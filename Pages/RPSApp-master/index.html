@@ -1,0 +1,59 @@
+<html>
+  <header>
+    <title>Rock, Paper, Scissors</title>
+    <link rel="stylesheet" type="text/css" href="./css/main.css">
+  </header>
+  <div>
+        <Form action="../Games.html">
+            <input type="submit" value="Back to Games" class="button">
+        </Form>
+    </div>
+  <body class="main">
+    <div class="header col-12">
+      <img src="./images/logo.png" class="logo col-2">
+      <h1 class="col-9">Rock, Paper, Scissors</h1>
+    </div>
+      <div id="playing-window" class="container viewer">
+        <div class="col-12 score">
+          <h1 class="col-2">Result</h1>
+          <h1 id="win"></h1>
+          <h1 id="lose"></h1>
+          <h1 id="draw"></h1>
+        </div>
+        <div class="col-3 selection">
+          <button id="rock-btn" class="btn col-10"><img src="./images/rock1.jpeg" class="col-10"></button>
+        </div>
+        <div class="col-3 selection">
+            <button id="paper-btn" class="btn col-10"><img src="./images/paper1.jpeg" class="col-10"></button>
+        </div>
+        <div class="col-3 selection">
+            <button id="scissors-btn" class="btn col-10"><img src="./images/scissors1.jpeg" class="col-10"></button>
+        </div>
+        <div class="col-12">
+          <div class="col-5 score">
+            <h3 class="col-6">Your Choice:</h3>
+            <label id="user-label" class="results"></label>
+          </div>
+          <div class="col-5 score">
+            <h3 class="col-6">Computer's Choice:</h3>
+            <label id="computer-label" class="results"></label>
+          </div>
+        </div>
+        <div class="col-12">
+            <div class="col-3 score">
+              <h3 class="col-6">Your Score:</h3>
+              <label id="user-score" class="results"></label>
+            </div>
+            <div class="col-3 score">
+                <h3 class="col-6">Number of Draws:</h3>
+                <label id="draw-score" class="results"></label>
+            </div>
+            <div class="col-3 score">
+              <h3 class="col-6">Computer's Score:</h3>
+              <label id="computer-score" class="results"></label>
+            </div>
+          </div>
+      </div>
+    <script src="./js/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,130 @@
+.main{
+  background-color: darkblue;
+}
+h1 {
+  color: darkblue;
+}
+h2 {
+  color: white;
+}
+.btn:hover{
+  color: white;
+  font-family: fantasy;
+  background-color: rgb(58, 91, 122);
+  opacity: .85;
+  margin: 5px;
+  text-align: center;
+  border-style: solid;
+  border-width: 1px;
+  border-color: white;
+  border-radius: 5px;
+}
+.btn {
+  color: white;
+  font-family: fantasy;
+  background-color: rgb(31, 53, 73);
+  opacity: .85;
+  margin: 5px;
+  text-align: center;
+  border-style: solid;
+  border-width: 1px;
+  border-color: white;
+  border-radius: 5px;
+}
+.header{
+  width: 80%;
+  margin: 0% 10% 0% 10%;
+}
+.container {
+  width: 80%;
+  margin: 0 10% 0 10%;
+}
+.col-1 {
+  width: 8.33%;
+  float: left;
+  padding: 15px;
+}
+.col-2 {
+  width: 16.66%;
+  float: left;
+  padding: 15px;
+}
+.col-3 {
+  width: 25%;
+  float: left;
+  padding: 15px;
+}
+.col-4 {
+  width: 33.33%;
+  float: left;
+  padding: 15px;
+}
+.col-5 {
+  width: 41.66%;
+  float: left;
+  padding: 15px;
+}
+.col-6 {
+  width: 50%;
+  float: left;
+  padding: 15px;
+}
+.col-7 {
+  width: 58.33%;
+  float: left;
+  padding: 15px;
+}
+.col-8 {
+  width: 66.66%;
+  float: left;
+  padding: 15px;
+}
+.col-9 {
+  width: 75%;
+  float: left;
+  padding: 15px;
+}
+.col-10 {
+  width: 83.33%;
+  float: left;
+  padding: 15px;
+}
+.col-11 {
+  width: 91.66%;
+  float: left;
+  padding: 15px;
+}
+.col-12 {
+  width: 100%;
+  float: left;
+  padding: 15px;
+}
+.viewer{
+  height: 900px;
+}
+#playing-window {
+  background-color: white;
+}
+.selection{
+  margin: 2.5%;
+}
+#win{
+  color: green;
+}
+#lose{
+  color: red;
+}
+#draw{
+  color: orange;
+}
+.logo{
+  height: 75px;
+  width: auto;
+}
+.score{
+  border: solid 1px black;
+}
+.results{
+  font-size: 24px;
+  color: darkcyan;
+}

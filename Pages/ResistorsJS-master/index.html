@@ -1,0 +1,116 @@
+</html>
+<head>
+    <meta charset="utf-8">
+    <title>
+      Measure the Resistance
+    </title>
+    <link rel="shortcut icon" href="https://image.flaticon.com/icons/svg/1482/1482822.svg" />
+    <link rel="stylesheet" type="text/css" href="./bootstrap_css/bootstrap-grid.css">
+    <link rel="stylesheet" type="text/css" href="./bootstrap_css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="./bootstrap_css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="./main.css">
+</head>
+<div>
+        <Form action="../Games.html">
+            <input type="submit" value="Back to Games" class="button">
+        </Form>
+    </div>
+<body class="container-fluid" style="background-color:lightgrey;">
+  <button id="newGameButton" class="btn-primary" style="margin-bottom: 20px;">New Game</button>
+  <button id="highScoreButton" class="btn-primary">High Scores</button>
+  <button id="rulesButton" class="btn-primary">Rules</button>
+  <button class="btn-primary" id="exitGameButton" style="display: none;"></button>
+  <div id="menu" class="container">
+    <H1>Resistor Challenge</H1>
+    <img src="./download.jpeg" alt="Resistor">
+  </div>
+  <div id="highScore" class="container" style="display: none;">
+      <H1>High Scores</H1>
+      <ol class="list-group">
+        <li id="firstScore"></li>
+        <li id="secondScore"></li>
+        <li id="thirdScore"></li>
+        <li id="fourthScore"></li>
+        <li id="fifthScore"></li>
+      </ol>
+      <div id="verifiedScores" class="alert-warning" style="display: none;">
+          <h3>Scores have been verified</h3>
+        </div>
+        <button id="recalculate">Verify Scores</button>
+      </div>
+      <div id="rules" class="container" style="display: none;">
+          <H1>How to Play</H1>
+          <p>
+            You have 60 seconds to get as many correct answers as you can.
+            Questions answered correctly on the first try are worth 5 points and you can only proceed to the next question once you have correctly answered the current question.
+          </p>
+          <p>
+            The timer will begin at 0 and end when it hits 60 seconds. If you answer a question right the first time it will pause the timer for 1 second, giving you an additional time to answer questions.
+          </p>
+          <p>
+            Every time a question is answered incorrectly it will lower the value of the question by 1 point (until the question is only worth 1 point, at which point is stays at 1 point until the question is answered).
+          </p>
+          <p>
+            The figure below is a reminder of how resister values and tolerances are calculated:
+          </p>
+          <img src="./Color code.png" alt="Resistor color chart">
+        </div>
+        <div id="game" style="display: none;">
+            <h1>
+              What is the Resistance?
+            </h1>
+            <h2 id="score">
+              Score:
+            </h2>
+            <div style="float: right;">
+                <h2 id="timer"></h2>
+              </div>
+              <div id="incorrect" class="alert-warning" style="display: none;">
+                  <h3>Try Again</h3>
+                </div>
+                <div style="width: 100%;height: 60%;background-color: aliceblue; padding: 10% 0 0 0;" >
+                    <div style="background-color: bisque;height: 30%;width: 40%; border-radius: 15px;" class="container">
+                        <div style="height: 100%;" class="row">
+                            <div style="height: 100%; " class="col-sm"></div>
+                            <div id="one" style="height: 100%; " class="col-sm"></div>
+                            <div style="height: 100%; " class="col-sm"></div>
+                            <div id="two" style="height: 100%; " class="col-sm"></div>
+                            <div style="height: 100%; " class="col-sm"></div>
+                            <div id="three" style="height: 100%;" class="col-sm"></div>
+                            <div style="height: 100%; " class="col-sm"></div>
+                            <div style="height: 100%; " class="col-sm"></div>
+                            <div id="four" style="height: 100%; " class="col-sm"></div>
+                            <div style="height: 100%; " class="col-sm"></div>
+                          </div>
+                          <div style="height: 100%;" class="row">
+                              <div style="height: 100%; " class="col-sm"></div>
+                              <div id="labelOne" style="height: 100%;" class="col-sm"></div>
+                              <div style="height: 100%; " class="col-sm"></div>
+                              <div id="labelTwo" style="height: 100%;" class="col-sm"></div>
+                              <div style="height: 100%; " class="col-sm"></div>
+                              <div id="labelThree" style="height: 100%;" class="col-sm"></div>
+                              <div style="height: 100%; " class="col-sm"></div>
+                              <div style="height: 100%; " class="col-sm"></div>
+                              <div id="labelFour" style="height: 100%;" class="col-sm"></div>
+                              <div style="height: 100%; " class="col-sm"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <label for="resistance">Ohms</label>
+                          <input type="text" id="resistance" autofocus>
+                          <label for="percentage">Tolerance</label>
+                          <input type="text" id="percentage">
+                          <button id="next" class="btn-primary">Next</button>
+                          <!-- <form>
+                            Ohms: <input type="text" id="resistance">
+                            Tolerance: <input type="text" id="percentage">
+                            <input type="submit" id="next"/>
+                          </form> -->
+                        </div>
+                      </div>
+                      <script src="./index.js"></script>
+                      <div id="footer" style="position: absolute; bottom: 10px; background-color: snow; width: 100%; padding: 0 0 0 10%;">Copyright HAWSCO 2019</div>
+                    </body>
+                    <html>
+                      
