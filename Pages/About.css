@@ -1,0 +1,134 @@
+h1 {
+    color:white;
+    font-size: 475%;
+    margin: 20px;
+}
+h2 {
+    color: rgb(31, 53, 73);
+    text-align: center;
+    padding-top: 30px;
+}
+p {
+    color: rgb(31, 53, 73);
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    margin: 20px;
+}
+.viewer{
+    display: none;
+    background-color: rgb(182, 192, 201);
+    opacity: .95;
+    height: 675px;
+    margin-top: 20%;
+}
+.gallogo {
+    height: 120px;
+}
+.btn:hover{
+    color: white;
+    background-color: rgb(58, 91, 122);
+    opacity: .85;
+    margin: 5px;
+    text-align: center;
+    border-style: solid;
+    border-width: 1px;
+    border-color: white;
+}
+.btn {
+    color: white;
+    background-color: rgb(31, 53, 73);
+    opacity: .85;
+    margin: 5px;
+    text-align: center;
+    border-style: solid;
+    border-width: 1px;
+    border-color: white;
+}
+.col-1 {
+    width: 8.33%;
+    float: left;
+    padding: 15px;
+}
+.col-2 {
+    width: 16.66%;
+    float: left;
+    padding: 15px;
+}
+.col-3 {
+    width: 25%;
+    float: left;
+    padding: 15px;
+}
+.col-4 {
+    width: 33.33%;
+    float: left;
+    padding: 15px;
+}
+.col-5 {
+    width: 41.66%;
+    float: left;
+    padding: 15px;
+}
+.col-6 {
+    width: 50%;
+    float: left;
+    padding: 15px;
+}
+.col-7 {
+    width: 58.33%;
+    float: left;
+    padding: 15px;
+}
+.col-8 {
+    width: 66.66%;
+    float: left;
+    padding: 15px;
+}
+.col-9 {
+    width: 75%;
+    float: left;
+    padding: 15px;
+}
+.col-10 {
+    width: 83.33%;
+    float: left;
+    padding: 15px;
+}
+.col-11 {
+    width: 91.66%;
+    float: left;
+    padding: 15px;
+}
+.col-12 {
+    width: 100%;
+    float: left;
+    padding: 15px;
+}
+
+.tbox{
+    margin: 20px;
+}
+.mbox {
+    height: 150px;
+}
+.lbl {
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+.portrait{
+    height: 200px; 
+    padding-left:25px;
+}
+.usu{
+    width:45%; 
+    height: 150px; 
+}
+.uofu{
+    width:30%; 
+    height: 150px;    
+}
+.panel{
+    /* display: none; */
+    background-color: rgb(182, 192, 201);
+    opacity: .95;
+    height: 675px;
+    margin-top: 10%;
+}

@@ -1,20 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Me</title>
-    <link rel="stylesheet" href="../CSS/styles.css">
+    <meta charset="utf-8">
+    <title>My TARDIS</title>
+<link rel="stylesheet" type="text/css" href="./About.css">
 </head>
-<body>
-    <div>
-        <h1>About Me</h1>
-        <p>Hello! I'm a passionate developer who loves creating interactive web applications. This sandbox is a place where I experiment with new ideas and technologies.</p>
+<div>
+    <Form action="../index.html">
+        <input type="submit" value="Back to Home" class="button">
+    </Form>
+</div>
+<body  style="background-image:url(../assets/superb-tardis-interior.jpg); -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover;">
+    <div class="col-6">
+        <div class="col-3">
+            <img src="../assets/gal1.png" alt="Time Lord Logo" class="gallogo">
+        </div>
+        <div>
+            <h1>Steven Haws</h1>
+        </div>
+        <div class="col-6">
+            <img src="../assets/profile.jpg" alt="Steven picture" class="portrait">
+        </div>
+        <div class="col-10">
+            <a class="btn col-6" type="button" id="educationbtn">Education and Work</a>
+        </div>
+        <div class="col-10">
+            <a class="btn col-6" type="button" id="hobbiesbtn">Hobbies</a>
+        </div>
+        <div class="col-10">
+            <a class="btn col-6" type="button" id="familybtn">Family</a>
+        </div>
+        <div class="col-10">
+            <a class="btn col-6" type="button" id="contactbtn">Contact</a>
+        </div>
     </div>
-    <div>
-        <Form action="../index.html">
-            <input type="submit" value="Back to Home" class="button">
-        </Form>
+    <div class="col-5 panel">
+        <div id="education" class="viewer">
+            <h2>Education and Work</h2>
+            <hr>
+            <div width="100%" class="col-12">   
+                <img src="../assets/USUlogo.png" alt="Utah State University Logo" class="usu col-5">
+                <img src="../assets/UofUlogo.png" alt="University of Utah Logo" class="uofu col-5">
+            </div>
+            <p>
+                I graduated from Utah State University with a Business Management Degree focusing on Human Resources.
+                <br><br>
+                For the first 4 years of my carreer, I worked as an in HR starting as an Assistant and working my way up to Generalist and Constultant. 
+                I then joined the IT department to help build a new HRIS system in house, got trained as a developer and system administrator,
+                and worked on the project for 3 years.
+                <br><br>
+                After that project ended, I worked as the IT Manager for a growing manufacturing company, at which point the company was purchased by 
+                a PE group and I moved to my next position as a Senior IT Manager for a Financial Services company. During that time I got my MSIS degree from 
+                the University of Utah to keep learning and growing my skills.
+                <br><br>
+                After 4 years, they were purchased by a larger company and I was moved to a new position as the IT Project Manager working with NetSuite, 
+                Workday, our Active Directory (hyrbrid).
+            </p>
+        </div>
+        <div id="hobbies" class="viewer">
+            <h2>Hobbies</h2>
+            <hr>
+            <img src="../assets/recumbent.png" alt="Recumbent tricycle logo" style="width:50%; margin:20px">
+            <img src="../assets/cheese.png" alt="cheese wedge" style="width:20%; margin:20px">
+            <p>
+                My friends and family know me best for my eclectic hobbies, and above are two of the most unique.
+                I enjoy riding my recumbent trike and making atisanal cheeses.
+                <br><br>
+                Some of my other hobbies include tinking with my Linux box, working on an augmented reality app for a company call Aryzon,
+                playing retro video games, water fights, and racquetball.
+            </p>
+            <img src="../assets/RaCquetball.jpg" alt="Utah State University Racquetball Team Logo" style="width:90%; margin:20px">
+        </div>
+        <div id="family" class="viewer">
+            <h2>Family</h2>
+            <hr>
+            <p>
+                A few years after gratuating from Utah State University, I ran into one of my friends from college.
+                Unknown to her, I had wanted to date her in college but didn't have the courage to ask her out.
+                After a few months of catching up, we started dating and were quickly married.
+                <br><br>
+                We now have a four more members of our family, all of whom get their stubbornness from their father and kindess from their mother.
+            </p>
+        </div>
+        <div id="contact" class="viewer">
+            <h2>Contact</h2>
+            <hr>
+            <p>
+                I am always happy to connect with others, whether it be for work, networking, or just to chat about shared interests.
+                <br><br>
+                Feel free to connect with me on LinkedIn: <a href="https://www.linkedin.com/in/steven-haws/">My LinkedIn</a>
+            </p>
+        </div>
     </div>
-    <script src="../JS/script.js"></script>
+
+    <script src="./About.js"></script>
+</body>
 </html>
