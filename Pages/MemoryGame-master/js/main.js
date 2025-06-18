@@ -1,3 +1,4 @@
+var level;
 var tries = 0;
 var timerVar
 var totalSeconds = 0;
@@ -12,6 +13,36 @@ var firstAnswer = null;
 var secondAnswer = null;
 var rightAnswers = 0;
 var thisButton;
+var hardbuttons = [
+  "btn21",
+  "btn22",
+  "btn23",
+  "btn24",
+  "btn25",
+  "btn26",
+  "btn27",
+  "btn28",
+  "btn29",
+  "btn30",
+  "btn31",
+  "btn32",
+  "btn33",
+  "btn34",
+  "btn35",
+  "btn36",
+  "btn37",
+  "btn38",
+  "btn39",
+  "btn40",
+  "btn41",
+  "btn42",
+  "btn43",
+  "btn44",
+  "btn45",
+  "btn46",
+  "btn47",
+  "btn48",
+]   
 var buttons = [
   "btn1",
   "btn2",
@@ -34,6 +65,38 @@ var buttons = [
   "btn19",
   "btn20",
 ];
+var hardanswers = [
+  "<img class='col-12' src='./images/asteroid.jpg'>",
+  "<img class='col-10' src='./images/blackhole.jpg'>",
+  "<img class='col-10' src='./images/comet.jpg'>",
+  "<img class='col-12' src='./images/earth.jpg'>",
+  "<img class='col-12' src='./images/jupiter.jpg'>",
+  "<img class='col-12' src='./images/mars.jpg'>",
+  "<img class='col-12' src='./images/moon.jpg'>",
+  "<img class='col-12' src='./images/mercury.jpg'>",
+  "<img class='col-12' src='./images/neptune.jpg'>",
+  "<img class='col-12' src='./images/pluto.jpg'>",
+  "<img class='col-12' src='./images/saturn.jpg'>",
+  "<img class='col-12' src='./images/sun.jpg'>",
+  "<img class='col-12' src='./images/star.jpg'>",
+  "<img class='col-12' src='./images/uranus.jpg'>",
+  "<img class='col-10' src='./images/venus.jpg'>",
+  "<img class='col-12' src='./images/asteroid.jpg'>",
+  "<img class='col-10' src='./images/blackhole.jpg'>",
+  "<img class='col-10' src='./images/comet.jpg'>",
+  "<img class='col-12' src='./images/earth.jpg'>",
+  "<img class='col-12' src='./images/jupiter.jpg'>",
+  "<img class='col-12' src='./images/mars.jpg'>",
+  "<img class='col-12' src='./images/moon.jpg'>",
+  "<img class='col-12' src='./images/mercury.jpg'>",
+  "<img class='col-12' src='./images/neptune.jpg'>",
+  "<img class='col-12' src='./images/pluto.jpg'>",
+  "<img class='col-12' src='./images/saturn.jpg'>",
+  "<img class='col-12' src='./images/sun.jpg'>",
+  "<img class='col-12' src='./images/star.jpg'>",
+  "<img class='col-12' src='./images/uranus.jpg'>",
+  "<img class='col-10' src='./images/venus.jpg'>",
+]
 var answers = [
   "<img class='col-12' src='./images/dog.png'>",
   "<img class='col-10' src='./images/cat.png'>",
@@ -185,7 +248,7 @@ function matchClick(){
 
   }
   else {
-    alert("You can only select two options at a time. Please try again.")
+    alert("Slow down turbo, you can only select two options at a time.")
   }
 };
 

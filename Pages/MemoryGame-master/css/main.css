@@ -2,6 +2,9 @@
 #game-board{
   display: none;
 }
+#game-board-hard{
+  
+}
 #background{
   background-image: url("./images/marble.jpg");
 }
