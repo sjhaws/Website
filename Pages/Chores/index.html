@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draggable Vertical Sliding Button (One per Column)</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="fullpage-container">
+        <div class="vertical-slider">
+            <!-- Column 1 -->
+            <div class="slider-column" id="col1">
+                <div class="track"></div>
+                <button class="slider-btn" id="btn1">Alice</button>
+            </div>
+            <!-- Column 2 -->
+            <div class="slider-column" id="col2">
+                <div class="track"></div>
+                <button class="slider-btn" id="btn2">Clara</button>
+            </div>
+            <!-- Column 3 -->
+            <div class="slider-column" id="col3">
+                <div class="track"></div>
+                <button class="slider-btn" id="btn3">Jesse</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        function makeDraggable(btnId, colId) {
+            const btn = document.getElementById(btnId);
+            const col = document.getElementById(colId);
+            let dragging = false;
+            let offsetY = 0;
+            let colRect, btnRect;
+
+            btn.addEventListener('mousedown', function(e) {
+                dragging = true;
+                colRect = col.getBoundingClientRect();
+                btnRect = btn.getBoundingClientRect();
+                offsetY = e.clientY - btnRect.top;
+                btn.style.transition = 'none';
+                document.body.style.userSelect = 'none';
+            });
+
+
+            let lastY = 0;
+            document.addEventListener('mousemove', function(e) {
+                if (!dragging) return;
+                let y = e.clientY - colRect.top - offsetY;
+                // Clamp y to stay within the column
+                y = Math.max(0, Math.min(y, colRect.height - btnRect.height));
+                btn.style.top = y + 'px';
+                // Firework if moving down
+                if (y > lastY) {
+                    showFirework(col, y + btnRect.height / 2);
+                }
+                // Turn green if at bottom, else restore
+                if (y >= colRect.height - btnRect.height - 1) {
+                    btn.classList.add('at-bottom');
+                } else {
+                    btn.classList.remove('at-bottom');
+                }
+                lastY = y;
+            });
+
+
+            document.addEventListener('mouseup', function() {
+                if (dragging) {
+                    dragging = false;
+                    btn.style.transition = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+
+            // Initialize button at top
+            btn.style.top = '0px';
+        }
+
+        // Firework animation function
+        function showFirework(col, y) {
+            // Only create one firework at a time per drag
+            if (col._fireworkTimeout) return;
+            const firework = document.createElement('div');
+            firework.className = 'firework';
+            firework.style.position = 'absolute';
+            firework.style.left = '50%';
+            firework.style.top = y + 'px';
+            firework.style.transform = 'translateX(-50%)';
+            col.appendChild(firework);
+            // Animate with CSS
+            setTimeout(() => {
+                firework.classList.add('explode');
+            }, 10);
+            // Remove after animation
+            col._fireworkTimeout = setTimeout(() => {
+                firework.remove();
+                col._fireworkTimeout = null;
+            }, 700);
+        }
+
+        makeDraggable('btn1', 'col1');
+        makeDraggable('btn2', 'col2');
+        makeDraggable('btn3', 'col3');
+    </script>
+</body>
+</html>
