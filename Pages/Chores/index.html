@@ -34,7 +34,6 @@
             let offsetY = 0;
             let colRect, btnRect;
 
-            // Mouse events
             btn.addEventListener('mousedown', function(e) {
                 dragging = true;
                 colRect = col.getBoundingClientRect();
@@ -44,27 +43,19 @@
                 document.body.style.userSelect = 'none';
             });
 
-            // Touch events
-            btn.addEventListener('touchstart', function(e) {
-                dragging = true;
-                colRect = col.getBoundingClientRect();
-                btnRect = btn.getBoundingClientRect();
-                const touch = e.touches[0];
-                offsetY = touch.clientY - btnRect.top;
-                btn.style.transition = 'none';
-                document.body.style.userSelect = 'none';
-            }, { passive: false });
 
             let lastY = 0;
-            // Mouse move
             document.addEventListener('mousemove', function(e) {
                 if (!dragging) return;
                 let y = e.clientY - colRect.top - offsetY;
+                // Clamp y to stay within the column
                 y = Math.max(0, Math.min(y, colRect.height - btnRect.height));
                 btn.style.top = y + 'px';
+                // Firework if moving down
                 if (y > lastY) {
                     showFirework(col, y + btnRect.height / 2);
                 }
+                // Turn green if at bottom, else restore
                 if (y >= colRect.height - btnRect.height - 1) {
                     btn.classList.add('at-bottom');
                 } else {
@@ -72,41 +63,9 @@
                 }
                 lastY = y;
             });
-            // Touch move
-            document.addEventListener('touchmove', function(e) {
-                if (!dragging) return;
-                const touch = e.touches[0];
-                let y = touch.clientY - colRect.top - offsetY;
-                y = Math.max(0, Math.min(y, colRect.height - btnRect.height));
-                btn.style.top = y + 'px';
-                if (y > lastY) {
-                    showFirework(col, y + btnRect.height / 2);
-                }
-                if (y >= colRect.height - btnRect.height - 1) {
-                    btn.classList.add('at-bottom');
-                } else {
-                    btn.classList.remove('at-bottom');
-                }
-                lastY = y;
-            }, { passive: false });
 
-            // Mouse up
+
             document.addEventListener('mouseup', function() {
-                if (dragging) {
-                    dragging = false;
-                    btn.style.transition = '';
-                    document.body.style.userSelect = '';
-                }
-            });
-            // Touch end/cancel
-            document.addEventListener('touchend', function() {
-                if (dragging) {
-                    dragging = false;
-                    btn.style.transition = '';
-                    document.body.style.userSelect = '';
-                }
-            });
-            document.addEventListener('touchcancel', function() {
                 if (dragging) {
                     dragging = false;
                     btn.style.transition = '';
