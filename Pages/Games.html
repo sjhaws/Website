@@ -1,6 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f8f8f8;
+        }
+        .menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 40px 0;
+        }
+        .menu-item {
+            margin: 16px 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .button {
+            font-size: 2rem;
+            padding: 18px 48px;
+            border-radius: 12px;
+            border: none;
+            background: #007bff;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            .button {
+                font-size: 1.2rem;
+                padding: 14px 24px;
+            }
+            .menu {
+                margin: 24px 0;
+            }
+        }
+    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Me</title>
@@ -11,28 +59,36 @@
         <h1>Here are some fun games</h1>
         <p>I hope you enjoy them!</p>
     </div>
-    <div>
-        <Form action="./MemoryGame-master/index.html">
-            <input type="submit" value="Memory Game" class="button">
-        </Form>
+    <div style="text-align:center; margin-top:32px;">
+        <h1>Choose a game to play!</h1>
     </div>
-    <div>
-        <Form action="./ResistorsJS-master/index.html">
-            <input type="submit" value="Resistor Challenge" class="button">
+    <div class="menu">
+        <div class="menu-item">
+            <form action="./MemoryGame-master/index.html">
+                <input type="submit" value="Memory Game" class="button">
+            </form>
+        </div>
+        <div class="menu-item">
+            <form action="./ResistorsJS-master/index.html">
+                <input type="submit" value="Resistor Challenge" class="button">
+            </form>
+        </div>
+        <div class="menu-item">
+            <form action="./RPSApp-master/index.html">
+                <input type="submit" value="Rock Paper Scissors" class="button">
+            </form>
+        </div>
+        <div class="menu-item">
+            <form action="./RetroCrawler/index.html">
+                <input type="submit" value="Retro Dungeon Crawler" class="button">
+            </form>
+        </div>
+        <div>
+        <Form action="../index.html">
+            <input type="submit" value="Back to Home" class="button">
         </Form>
-    </div>
-    <div>
-        <Form action="./RPSApp-master/index.html">
-            <input type="submit" value="Rock Paper Scissors" class="button">
-        </Form>
-    </div>
-    <div>
-        <Form action="./RetroCrawler/index.html">
-            <input type="submit" value="Retro Dungeon Crawler" class="button">
-        </Form>
-    </div>
-    <div>
-        <button onclick="location.href='../index.html'">Back to Home</button>
+        </div>
+        <!-- Add more game links here as needed -->
     </div>
     <script src="../JS/script.js"></script>
 </html>

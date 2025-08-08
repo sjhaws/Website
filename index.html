@@ -6,31 +6,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to the Sandbox</title>
     <link rel="stylesheet" href="CSS/styles.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f8f8f8;
+        }
+        .menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 40px 0;
+        }
+        .menu-item {
+            margin: 16px 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .button {
+            font-size: 2rem;
+            padding: 18px 48px;
+            border-radius: 12px;
+            border: none;
+            background: #007bff;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            .button {
+                font-size: 1.2rem;
+                padding: 14px 24px;
+            }
+            .menu {
+                margin: 24px 0;
+            }
+        }
+    </style>
 <body>
-    <div>
+    <div style="text-align:center; margin-top:32px;">
         <h1>Welcome to the Sandbox</h1>
     </div>
     <div class="menu">
         <div class="menu-item">
-        <Form action="Pages/About.html">
-            <input type="submit" value="About Me" class="button">
-        </Form>
+            <form action="Pages/About.html">
+                <input type="submit" value="About Me" class="button">
+            </form>
         </div>
         <div class="menu-item">
-            <Form action="Pages/Games.html">
+            <form action="Pages/Games.html">
                 <input type="submit" value="Games" class="button">
-            </Form>
+            </form>
         </div>
         <div class="menu-item">
-            <Form action="Pages/Fun.html">
+            <form action="Pages/Fun.html">
                 <input type="submit" value="Just for Fun" class="button">
-            </Form>
+            </form>
         </div>
     </div>
-    <div>
+    <div style="text-align:center;">
         <p>You never know what you might find</p>
         <p>Feel free to explore!</p>
     </div>
-    
     <script src="JS/script.js"></script>
 </body>
