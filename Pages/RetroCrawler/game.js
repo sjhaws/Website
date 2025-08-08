@@ -57,32 +57,34 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Touch controls: swipe to move
-let touchStartX = null, touchStartY = null;
 canvas.addEventListener('touchstart', function(e) {
     if (gameOver) return;
     const touch = e.touches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-}, { passive: false });
-
-canvas.addEventListener('touchend', function(e) {
-    if (gameOver || touchStartX === null || touchStartY === null) return;
-    const touch = e.changedTouches[0];
-    const dx = touch.clientX - touchStartX;
-    const dy = touch.clientY - touchStartY;
-    let moveX = 0, moveY = 0;
-    if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 30) moveX = 1;
-        else if (dx < -30) moveX = -1;
-    } else {
-        if (dy > 30) moveY = 1;
-        else if (dy < -30) moveY = -1;
+    // Get tap position relative to canvas
+    const rect = canvas.getBoundingClientRect();
+    const tapX = touch.clientX - rect.left;
+    const tapY = touch.clientY - rect.top;
+    // Convert to grid coordinates
+    const gridX = Math.floor(tapX / TILE_SIZE);
+    const gridY = Math.floor(tapY / TILE_SIZE);
+    // Determine direction to move one step closer
+    let dx = 0, dy = 0;
+    if (player.x < gridX) dx = 1;
+    else if (player.x > gridX) dx = -1;
+    if (player.y < gridY) dy = 1;
+    else if (player.y > gridY) dy = -1;
+    // Prioritize horizontal or vertical if both are possible
+    if (dx !== 0 && dy !== 0) {
+        // Move in the direction with greater distance
+        if (Math.abs(gridX - player.x) > Math.abs(gridY - player.y)) {
+            dy = 0;
+        } else {
+            dx = 0;
+        }
     }
-    if (moveX !== 0 || moveY !== 0) {
-        movePlayer(moveX, moveY);
+    if (dx !== 0 || dy !== 0) {
+        movePlayer(dx, dy);
     }
-    touchStartX = null;
-    touchStartY = null;
 }, { passive: false });
 
 function movePlayer(dx, dy) {
