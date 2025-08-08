@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Dungeon Crawler</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div>
+        <Form action="../Games.html">
+            <input type="submit" value="Back to Games" class="button">
+        </Form>
+    </div>
+    <h1>Retro Dungeon Crawler</h1>
+    <div id="info">
+        <button onclick="restartGame()">Restart</button>
+        <span id="status"></span>
+        <span id="level-counter"></span>
+    </div>
+    <canvas id="gameCanvas" width="1280" height="960"></canvas>
+    <script src="game.js"></script>
+</body>
+</html>
