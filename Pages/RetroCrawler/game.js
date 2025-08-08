@@ -1,3 +1,7 @@
+// Prevent swipe down to refresh on mobile
+canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+}, { passive: false });
 // 2D Dungeon Crawler with Levels and Enemies
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
