@@ -1,3 +1,10 @@
+let facingLeft = false;
+// Update scroll counter UI
+function updateScrollCounter() {
+    const scrollCount = scrolls ? scrolls.filter(s => s.collected).length : 0;
+    const scrollCountSpan = document.getElementById('scrollCount');
+    if (scrollCountSpan) scrollCountSpan.textContent = scrollCount;
+}
 // Load background images
 const cactusImg = new Image();
 cactusImg.src = '../../assets/Cactus.png';
@@ -108,6 +115,7 @@ function startGame() {
         { x: 4000, y: 320, w: 20, h: 30, collected: false },
         { x: 7000, y: 320, w: 20, h: 30, collected: false }
     ];
+    updateScrollCounter();
     invulnerable = false;
     invulnTimer = 0;
     gameActive = true;
@@ -139,10 +147,12 @@ function update() {
     if (keys.left) {
         player.x -= 4;
         if (player.x < 0) player.x = 0;
+        facingLeft = true;
     }
     if (keys.right) {
         player.x += 4;
         if (player.x + player.w > WORLD_WIDTH) player.x = WORLD_WIDTH - player.w;
+        facingLeft = false;
     }
     // Invulnerability timer
     if (invulnerable) {
@@ -150,6 +160,7 @@ function update() {
         if (invulnTimer <= 0) invulnerable = false;
     }
     // Collision with scrolls
+    let collectedBefore = scrolls.filter(s => s.collected).length;
     scrolls.forEach(scroll => {
         if (!scroll.collected && collide(player, scroll)) {
             scroll.collected = true;
@@ -157,6 +168,10 @@ function update() {
             invulnTimer = 180; // 3 seconds at 60fps
         }
     });
+    let collectedAfter = scrolls.filter(s => s.collected).length;
+    if (collectedAfter !== collectedBefore) {
+        updateScrollCounter();
+    }
     // Move enemies
     enemies.forEach(enemy => {
         // Move back and forth, keep within a 100px range from their original x
@@ -214,10 +229,20 @@ function draw() {
     // Draw enemies
     enemies.forEach(enemy => {
         if (enemy.x + enemy.w > camX && enemy.x < camX + VISIBLE_WIDTH) {
-            if (enemy.type === 'snake' && snakeImg.complete && snakeImg.naturalWidth !== 0) {
-                ctx.drawImage(snakeImg, enemy.x - camX, enemy.y, enemy.w, enemy.h);
-            } else if (enemy.type === 'scorpion' && scorpionImg.complete && scorpionImg.naturalWidth !== 0) {
-                ctx.drawImage(scorpionImg, enemy.x - camX, enemy.y, enemy.w, enemy.h);
+            let img = null;
+            if (enemy.type === 'snake' && snakeImg.complete && snakeImg.naturalWidth !== 0) img = snakeImg;
+            if (enemy.type === 'scorpion' && scorpionImg.complete && scorpionImg.naturalWidth !== 0) img = scorpionImg;
+            if (img) {
+                ctx.save();
+                if (enemy.dir === -1) {
+                    ctx.translate(enemy.x - camX + enemy.w, enemy.y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(img, 0, 0, enemy.w, enemy.h);
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                } else {
+                    ctx.drawImage(img, enemy.x - camX, enemy.y, enemy.w, enemy.h);
+                }
+                ctx.restore();
             } else {
                 ctx.fillStyle = enemy.type === 'snake' ? '#228B22' : '#A0522D';
                 ctx.fillRect(enemy.x - camX, enemy.y, enemy.w, enemy.h);
@@ -251,7 +276,14 @@ function draw() {
         if (invulnerable) {
             ctx.globalAlpha = 0.6;
         }
-        ctx.drawImage(nephiImg, player.x - camX, player.y, player.w, player.h);
+        if (facingLeft) {
+            ctx.translate(player.x - camX + player.w, player.y);
+            ctx.scale(-1, 1);
+            ctx.drawImage(nephiImg, 0, 0, player.w, player.h);
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
+        } else {
+            ctx.drawImage(nephiImg, player.x - camX, player.y, player.w, player.h);
+        }
         ctx.restore();
     } else {
         // fallback rectangle if image not loaded
