@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I, Nephi - Level 1</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="game.js"></script>
+</head>
+<body>
+    <div>
+        <Form action="../Games.html">
+            <input type="submit" value="Back to Games" class="button">
+        </Form>
+    </div>
+    <div id="menu" class="screen">
+        <h1>I, Nephi</h1>
+        <button id="startBtn">Start</button>
+    </div>
+    <div id="exposition" class="screen" style="display:none;">
+        <p>
+            Nephi and his family have been commanded by God to leave their home and find a place to stay. Help Nephi travel through the desert, avoid dangers, and seek safety!
+        </p>
+        <button id="nextBtn">Next</button>
+    </div>
+    <div id="gameContainer" class="screen" style="display:none;">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div id="gameOver" style="display:none;">
+            <h2>Game Over</h2>
+            <button id="restartBtn">Restart</button>
+        </div>
+    </div>
+</body>
+</html>

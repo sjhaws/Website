@@ -1,0 +1,289 @@
+// Load background images
+const cactusImg = new Image();
+cactusImg.src = '../../assets/Cactus.png';
+const sand1Img = new Image();
+sand1Img.src = '../../assets/Sand1.png';
+const sand2Img = new Image();
+sand2Img.src = '../../assets/Sand2.png';
+const sand3Img = new Image();
+sand3Img.src = '../../assets/Sand3.png';
+
+// Generate background objects
+let backgroundObjects = [];
+function generateBackgroundObjects() {
+    backgroundObjects = [];
+    // Place cacti every ~800px
+    // All background objects should be on the same plane as the character (y = 300)
+    for (let x = 200; x < WORLD_WIDTH; x += 800) {
+        backgroundObjects.push({ type: 'cactus', x: x, y: 300, w: 60, h: 120 });
+    }
+    // Place sand patches randomly
+    for (let i = 0; i < 20; i++) {
+        let sandType = ['sand1', 'sand2', 'sand3'][Math.floor(Math.random() * 3)];
+        let sandX = Math.floor(Math.random() * (WORLD_WIDTH - 100));
+        // Align sand to y = 360 - 80 (ground - sand height)
+        let sandY = 360 - 80;
+        backgroundObjects.push({ type: sandType, x: sandX, y: sandY, w: 100, h: 80 });
+    }
+}
+// Load scroll image
+const scrollImg = new Image();
+scrollImg.src = '../../assets/Scroll.png';
+// Load images for enemies and tent
+const snakeImg = new Image();
+snakeImg.src = '../../assets/Snake.png';
+const scorpionImg = new Image();
+scorpionImg.src = '../../assets/Scorpion.png';
+const tentImg = new Image();
+tentImg.src = '../../assets/Tent.png';
+// Load Nephi image
+const nephiImg = new Image();
+nephiImg.src = '../../assets/Nephi.png';
+
+// I, Nephi - Level 1 Game Logic
+const menu = document.getElementById('menu');
+const exposition = document.getElementById('exposition');
+const gameContainer = document.getElementById('gameContainer');
+const startBtn = document.getElementById('startBtn');
+const nextBtn = document.getElementById('nextBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+const gameCanvas = document.getElementById('gameCanvas');
+const ctx = gameCanvas.getContext('2d');
+const gameOverDiv = document.getElementById('gameOver');
+
+const VISIBLE_WIDTH = 800;
+const VISIBLE_HEIGHT = 400;
+const WORLD_WIDTH = VISIBLE_WIDTH * 10;
+const WORLD_HEIGHT = VISIBLE_HEIGHT;
+
+let gameState = 'menu';
+let player, enemies, scrolls, invulnerable, invulnTimer, gameActive;
+let keys = { left: false, right: false };
+
+function showScreen(screen) {
+    menu.style.display = screen === 'menu' ? 'block' : 'none';
+    exposition.style.display = screen === 'exposition' ? 'block' : 'none';
+    gameContainer.style.display = screen === 'game' ? 'block' : 'none';
+}
+
+startBtn.onclick = () => {
+    showScreen('exposition');
+    gameState = 'exposition';
+};
+
+nextBtn.onclick = () => {
+    showScreen('game');
+    gameState = 'game';
+    startGame();
+};
+
+restartBtn.onclick = () => {
+    gameOverDiv.style.display = 'none';
+    startGame();
+};
+
+function startGame() {
+    player = { x: 50, y: 300, w: 40, h: 60, vy: 0, onGround: true };
+    // Spread enemies and scrolls through the world
+    enemies = [
+        { x: 300, y: 340, w: 40, h: 20, type: 'snake', dir: 1 },
+        { x: 1200, y: 340, w: 40, h: 20, type: 'scorpion', dir: 1 },
+        { x: 2000, y: 340, w: 40, h: 20, type: 'snake', dir: 1 },
+        { x: 3500, y: 340, w: 40, h: 20, type: 'scorpion', dir: 1 },
+        { x: 5000, y: 340, w: 40, h: 20, type: 'snake', dir: 1 },
+        { x: 6500, y: 340, w: 40, h: 20, type: 'scorpion', dir: 1 },
+        { x: 8000, y: 340, w: 40, h: 20, type: 'snake', dir: 1 }
+    ];
+    // Set up random movement interval
+    if (window.enemyMoveInterval) clearInterval(window.enemyMoveInterval);
+    window.enemyMoveInterval = setInterval(() => {
+        enemies.forEach(enemy => {
+            // Randomly choose direction: -1 (left) or 1 (right)
+            enemy.dir = Math.random() < 0.5 ? -1 : 1;
+        });
+    }, 500);
+    scrolls = [
+        { x: 1000, y: 320, w: 20, h: 30, collected: false },
+        { x: 4000, y: 320, w: 20, h: 30, collected: false },
+        { x: 7000, y: 320, w: 20, h: 30, collected: false }
+    ];
+    invulnerable = false;
+    invulnTimer = 0;
+    gameActive = true;
+    keys = { left: false, right: false };
+    generateBackgroundObjects();
+    gameOverDiv.style.display = 'none';
+    window.requestAnimationFrame(gameLoop);
+}
+
+function gameLoop() {
+    if (!gameActive) return;
+    update();
+    draw();
+    window.requestAnimationFrame(gameLoop);
+}
+
+function update() {
+    // Gravity
+    if (!player.onGround) {
+        player.vy += 1.5;
+        player.y += player.vy;
+        if (player.y >= 300) {
+            player.y = 300;
+            player.vy = 0;
+            player.onGround = true;
+        }
+    }
+    // Horizontal movement
+    if (keys.left) {
+        player.x -= 4;
+        if (player.x < 0) player.x = 0;
+    }
+    if (keys.right) {
+        player.x += 4;
+        if (player.x + player.w > WORLD_WIDTH) player.x = WORLD_WIDTH - player.w;
+    }
+    // Invulnerability timer
+    if (invulnerable) {
+        invulnTimer--;
+        if (invulnTimer <= 0) invulnerable = false;
+    }
+    // Collision with scrolls
+    scrolls.forEach(scroll => {
+        if (!scroll.collected && collide(player, scroll)) {
+            scroll.collected = true;
+            invulnerable = true;
+            invulnTimer = 180; // 3 seconds at 60fps
+        }
+    });
+    // Move enemies
+    enemies.forEach(enemy => {
+        // Move back and forth, keep within a 100px range from their original x
+        let minX = enemy.x - 50;
+        let maxX = enemy.x + 50;
+        if (!enemy.baseX) enemy.baseX = enemy.x;
+        minX = enemy.baseX - 50;
+        maxX = enemy.baseX + 50;
+        enemy.x += enemy.dir * 2;
+        if (enemy.x < minX) enemy.x = minX;
+        if (enemy.x > maxX) enemy.x = maxX;
+        // Collision with player
+        if (collide(player, enemy) && !invulnerable) {
+            endGame();
+        }
+    });
+    // End level
+    if (player.x + player.w >= WORLD_WIDTH) {
+        endGame(true);
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, VISIBLE_WIDTH, VISIBLE_HEIGHT);
+    // Center camera on player
+    let camX = Math.max(0, Math.min(player.x + player.w / 2 - VISIBLE_WIDTH / 2, WORLD_WIDTH - VISIBLE_WIDTH));
+    // Desert background
+    ctx.fillStyle = '#e2c16b';
+    ctx.fillRect(0, 0, VISIBLE_WIDTH, VISIBLE_HEIGHT);
+    // Draw sand patches and cacti
+    backgroundObjects.forEach(obj => {
+        if (obj.x + obj.w > camX && obj.x < camX + VISIBLE_WIDTH) {
+            let img = null;
+            if (obj.type === 'cactus' && cactusImg.complete && cactusImg.naturalWidth !== 0) img = cactusImg;
+            if (obj.type === 'sand1' && sand1Img.complete && sand1Img.naturalWidth !== 0) img = sand1Img;
+            if (obj.type === 'sand2' && sand2Img.complete && sand2Img.naturalWidth !== 0) img = sand2Img;
+            if (obj.type === 'sand3' && sand3Img.complete && sand3Img.naturalWidth !== 0) img = sand3Img;
+            if (img) {
+                ctx.drawImage(img, obj.x - camX, obj.y, obj.w, obj.h);
+            } else {
+                // fallback shapes
+                if (obj.type === 'cactus') {
+                    ctx.fillStyle = '#228B22';
+                    ctx.fillRect(obj.x - camX, obj.y, obj.w, obj.h);
+                } else {
+                    ctx.fillStyle = '#e2c16b';
+                    ctx.fillRect(obj.x - camX, obj.y, obj.w, obj.h);
+                }
+            }
+        }
+    });
+    // Draw ground
+    ctx.fillStyle = '#c2b280';
+    ctx.fillRect(0, 360, VISIBLE_WIDTH, 40);
+    // Draw enemies
+    enemies.forEach(enemy => {
+        if (enemy.x + enemy.w > camX && enemy.x < camX + VISIBLE_WIDTH) {
+            if (enemy.type === 'snake' && snakeImg.complete && snakeImg.naturalWidth !== 0) {
+                ctx.drawImage(snakeImg, enemy.x - camX, enemy.y, enemy.w, enemy.h);
+            } else if (enemy.type === 'scorpion' && scorpionImg.complete && scorpionImg.naturalWidth !== 0) {
+                ctx.drawImage(scorpionImg, enemy.x - camX, enemy.y, enemy.w, enemy.h);
+            } else {
+                ctx.fillStyle = enemy.type === 'snake' ? '#228B22' : '#A0522D';
+                ctx.fillRect(enemy.x - camX, enemy.y, enemy.w, enemy.h);
+            }
+        }
+    });
+    // Draw tent at end of level
+    let tentX = WORLD_WIDTH - 100;
+    if (tentX + 80 > camX && tentX < camX + VISIBLE_WIDTH) {
+        if (tentImg.complete && tentImg.naturalWidth !== 0) {
+            ctx.drawImage(tentImg, tentX - camX, 280, 80, 80);
+        } else {
+            ctx.fillStyle = '#888';
+            ctx.fillRect(tentX - camX, 280, 80, 80);
+        }
+    }
+    // Draw scrolls
+    scrolls.forEach(scroll => {
+        if (!scroll.collected && scroll.x + scroll.w > camX && scroll.x < camX + VISIBLE_WIDTH) {
+            if (scrollImg.complete && scrollImg.naturalWidth !== 0) {
+                ctx.drawImage(scrollImg, scroll.x - camX, scroll.y, scroll.w, scroll.h);
+            } else {
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(scroll.x - camX, scroll.y, scroll.w, scroll.h);
+            }
+        }
+    });
+    // Draw player (Nephi image)
+    if (nephiImg.complete && nephiImg.naturalWidth !== 0) {
+        ctx.save();
+        if (invulnerable) {
+            ctx.globalAlpha = 0.6;
+        }
+        ctx.drawImage(nephiImg, player.x - camX, player.y, player.w, player.h);
+        ctx.restore();
+    } else {
+        // fallback rectangle if image not loaded
+        ctx.fillStyle = invulnerable ? '#00f' : '#964B00';
+        ctx.fillRect(player.x - camX, player.y, player.w, player.h);
+    }
+}
+
+function collide(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function endGame(win = false) {
+    gameActive = false;
+    gameOverDiv.style.display = 'block';
+    gameOverDiv.querySelector('h2').textContent = win ? 'You Win!' : 'Game Over';
+}
+
+// Controls: left/right arrows for movement, up arrow for jump
+window.addEventListener('keydown', e => {
+    if (gameState === 'game') {
+        if (e.code === 'ArrowLeft') keys.left = true;
+        if (e.code === 'ArrowRight') keys.right = true;
+        if (e.code === 'ArrowUp' && player.onGround) {
+            player.vy = -22.5; // 25% farther jump (-18 * 1.25)
+            player.onGround = false;
+        }
+    }
+});
+window.addEventListener('keyup', e => {
+    if (gameState === 'game') {
+        if (e.code === 'ArrowLeft') keys.left = false;
+        if (e.code === 'ArrowRight') keys.right = false;
+    }
+});

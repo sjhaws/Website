@@ -1,0 +1,42 @@
+/* Minimal style for I, Nephi game screens */
+body {
+    font-family: Arial, sans-serif;
+    background: #f8f6e3;
+    margin: 0;
+    padding: 0;
+}
+.screen {
+    text-align: center;
+    margin-top: 60px;
+}
+#gameCanvas {
+    border: 2px solid #333;
+    background: #e2c16b;
+    display: block;
+    margin: 0 auto;
+}
+#gameOver {
+    position: absolute;
+    top: 120px;
+    left: 0;
+    right: 0;
+    margin: auto;
+    background: rgba(255,255,255,0.95);
+    border: 2px solid #333;
+    width: 300px;
+    padding: 20px;
+    z-index: 10;
+}
+button {
+    font-size: 1.2em;
+    padding: 10px 30px;
+    margin: 20px;
+    border-radius: 8px;
+    border: none;
+    background: #c2b280;
+    color: #333;
+    cursor: pointer;
+}
+button:hover {
+    background: #e2c16b;
+}
