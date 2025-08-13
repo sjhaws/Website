@@ -1,9 +1,34 @@
+// Scripture popup logic
+const scripturePopup = document.getElementById('scripturePopup');
+const closeScriptureBtn = document.getElementById('closeScriptureBtn');
+if (closeScriptureBtn) {
+    closeScriptureBtn.onclick = () => {
+        scripturePopup.style.display = 'none';
+        if (gamePaused) {
+            gamePaused = false;
+            invulnerable = true;
+            invulnTimer = 180; // 3 seconds at 60fps
+        }
+    };
+}
+let scriptureShown = false;
 let facingLeft = false;
+let pendingInvulnerability = false;
+let scripture2Shown = false;
+let scripture3Shown = false;
 // Update scroll counter UI
 function updateScrollCounter() {
     const scrollCount = scrolls ? scrolls.filter(s => s.collected).length : 0;
     const scrollCountSpan = document.getElementById('scrollCount');
     if (scrollCountSpan) scrollCountSpan.textContent = scrollCount;
+    // Show popup if a scroll was just collected
+    if (typeof updateScrollCounter.lastCount === 'undefined') {
+        updateScrollCounter.lastCount = 0;
+    }
+    if (scrollCount > updateScrollCounter.lastCount && scrollCount <= scrollMessages.length) {
+        showScrollPopup(scrollCount - 1);
+    }
+    updateScrollCounter.lastCount = scrollCount;
 }
 // Load background images
 const cactusImg = new Image();
@@ -22,7 +47,8 @@ function generateBackgroundObjects() {
     // Place cacti every ~800px
     // All background objects should be on the same plane as the character (y = 300)
     for (let x = 200; x < WORLD_WIDTH; x += 800) {
-        backgroundObjects.push({ type: 'cactus', x: x, y: 300, w: 60, h: 120 });
+        // 50% smaller: w: 30, h: 60, y aligned so base is at y=360
+        backgroundObjects.push({ type: 'cactus', x: x, y: 360 - 60, w: 30, h: 60 });
     }
     // Place sand patches randomly
     for (let i = 0; i < 20; i++) {
@@ -67,6 +93,14 @@ const WORLD_HEIGHT = VISIBLE_HEIGHT;
 let gameState = 'menu';
 let player, enemies, scrolls, invulnerable, invulnTimer, gameActive;
 let keys = { left: false, right: false };
+
+// Popup messages for each scroll
+const scrollMessages = [
+    '1Nephi 2:1-2\n1 For behold, it came to pass that the Lord spake unto my father, yea, even in a dream, and said unto him: Blessed art thou, Lehi, because of the things which thou hast done; and because thou hast been faithful and declared unto this people the things which I commanded thee, behold, they seek to take away thy life.\n2 And it came to pass that the Lord commanded my father, even in a dream, that he should take his family and depart into the wilderness.',
+    '1Nephi 2:3-4\n3 And it came to pass that he was obedient unto the word of the Lord, wherefore he did as the Lord commanded him.',
+    '1Nephi 2: 5-6\n5 And he came down by the borders near the shore of the Red Sea; and he traveled in the wilderness in the borders which are nearer the Red Sea; and he did travel in the wilderness with his family, which consisted of my mother, Sariah, and my elder brothers, who were Laman, Lemuel, and Sam.\n\n6 And it came to pass that when he had traveled three days in the wilderness, he pitched his tent in a valley by the side of a river of water.'
+];
+let gamePaused = false;
 
 function showScreen(screen) {
     menu.style.display = screen === 'menu' ? 'block' : 'none';
@@ -133,6 +167,7 @@ function gameLoop() {
 }
 
 function update() {
+    if (gamePaused) return;
     // Gravity
     if (!player.onGround) {
         player.vy += 1.5;
@@ -161,16 +196,19 @@ function update() {
     }
     // Collision with scrolls
     let collectedBefore = scrolls.filter(s => s.collected).length;
-    scrolls.forEach(scroll => {
+    let popupToShow = -1;
+    scrolls.forEach((scroll, idx) => {
         if (!scroll.collected && collide(player, scroll)) {
             scroll.collected = true;
-            invulnerable = true;
-            invulnTimer = 180; // 3 seconds at 60fps
+            if (popupToShow === -1) popupToShow = idx;
         }
     });
     let collectedAfter = scrolls.filter(s => s.collected).length;
     if (collectedAfter !== collectedBefore) {
         updateScrollCounter();
+        if (popupToShow !== -1) {
+            showScrollPopup(popupToShow);
+        }
     }
     // Move enemies
     enemies.forEach(enemy => {
@@ -302,9 +340,16 @@ function endGame(win = false) {
     gameOverDiv.querySelector('h2').textContent = win ? 'You Win!' : 'Game Over';
 }
 
+function showScrollPopup(idx) {
+    if (!scripturePopup || !scripturePopup.querySelector('.scripture-text')) return;
+    scripturePopup.querySelector('.scripture-text').textContent = scrollMessages[idx];
+    scripturePopup.style.display = 'flex';
+    gamePaused = true;
+}
+
 // Controls: left/right arrows for movement, up arrow for jump
 window.addEventListener('keydown', e => {
-    if (gameState === 'game') {
+    if (gameState === 'game' && !gamePaused) {
         if (e.code === 'ArrowLeft') keys.left = true;
         if (e.code === 'ArrowRight') keys.right = true;
         if (e.code === 'ArrowUp' && player.onGround) {
@@ -314,7 +359,7 @@ window.addEventListener('keydown', e => {
     }
 });
 window.addEventListener('keyup', e => {
-    if (gameState === 'game') {
+    if (gameState === 'game' && !gamePaused) {
         if (e.code === 'ArrowLeft') keys.left = false;
         if (e.code === 'ArrowRight') keys.right = false;
     }
