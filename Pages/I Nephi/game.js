@@ -366,3 +366,56 @@ window.addEventListener('keyup', e => {
         if (e.code === 'ArrowRight') keys.right = false;
     }
 });
+
+// Touch controls
+function createTouchControls() {
+    const controls = document.createElement('div');
+    controls.id = 'touchControls';
+    controls.style.position = 'fixed';
+    controls.style.left = '0';
+    controls.style.right = '0';
+    controls.style.bottom = '20px';
+    controls.style.zIndex = '200';
+    controls.style.display = 'flex';
+    controls.style.justifyContent = 'center';
+    controls.style.gap = '32px';
+    controls.style.pointerEvents = 'none';
+
+    function makeBtn(label, onDown, onUp) {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.style.fontSize = '2em';
+        btn.style.width = '64px';
+        btn.style.height = '64px';
+        btn.style.borderRadius = '50%';
+        btn.style.background = '#fff7d6';
+        btn.style.border = '2px solid #c2b280';
+        btn.style.boxShadow = '0 2px 8px #0002';
+        btn.style.opacity = '0.85';
+        btn.style.pointerEvents = 'auto';
+        btn.style.touchAction = 'none';
+        btn.addEventListener('touchstart', e => { e.preventDefault(); onDown(); });
+        btn.addEventListener('touchend', e => { e.preventDefault(); onUp(); });
+        btn.addEventListener('touchcancel', e => { e.preventDefault(); onUp(); });
+        return btn;
+    }
+
+    const leftBtn = makeBtn('◀', () => { keys.left = true; }, () => { keys.left = false; });
+    const jumpBtn = makeBtn('▲', () => {
+        if (player && player.onGround && !gamePaused) {
+            player.vy = -22.5;
+            player.onGround = false;
+        }
+    }, () => {});
+    const rightBtn = makeBtn('▶', () => { keys.right = true; }, () => { keys.right = false; });
+
+    controls.appendChild(leftBtn);
+    controls.appendChild(jumpBtn);
+    controls.appendChild(rightBtn);
+    document.body.appendChild(controls);
+}
+
+// Only add touch controls if on a touch device
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    window.addEventListener('DOMContentLoaded', createTouchControls);
+}
