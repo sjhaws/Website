@@ -32,6 +32,13 @@
             <h2>Game Over</h2>
             <button id="restartBtn">Restart</button>
         </div>
+        <!-- Scroll Popup -->
+        <div id="scripturePopup" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;">
+            <div style="background:#fff7d6;padding:32px 32px 24px 32px;border-radius:18px;max-width:480px;box-shadow:0 4px 24px #0006;position:relative;display:flex;flex-direction:column;align-items:center;">
+                <div class="scripture-text" style="white-space:pre-line;font-size:1.1em;margin-bottom:24px;text-align:left;"></div>
+                <button id="closeScriptureBtn" style="font-size:1.1em;padding:6px 24px;border-radius:8px;background:#e2c16b;border:2px solid #c2b280;cursor:pointer;">Close</button>
+            </div>
+        </div>
     </div>
 </body>
 </html>

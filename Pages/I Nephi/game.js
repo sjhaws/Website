@@ -6,6 +6,8 @@ if (closeScriptureBtn) {
         scripturePopup.style.display = 'none';
         if (gamePaused) {
             gamePaused = false;
+            keys.left = false;
+            keys.right = false;
             invulnerable = true;
             invulnTimer = 180; // 3 seconds at 60fps
         }
@@ -96,9 +98,9 @@ let keys = { left: false, right: false };
 
 // Popup messages for each scroll
 const scrollMessages = [
-    '1Nephi 2:1-2\n1 For behold, it came to pass that the Lord spake unto my father, yea, even in a dream, and said unto him: Blessed art thou, Lehi, because of the things which thou hast done; and because thou hast been faithful and declared unto this people the things which I commanded thee, behold, they seek to take away thy life.\n2 And it came to pass that the Lord commanded my father, even in a dream, that he should take his family and depart into the wilderness.',
-    '1Nephi 2:3-4\n3 And it came to pass that he was obedient unto the word of the Lord, wherefore he did as the Lord commanded him.',
-    '1Nephi 2: 5-6\n5 And he came down by the borders near the shore of the Red Sea; and he traveled in the wilderness in the borders which are nearer the Red Sea; and he did travel in the wilderness with his family, which consisted of my mother, Sariah, and my elder brothers, who were Laman, Lemuel, and Sam.\n\n6 And it came to pass that when he had traveled three days in the wilderness, he pitched his tent in a valley by the side of a river of water.'
+    '1Nephi 2:1-2\n\n1 For behold, it came to pass that the Lord spake unto my father, yea, even in a dream, and said unto him: Blessed art thou, Lehi, because of the things which thou hast done; and because thou hast been faithful and declared unto this people the things which I commanded thee, behold, they seek to take away thy life.\n\n2 And it came to pass that the Lord commanded my father, even in a dream, that he should take his family and depart into the wilderness.',
+    '1Nephi 2:3-4\n\n3 And it came to pass that he was obedient unto the word of the Lord, wherefore he did as the Lord commanded him.\n\n4  And it came to pass that he departed into the wilderness. And he left his house, and the land of his inheritance, and his gold, and his silver, and his precious things, and took nothing with him, save it were his family, and provisions, and tents, and departed into the wilderness.',
+    '1Nephi 2: 5-6\n\n5 And he came down by the borders near the shore of the Red Sea; and he traveled in the wilderness in the borders which are nearer the Red Sea; and he did travel in the wilderness with his family, which consisted of my mother, Sariah, and my elder brothers, who were Laman, Lemuel, and Sam.\n\n6 And it came to pass that when he had traveled three days in the wilderness, he pitched his tent in a valley by the side of a river of water.'
 ];
 let gamePaused = false;
 
@@ -227,7 +229,7 @@ function update() {
         }
     });
     // End level
-    if (player.x + player.w >= WORLD_WIDTH) {
+    if (player.x + player.w >= WORLD_WIDTH - 50) {
         endGame(true);
     }
 }
@@ -331,7 +333,7 @@ function draw() {
 }
 
 function collide(a, b) {
-    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    return (a.x+10) < b.x + b.w && a.x + (a.w-10) > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
 function endGame(win = false) {
