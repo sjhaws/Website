@@ -424,10 +424,22 @@ if (gameContainer) {
     gameContainer.appendChild(jumpBtn);
 }
 
+// Detect if device is mobile
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+let enableTouchControls = isMobileDevice();
+
 // Show/hide controls when game starts/ends
 function setTouchControlsVisible(visible) {
-    joystickContainer.style.display = visible ? 'block' : 'none';
-    jumpBtn.style.display = visible ? 'block' : 'none';
+    if (enableTouchControls) {
+        joystickContainer.style.display = visible ? 'block' : 'none';
+        jumpBtn.style.display = visible ? 'block' : 'none';
+    } else {
+        joystickContainer.style.display = 'none';
+        jumpBtn.style.display = 'none';
+    }
 }
 
 // Show controls when game starts
