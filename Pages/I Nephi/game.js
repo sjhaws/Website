@@ -367,55 +367,187 @@ window.addEventListener('keyup', e => {
     }
 });
 
-// Touch controls
-function createTouchControls() {
-    const controls = document.createElement('div');
-    controls.id = 'touchControls';
-    controls.style.position = 'fixed';
-    controls.style.left = '0';
-    controls.style.right = '0';
-    controls.style.bottom = '20px';
-    controls.style.zIndex = '200';
-    controls.style.display = 'flex';
-    controls.style.justifyContent = 'center';
-    controls.style.gap = '32px';
-    controls.style.pointerEvents = 'none';
+// --- Touch Controls: On-screen joystick and jump button ---
+// Create joystick and jump button elements
+const joystickContainer = document.createElement('div');
+joystickContainer.id = 'joystick-container';
+joystickContainer.style.position = 'absolute';
+joystickContainer.style.left = '30px';
+joystickContainer.style.bottom = '30px';
+joystickContainer.style.width = '120px';
+joystickContainer.style.height = '120px';
+joystickContainer.style.zIndex = '1000';
+joystickContainer.style.touchAction = 'none';
+joystickContainer.style.userSelect = 'none';
+joystickContainer.style.display = 'none';
 
-    function makeBtn(label, onDown, onUp) {
-        const btn = document.createElement('button');
-        btn.textContent = label;
-        btn.style.fontSize = '2em';
-        btn.style.width = '64px';
-        btn.style.height = '64px';
-        btn.style.borderRadius = '50%';
-        btn.style.background = '#fff7d6';
-        btn.style.border = '2px solid #c2b280';
-        btn.style.boxShadow = '0 2px 8px #0002';
-        btn.style.opacity = '0.85';
-        btn.style.pointerEvents = 'auto';
-        btn.style.touchAction = 'none';
-        btn.addEventListener('touchstart', e => { e.preventDefault(); onDown(); });
-        btn.addEventListener('touchend', e => { e.preventDefault(); onUp(); });
-        btn.addEventListener('touchcancel', e => { e.preventDefault(); onUp(); });
-        return btn;
+const joystickBase = document.createElement('div');
+joystickBase.style.width = '100%';
+joystickBase.style.height = '100%';
+joystickBase.style.background = 'rgba(100,100,100,0.2)';
+joystickBase.style.borderRadius = '50%';
+joystickBase.style.position = 'absolute';
+joystickBase.style.left = '0';
+joystickBase.style.top = '0';
+joystickContainer.appendChild(joystickBase);
+
+const joystickStick = document.createElement('div');
+joystickStick.style.width = '60px';
+joystickStick.style.height = '60px';
+joystickStick.style.background = 'rgba(80,80,80,0.7)';
+joystickStick.style.borderRadius = '50%';
+joystickStick.style.position = 'absolute';
+joystickStick.style.left = '30px';
+joystickStick.style.top = '30px';
+joystickStick.style.transition = 'left 0.05s, top 0.05s';
+joystickContainer.appendChild(joystickStick);
+
+const jumpBtn = document.createElement('button');
+jumpBtn.id = 'jump-btn';
+jumpBtn.textContent = 'Jump';
+jumpBtn.style.position = 'absolute';
+jumpBtn.style.right = '40px';
+jumpBtn.style.bottom = '50px';
+jumpBtn.style.width = '90px';
+jumpBtn.style.height = '90px';
+jumpBtn.style.borderRadius = '50%';
+jumpBtn.style.background = 'rgba(255, 215, 0, 0.85)';
+jumpBtn.style.fontSize = '1.5em';
+jumpBtn.style.zIndex = '1000';
+jumpBtn.style.border = '2px solid #bfa100';
+jumpBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+jumpBtn.style.display = 'none';
+
+// Add to game container
+if (gameContainer) {
+    gameContainer.appendChild(joystickContainer);
+    gameContainer.appendChild(jumpBtn);
+}
+
+// Show/hide controls when game starts/ends
+function setTouchControlsVisible(visible) {
+    joystickContainer.style.display = visible ? 'block' : 'none';
+    jumpBtn.style.display = visible ? 'block' : 'none';
+}
+
+// Show controls when game starts
+const origStartGame = startGame;
+startGame = function() {
+    setTouchControlsVisible(true);
+    origStartGame();
+};
+// Hide controls on game over
+const origEndGame = endGame;
+endGame = function(win = false) {
+    setTouchControlsVisible(false);
+    origEndGame(win);
+};
+
+// Joystick logic
+let joystickActive = false;
+let joystickStart = { x: 0, y: 0 };
+let joystickPos = { x: 60, y: 60 };
+let joystickDir = 0; // -1: left, 1: right, 0: neutral
+
+function setJoystickKeys(dir) {
+    if (dir === -1) {
+        keys.left = true;
+        keys.right = false;
+    } else if (dir === 1) {
+        keys.left = false;
+        keys.right = true;
+    } else {
+        keys.left = false;
+        keys.right = false;
     }
-
-    const leftBtn = makeBtn('◀', () => { keys.left = true; }, () => { keys.left = false; });
-    const jumpBtn = makeBtn('▲', () => {
-        if (player && player.onGround && !gamePaused) {
-            player.vy = -22.5;
-            player.onGround = false;
-        }
-    }, () => {});
-    const rightBtn = makeBtn('▶', () => { keys.right = true; }, () => { keys.right = false; });
-
-    controls.appendChild(leftBtn);
-    controls.appendChild(jumpBtn);
-    controls.appendChild(rightBtn);
-    document.body.appendChild(controls);
 }
 
-// Only add touch controls if on a touch device
-if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-    window.addEventListener('DOMContentLoaded', createTouchControls);
+function handleJoystickMove(clientX, clientY) {
+    const rect = joystickContainer.getBoundingClientRect();
+    let x = clientX - rect.left;
+    let y = clientY - rect.top;
+    // Clamp to circle radius 50px from center (60,60)
+    let dx = x - 60;
+    let dy = y - 60;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > 50) {
+        dx = dx * 50 / dist;
+        dy = dy * 50 / dist;
+        x = 60 + dx;
+        y = 60 + dy;
+    }
+    joystickStick.style.left = (x - 30) + 'px';
+    joystickStick.style.top = (y - 30) + 'px';
+    // Direction: left/right only
+    if (dx < -15) {
+        setJoystickKeys(-1);
+        joystickDir = -1;
+    } else if (dx > 15) {
+        setJoystickKeys(1);
+        joystickDir = 1;
+    } else {
+        setJoystickKeys(0);
+        joystickDir = 0;
+    }
 }
+
+joystickContainer.addEventListener('touchstart', function(e) {
+    if (e.touches.length > 0) {
+        joystickActive = true;
+        handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY);
+        e.preventDefault();
+    }
+}, { passive: false });
+joystickContainer.addEventListener('touchmove', function(e) {
+    if (joystickActive && e.touches.length > 0) {
+        handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY);
+        e.preventDefault();
+    }
+}, { passive: false });
+joystickContainer.addEventListener('touchend', function(e) {
+    joystickActive = false;
+    joystickStick.style.left = '30px';
+    joystickStick.style.top = '30px';
+    setJoystickKeys(0);
+    joystickDir = 0;
+    e.preventDefault();
+}, { passive: false });
+
+// Also support mouse for testing
+joystickContainer.addEventListener('mousedown', function(e) {
+    joystickActive = true;
+    handleJoystickMove(e.clientX, e.clientY);
+    e.preventDefault();
+});
+window.addEventListener('mousemove', function(e) {
+    if (joystickActive) {
+        handleJoystickMove(e.clientX, e.clientY);
+        e.preventDefault();
+    }
+});
+window.addEventListener('mouseup', function(e) {
+    if (joystickActive) {
+        joystickActive = false;
+        joystickStick.style.left = '30px';
+        joystickStick.style.top = '30px';
+        setJoystickKeys(0);
+        joystickDir = 0;
+        e.preventDefault();
+    }
+});
+
+// Jump button logic
+jumpBtn.addEventListener('touchstart', function(e) {
+    if (gameState === 'game' && !gamePaused && player.onGround) {
+        player.vy = -22.5;
+        player.onGround = false;
+    }
+    e.preventDefault();
+}, { passive: false });
+jumpBtn.addEventListener('mousedown', function(e) {
+    if (gameState === 'game' && !gamePaused && player.onGround) {
+        player.vy = -22.5;
+        player.onGround = false;
+    }
+    e.preventDefault();
+});
