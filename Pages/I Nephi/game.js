@@ -328,6 +328,13 @@ function draw() {
     if (nephiImg.complete && nephiImg.naturalWidth !== 0) {
         ctx.save();
         if (invulnerable) {
+            // Draw white border
+            ctx.save();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#fff';
+            ctx.globalAlpha = 1.0;
+            ctx.strokeRect(player.x - camX - 2.5, player.y - 2.5, player.w + 5, player.h + 5);
+            ctx.restore();
             ctx.globalAlpha = 0.6;
         }
         if (facingLeft) {
@@ -341,6 +348,14 @@ function draw() {
         ctx.restore();
     } else {
         // fallback rectangle if image not loaded
+        if (invulnerable) {
+            ctx.save();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#fff';
+            ctx.globalAlpha = 1.0;
+            ctx.strokeRect(player.x - camX - 2.5, player.y - 2.5, player.w + 5, player.h + 5);
+            ctx.restore();
+        }
         ctx.fillStyle = invulnerable ? '#00f' : '#964B00';
         ctx.fillRect(player.x - camX, player.y, player.w, player.h);
     }
