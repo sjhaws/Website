@@ -41,11 +41,16 @@ const sand2Img = new Image();
 sand2Img.src = '../../assets/Sand2.png';
 const sand3Img = new Image();
 sand3Img.src = '../../assets/Sand3.png';
+// Load city image
+const cityImg = new Image();
+cityImg.src = '../../assets/City.png';
 
 // Generate background objects
 let backgroundObjects = [];
 function generateBackgroundObjects() {
     backgroundObjects = [];
+    // Add city at the very beginning (background, large)
+    backgroundObjects.push({ type: 'city', x: -60, y: 275, w: 260, h: 100 });
     // Place cacti every ~800px
     // All background objects should be on the same plane as the character (y = 300)
     for (let x = 200; x < WORLD_WIDTH; x += 800) {
@@ -245,6 +250,7 @@ function draw() {
     backgroundObjects.forEach(obj => {
         if (obj.x + obj.w > camX && obj.x < camX + VISIBLE_WIDTH) {
             let img = null;
+            if (obj.type === 'city' && cityImg.complete && cityImg.naturalWidth !== 0) img = cityImg;
             if (obj.type === 'cactus' && cactusImg.complete && cactusImg.naturalWidth !== 0) img = cactusImg;
             if (obj.type === 'sand1' && sand1Img.complete && sand1Img.naturalWidth !== 0) img = sand1Img;
             if (obj.type === 'sand2' && sand2Img.complete && sand2Img.naturalWidth !== 0) img = sand2Img;
@@ -253,7 +259,10 @@ function draw() {
                 ctx.drawImage(img, obj.x - camX, obj.y, obj.w, obj.h);
             } else {
                 // fallback shapes
-                if (obj.type === 'cactus') {
+                if (obj.type === 'city') {
+                    ctx.fillStyle = '#888';
+                    ctx.fillRect(obj.x - camX, obj.y, obj.w, obj.h);
+                } else if (obj.type === 'cactus') {
                     ctx.fillStyle = '#228B22';
                     ctx.fillRect(obj.x - camX, obj.y, obj.w, obj.h);
                 } else {
