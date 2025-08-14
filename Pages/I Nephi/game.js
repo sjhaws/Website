@@ -186,13 +186,18 @@ function update() {
         }
     }
     // Horizontal movement
+    let moveSpeed = 4;
+    // If joystick is active (mobile/touch), slow down by half
+    if (enableTouchControls && (joystickActive || joystickDir !== 0)) {
+        moveSpeed = 2;
+    }
     if (keys.left) {
-        player.x -= 4;
+        player.x -= moveSpeed;
         if (player.x < 0) player.x = 0;
         facingLeft = true;
     }
     if (keys.right) {
-        player.x += 4;
+        player.x += moveSpeed;
         if (player.x + player.w > WORLD_WIDTH) player.x = WORLD_WIDTH - player.w;
         facingLeft = false;
     }
@@ -467,7 +472,7 @@ endGame = function(win = false) {
 // Joystick logic
 let joystickActive = false;
 let joystickStart = { x: 0, y: 0 };
-let joystickPos = { x: 10, y: 10 };
+let joystickPos = { x: 60, y: 60 };
 let joystickDir = 0; // -1: left, 1: right, 0: neutral
 
 function setJoystickKeys(dir) {
