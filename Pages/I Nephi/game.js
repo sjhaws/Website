@@ -467,7 +467,7 @@ endGame = function(win = false) {
 // Joystick logic
 let joystickActive = false;
 let joystickStart = { x: 0, y: 0 };
-let joystickPos = { x: 60, y: 60 };
+let joystickPos = { x: 30, y: 30 };
 let joystickDir = 0; // -1: left, 1: right, 0: neutral
 
 function setJoystickKeys(dir) {
