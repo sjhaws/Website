@@ -101,12 +101,22 @@ let gameState = 'menu';
 let player, enemies, scrolls, invulnerable, invulnTimer, gameActive;
 let keys = { left: false, right: false };
 
-// Popup messages for each scroll
-const scrollMessages = [
+// Popup messages for each scroll (level 1 and 2)
+let scrollMessages = [
     '1Nephi 2:1-2\n\n1 For behold, it came to pass that the Lord spake unto my father, yea, even in a dream, and said unto him: Blessed art thou, Lehi, because of the things which thou hast done; and because thou hast been faithful and declared unto this people the things which I commanded thee, behold, they seek to take away thy life.\n\n2 And it came to pass that the Lord commanded my father, even in a dream, that he should take his family and depart into the wilderness.',
     '1Nephi 2:3-4\n\n3 And it came to pass that he was obedient unto the word of the Lord, wherefore he did as the Lord commanded him.\n\n4  And it came to pass that he departed into the wilderness. And he left his house, and the land of his inheritance, and his gold, and his silver, and his precious things, and took nothing with him, save it were his family, and provisions, and tents, and departed into the wilderness.',
     '1Nephi 2: 5-6\n\n5 And he came down by the borders near the shore of the Red Sea; and he traveled in the wilderness in the borders which are nearer the Red Sea; and he did travel in the wilderness with his family, which consisted of my mother, Sariah, and my elder brothers, who were Laman, Lemuel, and Sam.\n\n6 And it came to pass that when he had traveled three days in the wilderness, he pitched his tent in a valley by the side of a river of water.'
 ];
+
+// Level 2 scroll messages
+const scrollMessagesLevel2 = [
+    '1Nephi 3:15\n\nBut behold I said unto them that: As the Lord liveth, and as we live, we will not go down unto our father in the wilderness until we have accomplished the thing which the Lord hath commanded us.',
+    '1Nephi 3:19\n\nFor behold, he knew that Jerusalem must be destroyed, because of the wickedness of the people. For behold, they have rejected the words of the prophets. Wherefore, if my father should dwell in the land after he hath been commanded to flee out of the land, behold, he would perish; wherefore, it must needs be that he flee out of the land.',
+    '1Nephi 3:29\n\nAnd it came to pass that the angel of the Lord spake unto them again, saying: Go up, for the Lord will deliver Laban into your hands.'
+];
+
+// End of level 1 scripture
+const endLevel1Scripture = `1Nephi 3:1-7\n\n1 And it came to pass that I, Nephi, returned from speaking with the Lord, to the tent of my father.\n\n2 And it came to pass that he spake unto me, saying: Behold I have dreamed a dream, in the which the Lord hath commanded me that thou and thy brethren shall return to Jerusalem.\n\n3 For behold, Laban hath the record of the Jews and also a genealogy of my forefathers, and they are engraven upon plates of brass.\n\n4 Wherefore, the Lord hath commanded me that thou and thy brothers should go unto the house of Laban, and seek the records, and bring them down hither into the wilderness.\n\n5 And now, behold thy brothers murmur, saying it is a hard thing which I have required of them; but behold I have not required it of them, but it is a commandment of the Lord.\n\n6 Therefore go, my son, and thou shalt be favored of the Lord, because thou hast not murmured.\n\n7 And it came to pass that I, Nephi, said unto my father: I will go and do the things which the Lord hath commanded, for I know that the Lord giveth no commandments unto the children of men, save he shall prepare a way for them that they may accomplish the thing which he commandeth them.`;
 let gamePaused = false;
 
 function showScreen(screen) {
@@ -365,10 +375,85 @@ function collide(a, b) {
     return (a.x+10) < b.x + b.w && a.x + (a.w-10) > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
+
+// --- Level management ---
+let currentLevel = 1;
+
 function endGame(win = false) {
     gameActive = false;
-    gameOverDiv.style.display = 'block';
-    gameOverDiv.querySelector('h2').textContent = win ? 'You Win!' : 'Game Over';
+    if (win && currentLevel === 1) {
+        // Show scripture popup for end of level 1
+        showEndLevel1Popup();
+    } else if (win && currentLevel === 2) {
+        gameOverDiv.style.display = 'block';
+        gameOverDiv.querySelector('h2').textContent = 'You Win!';
+    } else {
+        gameOverDiv.style.display = 'block';
+        gameOverDiv.querySelector('h2').textContent = 'Game Over';
+    }
+}
+
+function showEndLevel1Popup() {
+    if (!scripturePopup || !scripturePopup.querySelector('.scripture-text')) {
+        // fallback: just end game
+        gameOverDiv.style.display = 'block';
+        gameOverDiv.querySelector('h2').textContent = 'You Win!';
+        return;
+    }
+    scripturePopup.querySelector('.scripture-text').textContent = endLevel1Scripture;
+    scripturePopup.style.display = 'flex';
+    gamePaused = true;
+    // When closed, start level 2
+    const origClose = closeScriptureBtn.onclick;
+    closeScriptureBtn.onclick = () => {
+        scripturePopup.style.display = 'none';
+        if (gamePaused) {
+            gamePaused = false;
+            keys.left = false;
+            keys.right = false;
+            invulnerable = true;
+            invulnTimer = 180;
+        }
+        startLevel2();
+        // Restore original close handler for future popups
+        closeScriptureBtn.onclick = origClose;
+    };
+}
+
+function startLevel2() {
+    currentLevel = 2;
+    player = { x: WORLD_WIDTH - 90, y: 300, w: 40, h: 60, vy: 0, onGround: true };
+    // New enemies (reuse same pattern, or add more if desired)
+    enemies = [
+        { x: 7000, y: 340, w: 40, h: 20, type: 'snake', dir: -1 },
+        { x: 5000, y: 340, w: 40, h: 20, type: 'scorpion', dir: -1 },
+        { x: 3500, y: 340, w: 40, h: 20, type: 'snake', dir: -1 },
+        { x: 2000, y: 340, w: 40, h: 20, type: 'scorpion', dir: -1 },
+        { x: 1200, y: 340, w: 40, h: 20, type: 'snake', dir: -1 },
+        { x: 300, y: 340, w: 40, h: 20, type: 'scorpion', dir: -1 }
+    ];
+    // Set up random movement interval
+    if (window.enemyMoveInterval) clearInterval(window.enemyMoveInterval);
+    window.enemyMoveInterval = setInterval(() => {
+        enemies.forEach(enemy => {
+            enemy.dir = Math.random() < 0.5 ? -1 : 1;
+        });
+    }, 500);
+    // Place new scrolls (level 2)
+    scrolls = [
+        { x: 6000, y: 320, w: 20, h: 30, collected: false },
+        { x: 4000, y: 320, w: 20, h: 30, collected: false },
+        { x: 2000, y: 320, w: 20, h: 30, collected: false }
+    ];
+    scrollMessages = scrollMessagesLevel2;
+    updateScrollCounter();
+    invulnerable = false;
+    invulnTimer = 0;
+    gameActive = true;
+    keys = { left: false, right: false };
+    generateBackgroundObjects();
+    gameOverDiv.style.display = 'none';
+    window.requestAnimationFrame(gameLoop);
 }
 
 function showScrollPopup(idx) {
@@ -477,61 +562,84 @@ startGame = function() {
     setTouchControlsVisible(true);
     origStartGame();
 };
-// Hide controls on game over
-const origEndGame = endGame;
-endGame = function(win = false) {
-    setTouchControlsVisible(false);
-    origEndGame(win);
-};
-
-// Joystick logic
-let joystickActive = false;
-let joystickStart = { x: 0, y: 0 };
-let joystickPos = { x: 60, y: 60 };
-let joystickDir = 0; // -1: left, 1: right, 0: neutral
-
-function setJoystickKeys(dir) {
-    if (dir === -1) {
-        keys.left = true;
-        keys.right = false;
-    } else if (dir === 1) {
-        keys.left = false;
-        keys.right = true;
-    } else {
-        keys.left = false;
-        keys.right = false;
+function update() {
+    if (gamePaused) return;
+    // Gravity
+    if (!player.onGround) {
+        player.vy += 1.5;
+        player.y += player.vy;
+        if (player.y >= 300) {
+            player.y = 300;
+            player.vy = 0;
+            player.onGround = true;
+        }
+    }
+    // Horizontal movement
+    let moveSpeed = 4;
+    // If joystick is active (mobile/touch), slow down by half
+    if (enableTouchControls && (joystickActive || joystickDir !== 0)) {
+        moveSpeed = 2;
+    }
+    if (keys.left) {
+        player.x -= moveSpeed;
+        if (player.x < 0) player.x = 0;
+        facingLeft = true;
+    }
+    if (keys.right) {
+        player.x += moveSpeed;
+        if (player.x + player.w > WORLD_WIDTH) player.x = WORLD_WIDTH - player.w;
+        facingLeft = false;
+    }
+    // Invulnerability timer
+    if (invulnerable) {
+        invulnTimer--;
+        if (invulnTimer <= 0) invulnerable = false;
+    }
+    // Collision with scrolls
+    let collectedBefore = scrolls.filter(s => s.collected).length;
+    let popupToShow = -1;
+    scrolls.forEach((scroll, idx) => {
+        if (!scroll.collected && collide(player, scroll)) {
+            scroll.collected = true;
+            if (popupToShow === -1) popupToShow = idx;
+        }
+    });
+    let collectedAfter = scrolls.filter(s => s.collected).length;
+    if (collectedAfter !== collectedBefore) {
+        updateScrollCounter();
+        if (popupToShow !== -1) {
+            showScrollPopup(popupToShow);
+        }
+    }
+    // Move enemies
+    enemies.forEach(enemy => {
+        // Move back and forth, keep within a 100px range from their original x
+        let minX = enemy.x - 50;
+        let maxX = enemy.x + 50;
+        if (!enemy.baseX) enemy.baseX = enemy.x;
+        minX = enemy.baseX - 50;
+        maxX = enemy.baseX + 50;
+        enemy.x += enemy.dir * 2;
+        if (enemy.x < minX) enemy.x = minX;
+        if (enemy.x > maxX) enemy.x = maxX;
+        // Collision with player
+        if (collide(player, enemy) && !invulnerable) {
+            endGame();
+        }
+    });
+    // End level logic
+    if (currentLevel === 1) {
+        if (player.x + player.w >= WORLD_WIDTH - 50) {
+            endGame(true);
+        }
+    } else if (currentLevel === 2) {
+        if (player.x <= 0) {
+            endGame(true);
+        }
     }
 }
 
-function handleJoystickMove(clientX, clientY) {
-    const rect = joystickContainer.getBoundingClientRect();
-    let x = clientX - rect.left;
-    let y = clientY - rect.top;
-    // Clamp to circle radius 50px from center (60,60)
-    let dx = x - 60;
-    let dy = y - 60;
-    let dist = Math.sqrt(dx*dx + dy*dy);
-    if (dist > 50) {
-        dx = dx * 50 / dist;
-        dy = dy * 50 / dist;
-        x = 60 + dx;
-        y = 60 + dy;
-    }
-    joystickStick.style.left = (x - 30) + 'px';
-    joystickStick.style.top = (y - 30) + 'px';
-    // Direction: left/right only
-    if (dx < -15) {
-        setJoystickKeys(-1);
-        joystickDir = -1;
-    } else if (dx > 15) {
-        setJoystickKeys(1);
-        joystickDir = 1;
-    } else {
-        setJoystickKeys(0);
-        joystickDir = 0;
-    }
-}
-
+// Touch joystick event handlers (restored)
 joystickContainer.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
         joystickActive = true;
@@ -553,6 +661,7 @@ joystickContainer.addEventListener('touchend', function(e) {
     joystickDir = 0;
     e.preventDefault();
 }, { passive: false });
+
 
 // Also support mouse for testing
 joystickContainer.addEventListener('mousedown', function(e) {
