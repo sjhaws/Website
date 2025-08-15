@@ -482,12 +482,6 @@ window.addEventListener('keyup', e => {
 });
 
 // --- Touch Controls: On-screen joystick and jump button ---
-// Joystick state variables (must be global for all handlers)
-let joystickActive = false;
-let joystickStart = { x: 0, y: 0 };
-let joystickPos = { x: 60, y: 60 };
-let joystickDir = 0; // -1: left, 1: right, 0: neutral
-
 // Create joystick and jump button elements
 const joystickContainer = document.createElement('div');
 joystickContainer.id = 'joystick-container';
@@ -500,7 +494,6 @@ joystickContainer.style.zIndex = '1000';
 joystickContainer.style.touchAction = 'none';
 joystickContainer.style.userSelect = 'none';
 joystickContainer.style.display = 'none';
-joystickContainer.style.pointerEvents = 'auto';
 
 const joystickBase = document.createElement('div');
 joystickBase.style.width = '100%';
@@ -510,7 +503,6 @@ joystickBase.style.borderRadius = '50%';
 joystickBase.style.position = 'absolute';
 joystickBase.style.left = '0';
 joystickBase.style.top = '0';
-joystickBase.style.pointerEvents = 'auto';
 joystickContainer.appendChild(joystickBase);
 
 const joystickStick = document.createElement('div');
@@ -522,7 +514,6 @@ joystickStick.style.position = 'absolute';
 joystickStick.style.left = '30px';
 joystickStick.style.top = '30px';
 joystickStick.style.transition = 'left 0.05s, top 0.05s';
-joystickStick.style.pointerEvents = 'auto';
 joystickContainer.appendChild(joystickStick);
 
 const jumpBtn = document.createElement('button');
@@ -540,56 +531,11 @@ jumpBtn.style.zIndex = '1000';
 jumpBtn.style.border = '2px solid #bfa100';
 jumpBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
 jumpBtn.style.display = 'none';
-jumpBtn.style.pointerEvents = 'auto';
 
-// On mobile, place controls below the canvas. On desktop, keep them hidden.
-if (gameContainer && enableTouchControls) {
-    // Create a controls wrapper to place below the canvas
-    let controlsWrapper = document.getElementById('mobile-controls-wrapper');
-    if (!controlsWrapper) {
-        controlsWrapper = document.createElement('div');
-        controlsWrapper.id = 'mobile-controls-wrapper';
-        controlsWrapper.style.display = 'flex';
-        controlsWrapper.style.flexDirection = 'row';
-        controlsWrapper.style.justifyContent = 'center';
-        controlsWrapper.style.alignItems = 'center';
-        controlsWrapper.style.width = '100%';
-        controlsWrapper.style.marginTop = '16px';
-        // Insert after the canvas
-        if (gameCanvas && gameCanvas.parentNode) {
-            gameCanvas.parentNode.insertBefore(controlsWrapper, gameCanvas.nextSibling);
-        } else {
-            gameContainer.appendChild(controlsWrapper);
-        }
-    }
-    // Adjust joystick and jump button for horizontal layout
-    joystickContainer.style.position = 'static';
-    joystickContainer.style.marginRight = '32px';
-    joystickContainer.style.left = '';
-    joystickContainer.style.bottom = '';
-    joystickContainer.style.marginBottom = '0';
-    joystickContainer.style.marginTop = '0';
-    joystickContainer.style.width = '120px';
-    joystickContainer.style.height = '120px';
-    jumpBtn.style.position = 'static';
-    jumpBtn.style.marginLeft = '32px';
-    jumpBtn.style.right = '';
-    jumpBtn.style.bottom = '';
-    jumpBtn.style.marginBottom = '0';
-    jumpBtn.style.marginTop = '0';
-    // Add to wrapper
-    controlsWrapper.appendChild(joystickContainer);
-    controlsWrapper.appendChild(jumpBtn);
-} else if (gameContainer) {
-    // Fallback for desktop: keep hidden and in gameContainer
+// Add to game container
+if (gameContainer) {
     gameContainer.appendChild(joystickContainer);
     gameContainer.appendChild(jumpBtn);
-}
-
-// Make sure canvas is focusable for input (helps on mobile)
-if (gameCanvas) {
-    gameCanvas.setAttribute('tabindex', '0');
-    gameCanvas.style.outline = 'none';
 }
 
 // Detect if device is mobile
