@@ -488,15 +488,26 @@ let joystickStart = { x: 0, y: 0 };
 let joystickPos = { x: 60, y: 60 };
 let joystickDir = 0; // -1: left, 1: right, 0: neutral
 
+// Create a controls wrapper to place below the canvas
+let controlsWrapper = null;
+if (enableTouchControls) {
+    controlsWrapper = document.createElement('div');
+    controlsWrapper.id = 'mobile-controls-wrapper';
+    controlsWrapper.style.display = 'flex';
+    controlsWrapper.style.justifyContent = 'center';
+    controlsWrapper.style.alignItems = 'center';
+    controlsWrapper.style.gap = '40px';
+    controlsWrapper.style.marginTop = '16px';
+    controlsWrapper.style.width = '100%';
+    controlsWrapper.style.position = 'static';
+}
+
 // Create joystick and jump button elements
 const joystickContainer = document.createElement('div');
 joystickContainer.id = 'joystick-container';
-joystickContainer.style.position = 'absolute';
-joystickContainer.style.left = '30px';
-joystickContainer.style.bottom = '30px';
+joystickContainer.style.position = 'relative';
 joystickContainer.style.width = '120px';
 joystickContainer.style.height = '120px';
-joystickContainer.style.zIndex = '1000';
 joystickContainer.style.touchAction = 'none';
 joystickContainer.style.userSelect = 'none';
 joystickContainer.style.display = 'none';
@@ -528,9 +539,7 @@ joystickContainer.appendChild(joystickStick);
 const jumpBtn = document.createElement('button');
 jumpBtn.id = 'jump-btn';
 jumpBtn.textContent = 'Jump';
-jumpBtn.style.position = 'absolute';
-jumpBtn.style.right = '40px';
-jumpBtn.style.bottom = '50px';
+jumpBtn.style.position = 'relative';
 jumpBtn.style.width = '90px';
 jumpBtn.style.height = '90px';
 jumpBtn.style.borderRadius = '50%';
@@ -542,10 +551,26 @@ jumpBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
 jumpBtn.style.display = 'none';
 jumpBtn.style.pointerEvents = 'auto';
 
-// Add to game container
-if (gameContainer) {
-    gameContainer.appendChild(joystickContainer);
-    gameContainer.appendChild(jumpBtn);
+// Add controls below the canvas on mobile
+if (enableTouchControls && gameContainer && controlsWrapper) {
+    controlsWrapper.appendChild(joystickContainer);
+    controlsWrapper.appendChild(jumpBtn);
+    // Insert after the canvas
+    if (gameCanvas && gameCanvas.parentNode === gameContainer) {
+        if (gameCanvas.nextSibling) {
+            gameContainer.insertBefore(controlsWrapper, gameCanvas.nextSibling);
+        } else {
+            gameContainer.appendChild(controlsWrapper);
+        }
+    } else {
+        gameContainer.appendChild(controlsWrapper);
+    }
+}
+// On desktop, do not show controls
+if (!enableTouchControls && gameContainer) {
+    // Defensive: remove if present
+    if (joystickContainer.parentNode) joystickContainer.parentNode.removeChild(joystickContainer);
+    if (jumpBtn.parentNode) jumpBtn.parentNode.removeChild(jumpBtn);
 }
 
 // Make sure canvas is focusable for input (helps on mobile)
