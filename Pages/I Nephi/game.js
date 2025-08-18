@@ -12,6 +12,19 @@ if (closeScriptureBtn) {
             invulnTimer = 180; // 3 seconds at 60fps
         }
     };
+    // Add Enter key support for closing popup
+    document.addEventListener('keydown', function handleScriptureEnter(e) {
+        if (
+            scripturePopup &&
+            scripturePopup.style.display !== 'none' &&
+            (e.key === 'Enter' || e.code === 'Enter')
+        ) {
+            // Simulate close button click
+            closeScriptureBtn.click();
+            // Prevent default to avoid accidental form submits
+            e.preventDefault();
+        }
+    });
 }
 let scriptureShown = false;
 let facingLeft = false;
