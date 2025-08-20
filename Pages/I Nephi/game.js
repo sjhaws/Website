@@ -26,6 +26,7 @@ if (closeScriptureBtn) {
         }
     });
 }
+let joystickActive = false;
 let scriptureShown = false;
 let facingLeft = false;
 let pendingInvulnerability = false;
@@ -46,17 +47,9 @@ function updateScrollCounter() {
     updateScrollCounter.lastCount = scrollCount;
 }
 // Load background images
-const cactusImg = new Image();
-cactusImg.src = '../../assets/Cactus.png';
-const sand1Img = new Image();
-sand1Img.src = '../../assets/Sand1.png';
-const sand2Img = new Image();
-sand2Img.src = '../../assets/Sand2.png';
-const sand3Img = new Image();
-sand3Img.src = '../../assets/Sand3.png';
-// Load city image
-const cityImg = new Image();
-cityImg.src = '../../assets/City.png';
+// Load new background image for both levels
+const levelBgImg = new Image();
+levelBgImg.src = '../../assets/Level1Canvas.png';
 
 // Generate background objects
 let backgroundObjects = [];
@@ -89,6 +82,8 @@ const scorpionImg = new Image();
 scorpionImg.src = '../../assets/Scorpion.png';
 const tentImg = new Image();
 tentImg.src = '../../assets/Tent.png';
+const cityImg = new Image();
+cityImg.src = '../../assets/City.png';
 // Load Nephi image
 const nephiImg = new Image();
 nephiImg.src = '../../assets/Nephi.png';
@@ -271,38 +266,48 @@ function draw() {
     ctx.clearRect(0, 0, VISIBLE_WIDTH, VISIBLE_HEIGHT);
     // Center camera on player
     let camX = Math.max(0, Math.min(player.x + player.w / 2 - VISIBLE_WIDTH / 2, WORLD_WIDTH - VISIBLE_WIDTH));
-    // Desert background
-    ctx.fillStyle = '#e2c16b';
-    ctx.fillRect(0, 0, VISIBLE_WIDTH, VISIBLE_HEIGHT);
-    // Draw sand patches and cacti
-    backgroundObjects.forEach(obj => {
-        if (obj.x + obj.w > camX && obj.x < camX + VISIBLE_WIDTH) {
-            let img = null;
-            if (obj.type === 'city' && cityImg.complete && cityImg.naturalWidth !== 0) img = cityImg;
-            if (obj.type === 'cactus' && cactusImg.complete && cactusImg.naturalWidth !== 0) img = cactusImg;
-            if (obj.type === 'sand1' && sand1Img.complete && sand1Img.naturalWidth !== 0) img = sand1Img;
-            if (obj.type === 'sand2' && sand2Img.complete && sand2Img.naturalWidth !== 0) img = sand2Img;
-            if (obj.type === 'sand3' && sand3Img.complete && sand3Img.naturalWidth !== 0) img = sand3Img;
-            if (img) {
-                ctx.drawImage(img, obj.x - camX, obj.y, obj.w, obj.h);
-            } else {
-                // fallback shapes
-                if (obj.type === 'city') {
-                    ctx.fillStyle = '#888';
-                    ctx.fillRect(obj.x - camX, obj.y, obj.w, obj.h);
-                } else if (obj.type === 'cactus') {
-                    ctx.fillStyle = '#228B22';
-                    ctx.fillRect(obj.x - camX, obj.y, obj.w, obj.h);
-                } else {
-                    ctx.fillStyle = '#e2c16b';
-                    ctx.fillRect(obj.x - camX, obj.y, obj.w, obj.h);
-                }
-            }
+    // Draw new background image stretched to cover the whole world
+    if (levelBgImg.complete && levelBgImg.naturalWidth !== 0) {
+        // Draw the visible portion of the stretched image
+        ctx.drawImage(
+            levelBgImg,
+            camX * (levelBgImg.naturalWidth / WORLD_WIDTH), // sx
+            0, // sy
+            VISIBLE_WIDTH * (levelBgImg.naturalWidth / WORLD_WIDTH), // sw
+            levelBgImg.naturalHeight, // sh
+            0, // dx
+            0, // dy
+            VISIBLE_WIDTH, // dw
+            VISIBLE_HEIGHT // dh
+        );
+    } else {
+        // fallback: fill with a solid color
+        ctx.fillStyle = '#e2c16b';
+        ctx.fillRect(0, 0, VISIBLE_WIDTH, VISIBLE_HEIGHT);
+    }
+    // Draw city at the beginning (on top of background)
+    if (typeof cityImg !== 'undefined' && cityImg.complete && cityImg.naturalWidth !== 0) {
+        // City object is always at x: -60, y: 275, w: 260, h: 100
+        let cityX = -60;
+        let cityY = 260;
+        let cityW = 260;
+        let cityH = 100;
+        if (cityX + cityW > camX && cityX < camX + VISIBLE_WIDTH) {
+            ctx.drawImage(cityImg, cityX - camX, cityY, cityW, cityH);
         }
-    });
-    // Draw ground
-    ctx.fillStyle = '#c2b280';
-    ctx.fillRect(0, 360, VISIBLE_WIDTH, 40);
+    }
+
+    // Draw tent at end of level (on top of background)
+    let tentX = WORLD_WIDTH - 100;
+    if (tentX + 80 > camX && tentX < camX + VISIBLE_WIDTH) {
+        if (tentImg.complete && tentImg.naturalWidth !== 0) {
+            ctx.drawImage(tentImg, tentX - camX, 280, 80, 80);
+        } else {
+            ctx.fillStyle = '#888';
+            ctx.fillRect(tentX - camX, 280, 80, 80);
+        }
+    }
+
     // Draw enemies
     enemies.forEach(enemy => {
         if (enemy.x + enemy.w > camX && enemy.x < camX + VISIBLE_WIDTH) {
@@ -326,16 +331,7 @@ function draw() {
             }
         }
     });
-    // Draw tent at end of level
-    let tentX = WORLD_WIDTH - 100;
-    if (tentX + 80 > camX && tentX < camX + VISIBLE_WIDTH) {
-        if (tentImg.complete && tentImg.naturalWidth !== 0) {
-            ctx.drawImage(tentImg, tentX - camX, 280, 80, 80);
-        } else {
-            ctx.fillStyle = '#888';
-            ctx.fillRect(tentX - camX, 280, 80, 80);
-        }
-    }
+    // (tent drawing moved above)
     // Draw scrolls
     scrolls.forEach(scroll => {
         if (!scroll.collected && scroll.x + scroll.w > camX && scroll.x < camX + VISIBLE_WIDTH) {
