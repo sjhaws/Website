@@ -24,13 +24,20 @@
         <button id="nextBtn">Next</button>
     </div>
     <div id="gameContainer" class="screen" style="display:none;">
-        <div id="scrollCounter" style="position:absolute;left:50%;transform:translateX(-50%);top:10px;font-size:1.3em;background:#fff7d6;padding:8px 24px;border-radius:12px;border:2px solid #c2b280;z-index:5;min-width:160px;">
+        <div id="levelBanner" style="position:absolute;left:50%;transform:translateX(-50%);top:10px;font-size:1.5em;background:#fff7d6;padding:8px 24px;border-radius:12px;border:2px solid #c2b280;z-index:5;">
+            Level 1
+        </div>
+        <div id="scrollCounter" style="position:absolute;left:50%;transform:translateX(-50%);top:120px;font-size:1.3em;background:#fff7d6;padding:8px 24px;border-radius:12px;border:2px solid #c2b280;z-index:5;min-width:160px;">
             Scrolls Collected: <span id="scrollCount">0</span>/3
         </div>
         <canvas id="gameCanvas" width="800" height="400"></canvas>
         <div id="gameOver" style="display:none;">
             <h2>Game Over</h2>
-            <button id="restartBtn">Restart</button>
+            <button id="restartBtn">Next</button>
+        </div>
+        <div id="Levelup" style="display:none;">
+            <h2>Congratulations!</h2>
+            <button id="levelBtn">Next Level</button>
         </div>
         <!-- Scroll Popup -->
         <div id="scripturePopup" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;">
