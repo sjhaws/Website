@@ -26,6 +26,30 @@ const nephiImg = new Image();
 nephiImg.src = '../../assets/Nephi.png';
 const menu = document.getElementById('menu');
 const exposition = document.getElementById('exposition');
+
+// --- Add leaving.png image to exposition screen if not already present ---
+function addExpositionImage() {
+    if (!exposition) return;
+    if (exposition.querySelector('.exposition-img')) return; // Only add once
+    const img = document.createElement('img');
+    img.src = '../../assets/leaving.png';
+    img.alt = 'Lehi and family leaving';
+    img.className = 'exposition-img';
+    img.style.display = 'block';
+    img.style.margin = '32px auto 0 auto';
+    img.style.maxWidth = '400px';
+    img.style.width = '80%';
+    exposition.appendChild(img);
+}
+
+// Ensure image is added when showing exposition
+const origShowScreen = showScreen;
+showScreen = function(screen) {
+    origShowScreen(screen);
+    if (screen === 'exposition') {
+        addExpositionImage();
+    }
+};
 const gameContainer = document.getElementById('gameContainer');
 const startBtn = document.getElementById('startBtn');
 const nextBtn = document.getElementById('nextBtn');
@@ -229,7 +253,7 @@ function update() {
     // Invulnerability timer
     if (invulnerable) {
         invulnTimer--;
-        if (invulnTimer <= 0) invulnerable = true;
+        if (invulnTimer <= 0) invulnerable = false;
     }
     // Collision with scrolls
     let collectedBefore = scrolls.filter(s => s.collected).length;
