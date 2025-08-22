@@ -12,6 +12,10 @@ let placingShips = true;
 let currentShipIdx = 0;
 let currentShipDir = 'H'; // 'H' or 'V'
 
+// Enemy AI hunt/target mode
+let enemyTargets = [];
+let enemyLastHits = [];
+
 const playerBoardDiv = document.getElementById('player-board');
 const enemyBoardDiv = document.getElementById('enemy-board');
 const messageDiv = document.getElementById('message');
@@ -149,24 +153,51 @@ function playerAttack(r, c) {
 function enemyAttack() {
     if (gameOver) return;
     let r, c;
-    do {
-        r = Math.floor(Math.random() * BOARD_SIZE);
-        c = Math.floor(Math.random() * BOARD_SIZE);
-    } while (playerBoard[r][c] && playerBoard[r][c].hit);
+    // If we have targets, pop from the front
+    if (enemyTargets.length > 0) {
+        [r, c] = enemyTargets.shift();
+    } else {
+        // Otherwise, pick random
+        do {
+            r = Math.floor(Math.random() * BOARD_SIZE);
+            c = Math.floor(Math.random() * BOARD_SIZE);
+        } while (playerBoard[r][c] && playerBoard[r][c].hit);
+    }
     playerBoard[r][c] = playerBoard[r][c] || { hit: false };
     playerBoard[r][c].hit = true;
     if (playerBoard[r][c].ship) {
         messageDiv.textContent = 'Enemy hit your ship!';
         playerHits++;
+        // Add to last hits for targeting
+        enemyLastHits.push([r, c]);
+        // Add adjacent cells to enemyTargets if not already hit or targeted
+        const deltas = [ [0,1], [1,0], [0,-1], [-1,0] ];
+        for (const [dr, dc] of deltas) {
+            const nr = r + dr, nc = c + dc;
+            if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+                if (!(playerBoard[nr][nc] && playerBoard[nr][nc].hit) && !enemyTargets.some(([tr,tc])=>tr===nr&&tc===nc)) {
+                    enemyTargets.push([nr, nc]);
+                }
+            }
+        }
+        // Check if a ship is sunk, if so, clear hunt state for that ship
+        let sunk = false;
         for (const ship of playerShips) {
             for (const [sr, sc] of ship.coords) {
                 if (sr === r && sc === c) {
                     ship.hits++;
                     if (ship.hits === ship.size) {
                         messageDiv.textContent = `Enemy sank your ${ship.name}!`;
+                        sunk = true;
                     }
                 }
             }
+        }
+        if (sunk) {
+            // Remove all targets that are not adjacent to any remaining hit but unsunk cells
+            // (Simple: clear all targets and last hits)
+            enemyTargets = [];
+            enemyLastHits = [];
         }
         if (playerHits === 17) {
             renderBoards();
@@ -174,6 +205,8 @@ function enemyAttack() {
         }
     } else {
         messageDiv.textContent = 'Enemy missed!';
+        // If in hunt mode, remove this as a target
+        // (already removed by shift)
     }
     turn = 'player';
     renderBoards();
@@ -206,6 +239,8 @@ function resetGame() {
     placingShips = true;
     currentShipIdx = 0;
     currentShipDir = 'H';
+    enemyTargets = [];
+    enemyLastHits = [];
     messageDiv.textContent = `Place your ${SHIPS[0].name} (${SHIPS[0].size} cells). Click to place. Press R to rotate.`;
     restartBtn.style.display = 'none';
     renderBoards();
