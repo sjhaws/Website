@@ -2,11 +2,33 @@
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Materialize CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="../assets/HawsfunLogo.PNG">
+    <!-- Bright Retro Font: Press Start 2P -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body {
             background: #f8f8f8;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            color: #FBD000;
+            text-shadow: 2px 2px 0 #43B047, 4px 4px 0 #000000;
+        }
+        h1, h2, h3, h4, h5, h6, .game-btn, button, input, label, p, a, .menu, .games-grid {
+            font-family: 'Press Start 2P', Arial, sans-serif !important;
+            color: #FBD000;
+            text-shadow: 2px 2px 0 #43B047, 4px 4px 0 #000000;
+        }
+        .game-btn {
+            background: #049CD8 !important;
+            border: 2px solid #FBD000 !important;
+            color: #FBD000 !important;
+            box-shadow: 0 2px 16px #43B047, 0 0 8px #000000;
+            margin: 2%;
+        }
+        .game-btn:hover {
+            background: #E52521 !important;
+            color: #fff !important;
+            border-color: #000000 !important;
+            box-shadow: 0 2px 24px #fff600, 0 0 12px #43B047;
         }
         .games-grid {
             margin: 40px auto 0 auto;
@@ -38,6 +60,7 @@
 </head>
 <body>
     <div style="text-align:center; margin-top:32px;">
+        <img src="../assets/HawsfunLogo.PNG" alt="HawsFun Logo" style="height:90px;" />
         <h1>Choose a game to play!</h1>
     </div>
     <div class="container games-grid">

@@ -5,74 +5,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HawsFun</title>
-    <link rel="stylesheet" href="CSS/styles.css">
+        <!-- Bright Retro Font: Press Start 2P -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
             background: #f8f8f8;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            color: #FBD000;
+            text-shadow: 2px 2px 0 #43B047, 4px 4px 0 #000000;
         }
-        .menu {
+        h1, h2, h3, h4, h5, h6, .game-btn, button, input, label, p, a, .menu, .games-grid {
+            font-family: 'Press Start 2P', Arial, sans-serif !important;
+            color: #FBD000;
+            text-shadow: 2px 2px 0 #43B047, 4px 4px 0 #000000;
+        }
+        .game-btn {
+            background: #049CD8 !important;
+            border: 2px solid #FBD000 !important;
+            color: #FBD000 !important;
+            box-shadow: 0 2px 16px #43B047, 0 0 8px #000000;
+            margin: 2%;
+        }
+        .game-btn:hover {
+            background: #E52521 !important;
+            color: #fff !important;
+            border-color: #000000 !important;
+            box-shadow: 0 2px 24px #fff600, 0 0 12px #43B047;
+        }
+        .games-grid {
+            margin: 40px auto 0 auto;
+            max-width: 1100px;
+        }
+        .game-btn {
+            width: 100%;
+            height: 120px;
+            font-size: 1.3rem;
+            border-radius: 18px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin: 40px 0;
+            font-weight: bold;
+            text-transform: none;
         }
-        .menu-item {
-            margin: 16px 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-        .button {
-            font-size: 2rem;
-            padding: 18px 48px;
-            border-radius: 12px;
-            border: none;
-            background: #007bff;
-            color: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .button:hover {
-            background: #0056b3;
+        @media (max-width: 992px) {
+            .game-btn { height: 90px; font-size: 1.1rem; }
         }
         @media (max-width: 600px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-            .button {
-                font-size: 1.2rem;
-                padding: 14px 24px;
-            }
-            .menu {
-                margin: 24px 0;
-            }
+            .games-grid { max-width: 98vw; }
+            .game-btn { height: 60px; font-size: 0.95rem; }
         }
     </style>
 <body>
     <div style="text-align:center; margin-top:32px;">
         <h1>Welcome to the HawsFun Sandbox</h1>
     </div>
-    <div class="menu">
-        <div class="menu-item">
-            <form action="Pages/Games.html">
-                <input type="submit" value="Games" class="button">
-            </form>
+    <div class="container games-grid">
+      <div class="row">
+        <div class="col s12 m6 l3">
+          <form action="./Pages/Games.html">
+            <button type="submit" class="btn-large waves-effect waves-light blue game-btn">Games</button>
+          </form>
         </div>
-        <div class="menu-item">
-            <form action="Pages/Fun.html">
-                <input type="submit" value="Just for Fun" class="button">
-            </form>
+        <div class="col s12 m6 l3">
+          <form action="./Pages/Fun.html">
+            <button type="submit" class="btn-large waves-effect waves-light blue game-btn">Just for Fun</button>
+          </form>
         </div>
-        <div>
-            <Form action="Pages/About.html">
-                <input type="submit" value="About Me" class="button">
-            </Form>
+        <div class="col s12 m6 l3">
+          <form action="./Pages/About.html">
+            <button type="submit" class="btn-large waves-effect waves-light blue game-btn">Behind the Curtain</button>
+          </form>
         </div>
+        <!-- End of game grid -->
     </div>
     <div style="text-align:center;">
         <p>You never know what you might find</p>
