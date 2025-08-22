@@ -8,6 +8,9 @@ const SHIPS = [
     { name: 'Destroyer', size: 2 }
 ];
 let playerBoard = [], enemyBoard = [], playerShips = [], enemyShips = [], playerHits = 0, enemyHits = 0, turn = 'player', gameOver = false;
+let placingShips = true;
+let currentShipIdx = 0;
+let currentShipDir = 'H'; // 'H' or 'V'
 
 const playerBoardDiv = document.getElementById('player-board');
 const enemyBoardDiv = document.getElementById('enemy-board');
@@ -16,6 +19,27 @@ const restartBtn = document.getElementById('restartBtn');
 
 function createEmptyBoard() {
     return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
+}
+
+function canPlaceShip(board, ship, row, col, dir) {
+    for (let i = 0; i < ship.size; i++) {
+        const r = row + (dir === 'V' ? i : 0);
+        const c = col + (dir === 'H' ? i : 0);
+        if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) return false;
+        if (board[r][c]) return false;
+    }
+    return true;
+}
+
+function placeShipOnBoard(board, ship, row, col, dir) {
+    const coords = [];
+    for (let i = 0; i < ship.size; i++) {
+        const r = row + (dir === 'V' ? i : 0);
+        const c = col + (dir === 'H' ? i : 0);
+        board[r][c] = { ship: ship.name, hit: false };
+        coords.push([r, c]);
+    }
+    return { ...ship, coords, hits: 0 };
 }
 
 function placeShipsRandomly(board, ships) {
@@ -59,7 +83,16 @@ function renderBoard(board, div, showShips, isEnemy) {
                 cell.classList.add(board[r][c].ship ? 'hit' : 'miss');
                 cell.textContent = board[r][c].ship ? 'X' : '•';
             }
-            if (isEnemy && !gameOver && turn === 'player' && !(board[r][c] && board[r][c].hit)) {
+            // Ship placement phase
+            if (placingShips && div === playerBoardDiv && currentShipIdx < SHIPS.length) {
+                cell.addEventListener('click', () => handleShipPlacement(r, c));
+                // Highlight possible placement
+                if (canPlaceShip(playerBoard, SHIPS[currentShipIdx], r, c, currentShipDir)) {
+                    cell.style.outline = '2px solid #2d7a2d';
+                }
+            }
+            // Game phase
+            if (!placingShips && isEnemy && !gameOver && turn === 'player' && !(board[r][c] && board[r][c].hit)) {
                 cell.addEventListener('click', () => playerAttack(r, c));
             }
             div.appendChild(cell);
@@ -67,6 +100,23 @@ function renderBoard(board, div, showShips, isEnemy) {
     }
 }
 
+function handleShipPlacement(row, col) {
+    if (!canPlaceShip(playerBoard, SHIPS[currentShipIdx], row, col, currentShipDir)) return;
+    const ship = placeShipOnBoard(playerBoard, SHIPS[currentShipIdx], row, col, currentShipDir);
+    playerShips.push(ship);
+    currentShipIdx++;
+    if (currentShipIdx >= SHIPS.length) {
+        placingShips = false;
+        messageDiv.textContent = 'Your turn! Click a cell on the enemy board.';
+        // Place enemy ships
+        enemyBoard = createEmptyBoard();
+        enemyShips = placeShipsRandomly(enemyBoard, SHIPS);
+        renderBoards();
+    } else {
+        messageDiv.textContent = `Place your ${SHIPS[currentShipIdx].name} (${SHIPS[currentShipIdx].size} cells). Click to place. Press R to rotate.`;
+        renderBoards();
+    }
+}
 function playerAttack(r, c) {
     if (gameOver || (enemyBoard[r][c] && enemyBoard[r][c].hit)) return;
     enemyBoard[r][c] = enemyBoard[r][c] || { hit: false };
@@ -141,17 +191,27 @@ function renderBoards() {
 function resetGame() {
     playerBoard = createEmptyBoard();
     enemyBoard = createEmptyBoard();
-    playerShips = placeShipsRandomly(playerBoard, SHIPS);
-    enemyShips = placeShipsRandomly(enemyBoard, SHIPS);
+    playerShips = [];
+    enemyShips = [];
     playerHits = 0;
     enemyHits = 0;
     turn = 'player';
     gameOver = false;
-    messageDiv.textContent = 'Your turn! Click a cell on the enemy board.';
+    placingShips = true;
+    currentShipIdx = 0;
+    currentShipDir = 'H';
+    messageDiv.textContent = `Place your ${SHIPS[0].name} (${SHIPS[0].size} cells). Click to place. Press R to rotate.`;
     restartBtn.style.display = 'none';
     renderBoards();
 }
 
+// Allow player to rotate ship with R key
+window.addEventListener('keydown', e => {
+    if (placingShips && (e.key === 'r' || e.key === 'R')) {
+        currentShipDir = currentShipDir === 'H' ? 'V' : 'H';
+        renderBoards();
+    }
+});
 restartBtn.onclick = resetGame;
 // Start game
 resetGame();
