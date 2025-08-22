@@ -134,7 +134,10 @@ function playerAttack(r, c) {
                 }
             }
         }
-        if (enemyHits === 17) return endGame('player');
+        if (enemyHits === 17) {
+            renderBoards();
+            return endGame('player');
+        }
     } else {
         messageDiv.textContent = 'Miss!';
     }
@@ -165,7 +168,10 @@ function enemyAttack() {
                 }
             }
         }
-        if (playerHits === 17) return endGame('enemy');
+        if (playerHits === 17) {
+            renderBoards();
+            return endGame('enemy');
+        }
     } else {
         messageDiv.textContent = 'Enemy missed!';
     }
