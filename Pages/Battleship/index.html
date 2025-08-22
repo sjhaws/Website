@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battleship Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div>
+        <Form action="../Games.html">
+            <input type="submit" value="Back to Games" class="button">
+        </Form>
+    </div>
+    <h1>Battleship</h1>
+    <div class="boards-container">
+        <div>
+            <div class="label">Your Board</div>
+            <div id="player-board" class="board"></div>
+        </div>
+        <div>
+            <div class="label">Enemy Board</div>
+            <div id="enemy-board" class="board"></div>
+        </div>
+    </div>
+    <div id="message"></div>
+    <button id="restartBtn" style="display:none;">Restart</button>
+    <script src="game.js"></script>
+</body>
+</html>
