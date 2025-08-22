@@ -2,51 +2,33 @@
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Materialize CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
             background: #f8f8f8;
         }
-        .menu {
+        .games-grid {
+            margin: 40px auto 0 auto;
+            max-width: 1100px;
+        }
+        .game-btn {
+            width: 100%;
+            height: 120px;
+            font-size: 1.3rem;
+            border-radius: 18px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin: 40px 0;
+            font-weight: bold;
+            text-transform: none;
         }
-        .menu-item {
-            margin: 16px 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-        .button {
-            font-size: 2rem;
-            padding: 18px 48px;
-            border-radius: 12px;
-            border: none;
-            background: #007bff;
-            color: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .button:hover {
-            background: #0056b3;
+        @media (max-width: 992px) {
+            .game-btn { height: 90px; font-size: 1.1rem; }
         }
         @media (max-width: 600px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-            .button {
-                font-size: 1.2rem;
-                padding: 14px 24px;
-            }
-            .menu {
-                margin: 24px 0;
-            }
+            .games-grid { max-width: 98vw; }
+            .game-btn { height: 60px; font-size: 0.95rem; }
         }
     </style>
     <meta charset="UTF-8">
@@ -58,43 +40,49 @@
     <div style="text-align:center; margin-top:32px;">
         <h1>Choose a game to play!</h1>
     </div>
-    <div class="menu">
-        <div class="menu-item">
-            <form action="./MemoryGame-master/index.html">
-                <input type="submit" value="Memory Game" class="button">
-            </form>
+    <div class="container games-grid">
+      <div class="row">
+        <div class="col s12 m6 l3">
+          <form action="./MemoryGame-master/index.html">
+            <button type="submit" class="btn-large waves-effect waves-light blue game-btn">Memory Game</button>
+          </form>
         </div>
-        <div class="menu-item">
-            <form action="./ResistorsJS-master/index.html">
-                <input type="submit" value="Resistor Challenge" class="button">
-            </form>
+        <div class="col s12 m6 l3">
+          <form action="./ResistorsJS-master/index.html">
+            <button type="submit" class="btn-large waves-effect waves-light blue game-btn">Resistor Challenge</button>
+          </form>
         </div>
-        <div class="menu-item">
-            <form action="./RPSApp-master/index.html">
-                <input type="submit" value="Rock Paper Scissors" class="button">
-            </form>
+        <div class="col s12 m6 l3">
+          <form action="./RPSApp-master/index.html">
+            <button type="submit" class="btn-large waves-effect waves-light blue game-btn">Rock Paper Scissors</button>
+          </form>
         </div>
-        <div class="menu-item">
-            <form action="./RetroCrawler/index.html">
-                <input type="submit" value="Retro Dungeon Crawler" class="button">
-            </form>
+        <div class="col s12 m6 l3">
+          <form action="./RetroCrawler/index.html">
+            <button type="submit" class="btn-large waves-effect waves-light blue game-btn">Retro Dungeon Crawler</button>
+          </form>
         </div>
-        <div class="menu-item">
-            <form action="./I Nephi/index.html">
-                <input type="submit" value="I, Nephi" class="button">
-            </form>
+        <div class="col s12 m6 l3">
+          <form action="./I Nephi/index.html">
+            <button type="submit" class="btn-large waves-effect waves-light blue game-btn">I, Nephi</button>
+          </form>
         </div>
-        <div class="menu-item">
-            <form action="./Battleship/index.html">
-                <input type="submit" value="Battleship" class="button">
-            </form>
+        <div class="col s12 m6 l3">
+          <form action="./Battleship/index.html">
+            <button type="submit" class="btn-large waves-effect waves-light blue game-btn">Battleship</button>
+          </form>
         </div>
-        <div>
-        <Form action="../index.html">
-            <input type="submit" value="Back to Home" class="button">
-        </Form>
-        </div>
-        <!-- Add more game links here as needed -->
+        <!-- End of game grid -->
+      </div>
     </div>
+    <div class="row" style="margin: 36px 0 24px 0;">
+      <div class="col s12 m8 offset-m2 l4 offset-l4 center-align">
+        <form action="../index.html">
+          <button type="submit" class="btn-large waves-effect waves-light grey darken-1 game-btn" style="max-width:340px;">Back to Home</button>
+        </form>
+      </div>
+    </div>
+    <!-- Materialize JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script src="../JS/script.js"></script>
 </html>
