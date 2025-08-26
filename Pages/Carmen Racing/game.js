@@ -66,7 +66,7 @@ function resetGame() {
     started = false;
     window.carmenGameStarted = false;
     document.getElementById('restartBtn').style.display = 'none';
-    if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = (window.innerWidth < 600 || window.innerHeight < 600) ? 'block' : 'none';
+    if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = 'none';
     draw();
 }
 
@@ -185,11 +185,15 @@ document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' && player.lane < 2) player.lane++;
 });
 
-// Mobile arrow button support
+
+// Mobile arrow button support (move only one lane per tap)
 window.addEventListener('mobileArrow', e => {
     if (!player.alive) return;
-    if (e.detail === 'left' && player.lane > 0) player.lane--;
-    if (e.detail === 'right' && player.lane < 2) player.lane++;
+    if (e.detail === 'left' && player.lane > 0) {
+        player.lane--;
+    } else if (e.detail === 'right' && player.lane < 2) {
+        player.lane++;
+    }
 });
 
 // Mobile start button support
@@ -199,13 +203,6 @@ window.addEventListener('mobileStart', () => {
         window.carmenGameStarted = true;
         if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = 'none';
     }
-});
-
-// Mobile arrow button support
-window.addEventListener('mobileArrow', e => {
-    if (!player.alive) return;
-    if (e.detail === 'left' && player.lane > 0) player.lane--;
-    if (e.detail === 'right' && player.lane < 2) player.lane++;
 });
 
 document.getElementById('restartBtn').onclick = () => {
