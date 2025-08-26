@@ -16,17 +16,23 @@ const FLAG_W = 16, FLAG_H = 16;
 const FPS = 60;
 
 // Sprites (8-bit style, simple shapes/colors)
-function drawCar(x, y, color = '#fff600') {
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, CAR_W, CAR_H);
-    ctx.fillStyle = '#ff00c8';
-    ctx.fillRect(x + 4, y + 4, CAR_W - 8, CAR_H - 8);
+const carImg = new Image();
+carImg.src = '../../assets/Carmen.png';
+function drawCar(x, y) {
+    if (carImg.complete) {
+        ctx.drawImage(carImg, x, y, CAR_W, CAR_H);
+    } else {
+        carImg.onload = () => ctx.drawImage(carImg, x, y, CAR_W, CAR_H);
+    }
 }
+const obstacleImg = new Image();
+obstacleImg.src = '../../assets/car.png';
 function drawObstacle(x, y) {
-    ctx.fillStyle = '#ff4444';
-    ctx.fillRect(x, y, OBSTACLE_W, OBSTACLE_H);
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(x + 6, y + 8, OBSTACLE_W - 12, OBSTACLE_H - 16);
+    if (obstacleImg.complete) {
+        ctx.drawImage(obstacleImg, x, y, OBSTACLE_W, OBSTACLE_H);
+    } else {
+        obstacleImg.onload = () => ctx.drawImage(obstacleImg, x, y, OBSTACLE_W, OBSTACLE_H);
+    }
 }
 function drawFlag(x, y) {
     ctx.fillStyle = '#00fff7';
@@ -100,8 +106,11 @@ function update() {
 
 function draw() {
     ctx.clearRect(0, 0, W, H);
-    // Draw road
-    ctx.fillStyle = '#444';
+    // Draw grass (background)
+    ctx.fillStyle = '#1fa31f';
+    ctx.fillRect(0, 0, W, H);
+    // Draw road (all lanes dark grey)
+    ctx.fillStyle = '#222';
     ctx.fillRect(ROAD_X, 0, ROAD_W, H);
     // Lane lines
     ctx.strokeStyle = '#fff';
