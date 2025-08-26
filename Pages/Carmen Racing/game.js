@@ -42,7 +42,10 @@ function drawFlag(x, y) {
 }
 
 // Game state
-let player = { lane: 1, y: H - CAR_H - 12, speed: 4, alive: true, score: 0 };
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth < 600 || window.innerHeight < 600);
+}
+let player = { lane: 1, y: H - CAR_H - 12, speed: isMobileDevice() ? 2 : 4, alive: true, score: 0 };
 let obstacles = [];
 let flags = [];
 let frame = 0;
@@ -53,7 +56,7 @@ window.carmenGameStarted = false;
 function resetGame() {
     player.lane = 1;
     player.y = H - CAR_H - 12;
-    player.speed = 4;
+    player.speed = isMobileDevice() ? 2 : 4;
     player.alive = true;
     player.score = 0;
     obstacles = [];
@@ -104,7 +107,9 @@ function update() {
         }
     }
     // Speed up
-    if (frame % 180 === 0 && player.speed < 12) player.speed += 0.5;
+    const maxSpeed = isMobileDevice() ? 6 : 12;
+    const speedStep = isMobileDevice() ? 0.25 : 0.5;
+    if (frame % 180 === 0 && player.speed < maxSpeed) player.speed += speedStep;
 }
 
 function draw() {
