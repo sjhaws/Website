@@ -48,6 +48,7 @@ let flags = [];
 let frame = 0;
 let gameOver = false;
 let started = false;
+window.carmenGameStarted = false;
 
 function resetGame() {
     player.lane = 1;
@@ -60,7 +61,9 @@ function resetGame() {
     frame = 0;
     gameOver = false;
     started = false;
+    window.carmenGameStarted = false;
     document.getElementById('restartBtn').style.display = 'none';
+    if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = (window.innerWidth < 600 || window.innerHeight < 600) ? 'block' : 'none';
     draw();
 }
 
@@ -157,19 +160,40 @@ function gameLoop() {
 }
 
 
+
 document.addEventListener('keydown', e => {
     if (!player.alive && (e.key === ' ' || e.key === 'Spacebar')) {
         resetGame();
         started = true;
+        window.carmenGameStarted = true;
+        if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = 'none';
         return;
     }
     if (!started && (e.key === ' ' || e.key === 'Spacebar')) {
         started = true;
+        window.carmenGameStarted = true;
+        if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = 'none';
         return;
     }
     if (!player.alive) return;
     if (e.key === 'ArrowLeft' && player.lane > 0) player.lane--;
     if (e.key === 'ArrowRight' && player.lane < 2) player.lane++;
+});
+
+// Mobile arrow button support
+window.addEventListener('mobileArrow', e => {
+    if (!player.alive) return;
+    if (e.detail === 'left' && player.lane > 0) player.lane--;
+    if (e.detail === 'right' && player.lane < 2) player.lane++;
+});
+
+// Mobile start button support
+window.addEventListener('mobileStart', () => {
+    if (!started) {
+        started = true;
+        window.carmenGameStarted = true;
+        if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = 'none';
+    }
 });
 
 // Mobile arrow button support

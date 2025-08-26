@@ -69,6 +69,7 @@
             &#8592;
         </button>
         <canvas id="gameCanvas" width="320" height="480"></canvas>
+        <button id="startBtn" style="position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);width:140px;height:54px;font-size:1.2rem;background:#00fff7;border:2px solid #fff600;border-radius:12px;color:#222;z-index:30;display:none;box-shadow:0 2px 12px #ff00c8;font-family:'Press Start 2P',Arial,sans-serif;">Start</button>
         <button id="rightBtn" aria-label="Right" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:48px;height:48px;font-size:2.2rem;background:#222;border:2px solid #fff600;border-radius:50%;color:#fff600;z-index:20;display:none;box-shadow:0 2px 12px #00fff7;">
             &#8594;
         </button>
@@ -81,21 +82,29 @@
     </div>
     <script src="game.js"></script>
     <script>
-    // Show/hide mobile arrow buttons based on screen size
-    function updateArrowButtons() {
+    // Show/hide mobile arrow buttons and start button based on screen size and game state
+    function updateMobileUI() {
         const leftBtn = document.getElementById('leftBtn');
         const rightBtn = document.getElementById('rightBtn');
-        if (window.innerWidth < 600 || window.innerHeight < 600) {
+        const startBtn = document.getElementById('startBtn');
+        const isMobile = window.innerWidth < 600 || window.innerHeight < 600;
+        if (isMobile) {
             leftBtn.style.display = 'block';
             rightBtn.style.display = 'block';
+            if (!window.carmenGameStarted) {
+                startBtn.style.display = 'block';
+            } else {
+                startBtn.style.display = 'none';
+            }
         } else {
             leftBtn.style.display = 'none';
             rightBtn.style.display = 'none';
+            startBtn.style.display = 'none';
         }
     }
-    window.addEventListener('resize', updateArrowButtons);
-    window.addEventListener('orientationchange', updateArrowButtons);
-    document.addEventListener('DOMContentLoaded', updateArrowButtons);
+    window.addEventListener('resize', updateMobileUI);
+    window.addEventListener('orientationchange', updateMobileUI);
+    document.addEventListener('DOMContentLoaded', updateMobileUI);
     // Touch controls
     document.getElementById('leftBtn').addEventListener('touchstart', function(e) {
         e.preventDefault();
@@ -104,6 +113,11 @@
     document.getElementById('rightBtn').addEventListener('touchstart', function(e) {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('mobileArrow', { detail: 'right' }));
+    });
+    // Touch start button
+    document.getElementById('startBtn').addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('mobileStart', {}));
     });
     </script>
 </body>
