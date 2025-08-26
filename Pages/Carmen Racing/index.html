@@ -64,14 +64,47 @@
         </Form>
     </div>
     <h1>Carmen Racing</h1>
-    <div id="gameContainer">
+    <div id="gameContainer" style="position:relative;">
+        <button id="leftBtn" aria-label="Left" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:48px;height:48px;font-size:2.2rem;background:#222;border:2px solid #fff600;border-radius:50%;color:#fff600;z-index:20;display:none;box-shadow:0 2px 12px #00fff7;">
+            &#8592;
+        </button>
         <canvas id="gameCanvas" width="320" height="480"></canvas>
+        <button id="rightBtn" aria-label="Right" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:48px;height:48px;font-size:2.2rem;background:#222;border:2px solid #fff600;border-radius:50%;color:#fff600;z-index:20;display:none;box-shadow:0 2px 12px #00fff7;">
+            &#8594;
+        </button>
         <div id="instructions">
             Use <b>←</b> and <b>→</b> to steer. Avoid obstacles and collect flags!<br>
-            Press <b>Space</b> to start or restart.
+            Press <b>Space</b> to start or restart.<br>
+            <span style="font-size:0.9em;">On mobile, use the arrow buttons.</span>
         </div>
         <button id="restartBtn">Restart</button>
     </div>
     <script src="game.js"></script>
+    <script>
+    // Show/hide mobile arrow buttons based on screen size
+    function updateArrowButtons() {
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        if (window.innerWidth < 600 || window.innerHeight < 600) {
+            leftBtn.style.display = 'block';
+            rightBtn.style.display = 'block';
+        } else {
+            leftBtn.style.display = 'none';
+            rightBtn.style.display = 'none';
+        }
+    }
+    window.addEventListener('resize', updateArrowButtons);
+    window.addEventListener('orientationchange', updateArrowButtons);
+    document.addEventListener('DOMContentLoaded', updateArrowButtons);
+    // Touch controls
+    document.getElementById('leftBtn').addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('mobileArrow', { detail: 'left' }));
+    });
+    document.getElementById('rightBtn').addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('mobileArrow', { detail: 'right' }));
+    });
+    </script>
 </body>
 </html>

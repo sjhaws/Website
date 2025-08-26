@@ -156,6 +156,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+
 document.addEventListener('keydown', e => {
     if (!player.alive && (e.key === ' ' || e.key === 'Spacebar')) {
         resetGame();
@@ -169,6 +170,13 @@ document.addEventListener('keydown', e => {
     if (!player.alive) return;
     if (e.key === 'ArrowLeft' && player.lane > 0) player.lane--;
     if (e.key === 'ArrowRight' && player.lane < 2) player.lane++;
+});
+
+// Mobile arrow button support
+window.addEventListener('mobileArrow', e => {
+    if (!player.alive) return;
+    if (e.detail === 'left' && player.lane > 0) player.lane--;
+    if (e.detail === 'right' && player.lane < 2) player.lane++;
 });
 
 document.getElementById('restartBtn').onclick = () => {
