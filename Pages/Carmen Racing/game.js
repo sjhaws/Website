@@ -40,14 +40,26 @@ function drawFlag(x, y) {
     ctx.fillStyle = '#fff600';
     ctx.fillRect(x + 4, y + 4, 8, 8);
 }
+// Tree sprite
+const treeImg = new Image();
+treeImg.src = '../../assets/tree.png';
+function drawTree(x, y) {
+    if (treeImg.complete) {
+        ctx.drawImage(treeImg, x, y, 24, 32);
+    } else {
+        treeImg.onload = () => ctx.drawImage(treeImg, x, y, 24, 32);
+    }
+}
 
 // Game state
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth < 600 || window.innerHeight < 600);
 }
+
 let player = { lane: 1, y: H - CAR_H - 12, speed: isMobileDevice() ? 2 : 4, alive: true, score: 0 };
 let obstacles = [];
 let flags = [];
+let trees = [];
 let frame = 0;
 let gameOver = false;
 let started = false;
@@ -61,6 +73,20 @@ function resetGame() {
     player.score = 0;
     obstacles = [];
     flags = [];
+    trees = [];
+    // Randomly spread trees on both sides
+    for (let i = 0; i < 10; i++) {
+        // Left grass area
+        trees.push({
+            x: Math.random() * (ROAD_X - 24),
+            y: Math.random() * H
+        });
+        // Right grass area
+        trees.push({
+            x: ROAD_X + ROAD_W + 8 + Math.random() * (W - (ROAD_X + ROAD_W + 32)),
+            y: Math.random() * H
+        });
+    }
     frame = 0;
     gameOver = false;
     started = false;
@@ -85,6 +111,20 @@ function update() {
     // Move obstacles
     for (const obs of obstacles) obs.y += player.speed;
     for (const flag of flags) flag.y += player.speed;
+    // Move trees (twice as fast as obstacles)
+    for (const tree of trees) tree.y += player.speed * 2;
+    // Remove off-screen and respawn trees at top with new random x
+    for (const tree of trees) {
+        if (tree.y > H) {
+            tree.y = -32;
+            // Decide if left or right side
+            if (tree.x < ROAD_X) {
+                tree.x = Math.random() * (ROAD_X - 24);
+            } else {
+                tree.x = ROAD_X + ROAD_W + 8 + Math.random() * (W - (ROAD_X + ROAD_W + 32));
+            }
+        }
+    }
     // Remove off-screen
     obstacles = obstacles.filter(o => o.y < H);
     flags = flags.filter(f => f.y < H);
@@ -120,6 +160,10 @@ function draw() {
     // Draw road (all lanes dark grey)
     ctx.fillStyle = '#222';
     ctx.fillRect(ROAD_X, 0, ROAD_W, H);
+    // Draw trees (behind road)
+    for (const tree of trees) {
+        drawTree(tree.x, tree.y);
+    }
     // Lane lines
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
