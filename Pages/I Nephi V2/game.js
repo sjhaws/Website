@@ -148,7 +148,7 @@ nephiImg.src = '../../assets/Nephi.png';
       name: "Level 1",
       title: "Leaving Jerusalem",
       story:
-        "Nephi must cross the desert, dodge snakes and scorpions, and reach his tent.",
+        "Nephi must cross the desert, dodge snakes and scorpions, and reach his tent in the wilderness.",
       theme: {
         skyTop: 0x3b2f2f,
         skyBottom: 0x8b6d4d,
