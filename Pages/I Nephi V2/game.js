@@ -14,7 +14,21 @@
   const ENEMY_SPEED_VARIATION = 0.15;
   const ENEMY_SPEED_VARIATION_SHIP = 0.25;
   const LEVEL_X_SCALE = 2;
-
+const levelBgImg = new Image();
+levelBgImg.src = '../../assets/Level1Canvas.png';
+const scrollImg = new Image();
+scrollImg.src = '../../assets/Scroll.png';
+const snakeImg = new Image();
+snakeImg.src = '../../assets/Snake.png';
+const scorpionImg = new Image();
+scorpionImg.src = '../../assets/Scorpion.png';
+const tentImg = new Image();
+tentImg.src = '../../assets/Tent.png';
+const cityImg = new Image();
+cityImg.src = '../../assets/City.png';
+const nephiImg = new Image();
+nephiImg.src = '../../assets/Nephi.png';
+  
   const LEVEL_LAYOUTS = [
     {
       platforms: [
@@ -98,14 +112,14 @@
 
   const LEVEL_SCROLL_MESSAGES = [
     [
-      "A brave first step into the wilderness.",
-      "The road ahead is long, but Nephi presses on.",
-      "Each mile forward asks for courage and faith.",
+      "1Nephi 2:1-2\n\n1 For behold, it came to pass that the Lord spake unto my father, yea, even in a dream, and said unto him: Blessed art thou, Lehi, because of the things which thou hast done; and because thou hast been faithful and declared unto this people the things which I commanded thee, behold, they seek to take away thy life.\n\n2 And it came to pass that the Lord commanded my father, even in a dream, that he should take his family and depart into the wilderness.",
+      "1Nephi 2:3-4\n\n3 And it came to pass that he was obedient unto the word of the Lord, wherefore he did as the Lord commanded him.\n\n4  And it came to pass that he departed into the wilderness. And he left his house, and the land of his inheritance, and his gold, and his silver, and his precious things, and took nothing with him, save it were his family, and provisions, and tents, and departed into the wilderness.",
+      "1Nephi 2: 5-6\n\n5 And he came down by the borders near the shore of the Red Sea; and he traveled in the wilderness in the borders which are nearer the Red Sea; and he did travel in the wilderness with his family, which consisted of my mother, Sariah, and my elder brothers, who were Laman, Lemuel, and Sam.\n\n6 And it came to pass that when he had traveled three days in the wilderness, he pitched his tent in a valley by the side of a river of water.",
     ],
     [
-      "The path home is never as easy as it looks.",
-      "Turning back takes just as much courage.",
-      "The desert still tests Nephi with every horizon.",
+      "1Nephi 3:9-11\n\n9 And I, Nephi, and my brethren took our journey in the wilderness, with our tents, to go up to the land of Jerusalem.\n\n10 And it came to pass that when we had gone up to the land of Jerusalem, I and my brethren did consult one with another.\n\n11 And we cast lots—who of us should go in unto the house of Laban. And it came to pass that the lot fell upon Laman; and Laman went in unto the house of Laban, and he talked with him as he sat in his house.",
+      "1Nephi 3:12-14\n\nFor behold, he knew that Jerusalem must be destroyed, because of the wickedness of the people. For behold, they have rejected the words of the prophets. Wherefore, if my father should dwell in the land after he hath been commanded to flee out of the land, behold, he would perish; wherefore, it must needs be that he flee out of the land.12 And he desired of Laban the records which were engraven upon the plates of brass, which contained the genealogy of my father.\n\n13 And behold, it came to pass that Laban was angry, and thrust him out from his presence; and he would not that he should have the records. Wherefore, he said unto him: Behold thou art a robber, and I will slay thee.\n\n14 But Laman fled out of his presence, and told the things which Laban had done, unto us. And we began to be exceedingly sorrowful, and my brethren were about to return unto my father in the wilderness.",
+      "1Nephi 3:22-27\n\nAnd it came to pass that the angel of the Lord spake unto them again, saying: Go up, for the Lord will deliver Laban into your hands22 And it came to pass that we went down to the land of our inheritance, and we did gather together our gold, and our silver, and our precious things.\n\n23 And after we had gathered these things together, we went up again unto the house of Laban.\n\n24 And it came to pass that we went in unto Laban, and desired him that he would give unto us the records which were engraven upon the plates of brass, for which we would give unto him our gold, and our silver, and all our precious things.\n\n25 And it came to pass that when Laban saw our property, and that it was exceedingly great, he did lust after it, insomuch that he thrust us out, and sent his servants to slay us, that he might obtain our property.\n\n26 And it came to pass that we did flee before the servants of Laban, and we were obliged to leave behind our property, and it fell into the hands of Laban.\n\n27 And it came to pass that we fled into the wilderness, and the servants of Laban did not overtake us, and we hid ourselves in the cavity of a rock.",
     ],
     [
       "Jerusalem's streets are crowded and dangerous.",
@@ -147,7 +161,7 @@
       name: "Level 2",
       title: "Back to Jerusalem",
       story:
-        "Nephi returns across the same desert, staying alert for dangers on the path home.",
+        "1Nephi 3:1-7\n\n1 And it came to pass that I, Nephi, returned from speaking with the Lord, to the tent of my father.\n\n2 And it came to pass that he spake unto me, saying: Behold I have dreamed a dream, in the which the Lord hath commanded me that thou and thy brethren shall return to Jerusalem.\n\n3 For behold, Laban hath the record of the Jews and also a genealogy of my forefathers, and they are engraven upon plates of brass.\n\n4 Wherefore, the Lord hath commanded me that thou and thy brothers should go unto the house of Laban, and seek the records, and bring them down hither into the wilderness.\n\n5 And now, behold thy brothers murmur, saying it is a hard thing which I have required of them; but behold I have not required it of them, but it is a commandment of the Lord.\n\n6 Therefore go, my son, and thou shalt be favored of the Lord, because thou hast not murmured.\n\n7 And it came to pass that I, Nephi, said unto my father: I will go and do the things which the Lord hath commanded, for I know that the Lord giveth no commandments unto the children of men, save he shall prepare a way for them that they may accomplish the thing which he commandeth them.",
       theme: {
         skyTop: 0x26364d,
         skyBottom: 0xb28a58,
