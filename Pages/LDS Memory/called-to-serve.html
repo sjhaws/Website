@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Called to Serve — A Church Leadership Memory Game</title>
+<style>
+  :root{
+    --navy: #16233d;
+    --navy-deep: #0e182c;
+    --cream: #f4efe2;
+    --gold: #b6903f;
+    --gold-light: #d8b877;
+    --charcoal: #262420;
+    --slate: #7c8aa3;
+    --card-back-1: #1c2c4c;
+    --card-back-2: #223460;
+    --success: #4a7a5c;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: radial-gradient(ellipse at top, #1a2a4a 0%, var(--navy-deep) 70%);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--cream);
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 22px;
+    position: relative;
+  }
+
+  .eyebrow {
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--gold-light);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+    font-weight: 600;
+    font-size: clamp(28px, 5vw, 44px);
+    margin: 0 0 8px;
+    color: var(--cream);
+    letter-spacing: 0.01em;
+  }
+
+  .spires {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 6px 0 14px;
+  }
+  .spires svg { display:block; }
+
+  .sub {
+    max-width: 560px;
+    margin: 0 auto;
+    color: var(--slate);
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin: 22px 0 26px;
+    font-family: "Iowan Old Style", Georgia, serif;
+  }
+
+  .stat {
+    text-align: center;
+    min-width: 68px;
+  }
+  .stat .num {
+    font-size: 22px;
+    color: var(--gold-light);
+    font-weight: 600;
+  }
+  .stat .lbl {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--slate);
+    font-family: "Segoe UI", system-ui, sans-serif;
+  }
+
+  button.newgame {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold-light);
+    padding: 10px 20px;
+    border-radius: 3px;
+    font-size: 12.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    transition: background 0.2s, color 0.2s;
+  }
+  button.newgame:hover { background: var(--gold); color: var(--navy-deep); }
+  button.newgame:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-bottom: 26px;
+  }
+
+  @media (max-width: 760px) {
+    .board { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .board { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  }
+
+  .card {
+    aspect-ratio: 3 / 4;
+    perspective: 800px;
+    cursor: pointer;
+  }
+  .card.matched { cursor: default; }
+
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(.4,.2,.2,1);
+    transform-style: preserve-3d;
+  }
+  .card.flipped .card-inner,
+  .card.matched .card-inner {
+    transform: rotateY(180deg);
+  }
+
+  .face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+  }
+
+  .face.back {
+    background: linear-gradient(155deg, var(--card-back-1), var(--card-back-2));
+    border: 1px solid rgba(214,184,119,0.25);
+  }
+  .face.back svg { width: 42%; opacity: 0.55; }
+
+  .face.front {
+    background: var(--cream);
+    color: var(--charcoal);
+    transform: rotateY(180deg);
+    border: 1px solid rgba(0,0,0,0.06);
+    flex-direction: column;
+    gap: 4px;
+  }
+  .card.matched .face.front {
+    background: #f0ead7;
+    border: 1px solid var(--gold);
+    box-shadow: 0 0 0 2px rgba(182,144,63,0.35) inset;
+  }
+
+  .front .kicker {
+    font-size: 8.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .front .name {
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: clamp(11px, 2vw, 14px);
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .front .clue {
+    font-size: clamp(9.5px, 1.6vw, 11.5px);
+    line-height: 1.25;
+    color: #4a463d;
+  }
+
+  .card:not(.flipped):not(.matched) .card-inner:hover {
+    transform: translateY(-3px) rotateY(0deg);
+  }
+  .card:focus-visible .face.back { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+
+  .log {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(214,184,119,0.18);
+    border-radius: 6px;
+    padding: 18px 20px;
+  }
+  .log h2 {
+    font-family: "Iowan Old Style", Georgia, serif;
+    font-size: 15px;
+    color: var(--gold-light);
+    margin: 0 0 4px;
+    letter-spacing: 0.03em;
+  }
+  .log .hint {
+    font-size: 12px;
+    color: var(--slate);
+    margin: 0 0 12px;
+  }
+  .log ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+  }
+  .log li {
+    font-size: 13px;
+    line-height: 1.5;
+    border-left: 2px solid var(--gold);
+    padding-left: 10px;
+    color: #e6e0cf;
+    animation: fadein 0.4s ease;
+  }
+  .log li strong { color: var(--gold-light); }
+  @keyframes fadein { from{opacity:0; transform: translateY(4px);} to{opacity:1; transform:none;} }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,16,30,0.86);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .overlay .panel {
+    background: var(--cream);
+    color: var(--charcoal);
+    border-radius: 8px;
+    padding: 36px 34px;
+    max-width: 420px;
+    text-align: center;
+    border-top: 4px solid var(--gold);
+  }
+  .overlay h2 {
+    font-family: "Iowan Old Style", Georgia, serif;
+    font-size: 24px;
+    margin: 0 0 10px;
+  }
+  .overlay p { font-size: 14px; color: #524d40; margin: 0 0 18px; line-height: 1.5;}
+  .overlay button {
+    background: var(--navy);
+    color: var(--cream);
+    border: none;
+    padding: 11px 26px;
+    border-radius: 4px;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .overlay button:hover { background: var(--navy-deep); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-inner, .card:not(.flipped):not(.matched) .card-inner:hover, .log li { transition: none; animation: none; }
+  }
+</style>
+</head>
+<body>
+  <div>
+        <Form action="../Games.html">
+            <input type="submit" value="Back to Games" class="button">
+        </Form>
+    </div>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">A Memory Game</div>
+    <h1>Called to Serve</h1>
+    <div class="spires" aria-hidden="true">
+      <svg width="26" height="34" viewBox="0 0 26 34"><path d="M13 0 L20 14 L20 34 L6 34 L6 14 Z" fill="#d8b877" opacity="0.5"/></svg>
+      <svg width="34" height="44" viewBox="0 0 34 44"><path d="M17 0 L27 18 L27 44 L7 44 L7 18 Z" fill="#d8b877" opacity="0.75"/></svg>
+      <svg width="26" height="34" viewBox="0 0 26 34"><path d="M13 0 L20 14 L20 34 L6 34 L6 14 Z" fill="#d8b877" opacity="0.5"/></svg>
+    </div>
+    <p class="sub">Match each leader's name with the clue that describes him. Learn the First Presidency and Quorum of the Twelve Apostles of The Church of Jesus Christ of Latter-day Saints as of March 2026.</p>
+  </header>
+
+  <div class="bar">
+    <div class="stat"><div class="num" id="statMoves">0</div><div class="lbl">Moves</div></div>
+    <div class="stat"><div class="num" id="statMatches">0 / 15</div><div class="lbl">Matches</div></div>
+    <div class="stat"><div class="num" id="statTime">0:00</div><div class="lbl">Time</div></div>
+    <button class="newgame" id="newGameBtn">New Game</button>
+  </div>
+
+  <div class="board" id="board" aria-label="Memory game board"></div>
+
+  <div class="log">
+    <h2>Leaders You've Learned</h2>
+    <p class="hint">Each match unlocks a fuller fact about that leader.</p>
+    <ul id="logList"></ul>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <h2>Well done!</h2>
+    <p id="overlayText">You matched all 15 leaders.</p>
+    <button id="playAgainBtn">Play Again</button>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  const LEADERS = [
+    {
+      name: "Dallin H. Oaks",
+      role: "President of the Church",
+      clue: "18th President of the Church, sustained October 2025",
+      detail: "Before becoming an Apostle, he served as a Justice of the Utah Supreme Court and as president of Brigham Young University."
+    },
+    {
+      name: "Henry B. Eyring",
+      role: "First Counselor, First Presidency",
+      clue: "First Counselor in the First Presidency and senior Apostle",
+      detail: "As the senior-most Apostle after President Oaks, he holds the office of President of the Quorum of the Twelve while serving in the First Presidency."
+    },
+    {
+      name: "D. Todd Christofferson",
+      role: "Second Counselor, First Presidency",
+      clue: "Second Counselor in the First Presidency",
+      detail: "He was ordained an Apostle in 2008 and previously worked as an attorney before dedicating his life to full-time Church service."
+    },
+    {
+      name: "Dieter F. Uchtdorf",
+      role: "Acting President, Quorum of the Twelve",
+      clue: "Acting President of the Quorum of the Twelve, born in Germany",
+      detail: "A former airline captain for Lufthansa, he was set apart as Acting President of the Twelve in January 2026."
+    },
+    {
+      name: "David A. Bednar",
+      role: "Quorum of the Twelve",
+      clue: "Former president of Brigham Young University–Idaho",
+      detail: "He led BYU–Idaho before being ordained an Apostle in 2004, one of the youngest called in recent decades."
+    },
+    {
+      name: "Quentin L. Cook",
+      role: "Quorum of the Twelve",
+      clue: "Former attorney and healthcare company executive",
+      detail: "Before his call in 2007, he practiced law and led a major hospital corporation."
+    },
+    {
+      name: "Neil L. Andersen",
+      role: "Quorum of the Twelve",
+      clue: "Called as an Apostle in 2009",
+      detail: "He has spoken widely on strengthening youth and young single adults across the worldwide Church."
+    },
+    {
+      name: "Ronald A. Rasband",
+      role: "Quorum of the Twelve",
+      clue: "Former business executive, called an Apostle in 2015",
+      detail: "He spent decades in corporate leadership roles, including at a major chemical manufacturing company, before his call."
+    },
+    {
+      name: "Gary E. Stevenson",
+      role: "Quorum of the Twelve",
+      clue: "Served as Presiding Bishop before becoming an Apostle",
+      detail: "He oversaw the Church's temporal affairs as Presiding Bishop from 2012 until his call to the Twelve in 2015."
+    },
+    {
+      name: "Dale G. Renlund",
+      role: "Quorum of the Twelve",
+      clue: "A cardiologist before his call as an Apostle",
+      detail: "He practiced as a heart-transplant physician and researcher before being ordained an Apostle in 2015."
+    },
+    {
+      name: "Gerrit W. Gong",
+      role: "Quorum of the Twelve",
+      clue: "First Apostle of Asian American descent",
+      detail: "Called in March 2018, he previously worked in academia, diplomacy, and business before full-time Church service."
+    },
+    {
+      name: "Ulisses Soares",
+      role: "Quorum of the Twelve",
+      clue: "From Brazil, called an Apostle in 2018",
+      detail: "He is one of the first Apostles from Latin America and served in Brazil before his call to the Twelve."
+    },
+    {
+      name: "Patrick Kearon",
+      role: "Quorum of the Twelve",
+      clue: "Born in Bahrain, known for refugee humanitarian work",
+      detail: "Raised largely in England, he championed the Church's global refugee response before his call as an Apostle in 2023."
+    },
+    {
+      name: "Gérald Caussé",
+      role: "Quorum of the Twelve",
+      clue: "From France, served as Presiding Bishop",
+      detail: "He led the Church's temporal affairs as Presiding Bishop before being called to the Twelve in November 2025."
+    },
+    {
+      name: "Clark G. Gilbert",
+      role: "Quorum of the Twelve",
+      clue: "Former president of BYU–Pathway Worldwide",
+      detail: "The newest member of the Twelve, called in February 2026, he previously led educational initiatives across the Church's university system."
+    }
+  ];
+
+  const boardEl = document.getElementById("board");
+  const logList = document.getElementById("logList");
+  const statMoves = document.getElementById("statMoves");
+  const statMatches = document.getElementById("statMatches");
+  const statTime = document.getElementById("statTime");
+  const overlay = document.getElementById("overlay");
+  const overlayText = document.getElementById("overlayText");
+
+  let cards = [];
+  let flipped = [];
+  let matchedCount = 0;
+  let moves = 0;
+  let lockBoard = false;
+  let timerId = null;
+  let seconds = 0;
+  let started = false;
+
+  const templeIconSVG = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 3 L30 18 L30 36 L10 36 L10 18 Z" fill="#d8b877"/>
+      <rect x="17" y="24" width="6" height="12" fill="#1c2c4c"/>
+      <circle cx="20" cy="10" r="2" fill="#1c2c4c"/>
+    </svg>`;
+
+  function shuffle(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function buildDeck(){
+    const deck = [];
+    LEADERS.forEach((leader, idx) => {
+      deck.push({ pairId: idx, type: "name", leader });
+      deck.push({ pairId: idx, type: "clue", leader });
+    });
+    return shuffle(deck);
+  }
+
+  function formatTime(s){
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m + ":" + String(sec).padStart(2, "0");
+  }
+
+  function startTimer(){
+    if (timerId) return;
+    timerId = setInterval(() => {
+      seconds++;
+      statTime.textContent = formatTime(seconds);
+    }, 1000);
+  }
+
+  function stopTimer(){
+    clearInterval(timerId);
+    timerId = null;
+  }
+
+  function render(){
+    boardEl.innerHTML = "";
+    cards.forEach((cardData, i) => {
+      const el = document.createElement("div");
+      el.className = "card";
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+      el.dataset.index = i;
+      const label = cardData.type === "name" ? cardData.leader.name : cardData.leader.clue;
+      el.setAttribute("aria-label", "Face-down card");
+
+      el.innerHTML = `
+        <div class="card-inner">
+          <div class="face back">${templeIconSVG}</div>
+          <div class="face front">
+            <div class="kicker">${cardData.type === "name" ? "Leader" : "Clue"}</div>
+            <div class="${cardData.type === "name" ? "name" : "clue"}">${label}</div>
+          </div>
+        </div>
+      `;
+      el.addEventListener("click", () => handleFlip(i));
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " "){
+          e.preventDefault();
+          handleFlip(i);
+        }
+      });
+      boardEl.appendChild(el);
+    });
+  }
+
+  function handleFlip(i){
+    if (lockBoard) return;
+    const el = boardEl.children[i];
+    if (el.classList.contains("flipped") || el.classList.contains("matched")) return;
+    if (flipped.length === 2) return;
+
+    if (!started){
+      started = true;
+      startTimer();
+    }
+
+    el.classList.add("flipped");
+    flipped.push(i);
+
+    if (flipped.length === 2){
+      moves++;
+      statMoves.textContent = moves;
+      checkMatch();
+    }
+  }
+
+  function checkMatch(){
+    const [i1, i2] = flipped;
+    const c1 = cards[i1];
+    const c2 = cards[i2];
+    const el1 = boardEl.children[i1];
+    const el2 = boardEl.children[i2];
+
+    if (c1.pairId === c2.pairId && c1.type !== c2.type){
+      lockBoard = true;
+      setTimeout(() => {
+        el1.classList.add("matched");
+        el2.classList.add("matched");
+        flipped = [];
+        lockBoard = false;
+        matchedCount++;
+        statMatches.textContent = matchedCount + " / 15";
+        addToLog(c1.leader);
+        if (matchedCount === LEADERS.length){
+          finishGame();
+        }
+      }, 450);
+    } else {
+      lockBoard = true;
+      setTimeout(() => {
+        el1.classList.remove("flipped");
+        el2.classList.remove("flipped");
+        flipped = [];
+        lockBoard = false;
+      }, 900);
+    }
+  }
+
+  function addToLog(leader){
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${leader.name}</strong> — ${leader.role}. ${leader.detail}`;
+    logList.prepend(li);
+  }
+
+  function finishGame(){
+    stopTimer();
+    overlayText.textContent = `You matched all 15 leaders in ${moves} moves and ${formatTime(seconds)}.`;
+    overlay.classList.add("show");
+  }
+
+  function newGame(){
+    stopTimer();
+    cards = buildDeck();
+    flipped = [];
+    matchedCount = 0;
+    moves = 0;
+    seconds = 0;
+    started = false;
+    lockBoard = false;
+    statMoves.textContent = "0";
+    statMatches.textContent = "0 / 15";
+    statTime.textContent = "0:00";
+    logList.innerHTML = "";
+    overlay.classList.remove("show");
+    render();
+  }
+
+  document.getElementById("newGameBtn").addEventListener("click", newGame);
+  document.getElementById("playAgainBtn").addEventListener("click", newGame);
+
+  newGame();
+})();
+</script>
+
+</body>
+</html>
