@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Called to Serve — A Church Leadership Memory Game</title>
+<title>Called to Serve — Flashcards</title>
 <style>
   :root{
     --navy: #16233d;
@@ -16,6 +16,8 @@
     --card-back-1: #1c2c4c;
     --card-back-2: #223460;
     --success: #4a7a5c;
+    --amber: #a66a2e;
+    --error: #a5453c;
   }
 
   * { box-sizing: border-box; }
@@ -38,7 +40,6 @@
   header {
     text-align: center;
     margin-bottom: 22px;
-    position: relative;
   }
 
   .eyebrow {
@@ -52,7 +53,7 @@
   h1 {
     font-family: "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
     font-weight: 600;
-    font-size: clamp(28px, 5vw, 44px);
+    font-size: clamp(26px, 5vw, 40px);
     margin: 0 0 8px;
     color: var(--cream);
     letter-spacing: 0.01em;
@@ -64,7 +65,6 @@
     gap: 6px;
     margin: 6px 0 14px;
   }
-  .spires svg { display:block; }
 
   .sub {
     max-width: 560px;
@@ -84,21 +84,11 @@
     font-family: "Iowan Old Style", Georgia, serif;
   }
 
-  .stat {
-    text-align: center;
-    min-width: 68px;
-  }
-  .stat .num {
-    font-size: 22px;
-    color: var(--gold-light);
-    font-weight: 600;
-  }
+  .stat { text-align: center; min-width: 68px; }
+  .stat .num { font-size: 22px; color: var(--gold-light); font-weight: 600; }
   .stat .lbl {
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--slate);
-    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--slate); font-family: "Segoe UI", system-ui, sans-serif;
   }
 
   button.newgame {
@@ -117,161 +107,236 @@
   button.newgame:hover { background: var(--gold); color: var(--navy-deep); }
   button.newgame:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
 
-  .board {
+  .layout {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-    margin-bottom: 26px;
+    grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.1fr);
+    gap: 26px;
+    align-items: start;
+  }
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; }
   }
 
-  @media (max-width: 900px) {
-    .board { grid-template-columns: repeat(5, 1fr); }
+  /* ---- Flashcard panel ---- */
+  .card-stage {
+    position: sticky;
+    top: 20px;
   }
-  @media (max-width: 760px) {
-    .board { grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  }
-  @media (max-width: 560px) {
-    .board { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .wrap { padding: 20px 12px 44px; }
-  }
-  @media (max-width: 380px) {
-    .board { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  }
+  @media (max-width: 820px) { .card-stage { position: static; } }
 
-  .card {
-    aspect-ratio: 3 / 4;
-    perspective: 800px;
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
+  .progress-track {
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 14px;
   }
-  .card.matched { cursor: default; }
-
-  .card-inner {
-    position: relative;
-    width: 100%;
+  .progress-fill {
     height: 100%;
-    transition: transform 0.5s cubic-bezier(.4,.2,.2,1);
-    transform-style: preserve-3d;
-  }
-  .card.flipped .card-inner,
-  .card.matched .card-inner {
-    transform: rotateY(180deg);
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    width: 0%;
+    transition: width 0.4s ease;
   }
 
-  .face {
-    position: absolute;
-    inset: 0;
-    backface-visibility: hidden;
-    border-radius: 6px;
+  .flashcard {
+    background: linear-gradient(155deg, var(--card-back-1), var(--card-back-2));
+    border: 1px solid rgba(214,184,119,0.28);
+    border-radius: 10px;
+    min-height: 320px;
+    padding: 30px 28px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 8px;
+    gap: 14px;
+    position: relative;
+    transition: box-shadow 0.3s;
   }
+  .flashcard.correct-flash { box-shadow: 0 0 0 3px var(--success) inset; }
+  .flashcard.skip-flash { box-shadow: 0 0 0 3px var(--amber) inset; }
 
-  .face.back {
-    background: linear-gradient(155deg, var(--card-back-1), var(--card-back-2));
-    border: 1px solid rgba(214,184,119,0.25);
-  }
-  .face.back svg { width: 42%; opacity: 0.55; }
+  .flashcard .icon svg { width: 54px; height: 54px; opacity: 0.6; }
 
-  .face.front {
-    background: var(--cream);
-    color: var(--charcoal);
-    transform: rotateY(180deg);
-    border: 1px solid rgba(0,0,0,0.06);
-    flex-direction: column;
-    gap: 4px;
-  }
-  .card.matched .face.front {
-    background: #f0ead7;
-    border: 1px solid var(--gold);
-    box-shadow: 0 0 0 2px rgba(182,144,63,0.35) inset;
-  }
-
-  .front .kicker {
-    font-size: 8.5px;
-    letter-spacing: 0.12em;
+  .flashcard .kicker {
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--gold-light);
     font-weight: 700;
   }
-  .front .avatar {
-    width: 34%;
-    aspect-ratio: 1 / 1;
+  .flashcard .clue-text {
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: clamp(17px, 3vw, 22px);
+    line-height: 1.4;
+    color: var(--cream);
+    max-width: 420px;
+  }
+  .flashcard .hint {
+    font-size: 12.5px;
+    color: var(--slate);
+    margin-top: 4px;
+  }
+
+  .flashcard .avatar-big {
+    width: 136px;
+    height: 136px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-family: "Iowan Old Style", Georgia, serif;
     font-weight: 700;
-    font-size: clamp(10px, 2.4vw, 15px);
+    font-size: 40px;
     color: var(--cream);
-    border: 2px solid var(--gold);
-    margin-bottom: 2px;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-  img.avatar {
+    border: 3px solid var(--gold);
     object-fit: cover;
     object-position: center top;
-    background: var(--navy);
+    flex-shrink: 0;
   }
-  .front .name {
+  .flashcard .answer-name {
     font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-    font-size: clamp(10px, 1.9vw, 13.5px);
+    font-size: clamp(19px, 3.4vw, 25px);
     font-weight: 700;
-    line-height: 1.15;
+    color: var(--cream);
   }
-  .front .clue {
-    font-size: clamp(9.5px, 1.6vw, 11.5px);
-    line-height: 1.25;
-    color: #4a463d;
+  .flashcard .answer-role {
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+  }
+  .flashcard .answer-facts {
+    text-align: left;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #d8d2c0;
+    max-width: 460px;
+    margin: 2px 0 0;
+    padding-left: 18px;
+  }
+  .flashcard .answer-facts li {
+    margin-bottom: 6px;
+  }
+  .flashcard .answer-facts li::marker {
+    color: var(--gold);
   }
 
-  .card:not(.flipped):not(.matched) .card-inner:hover {
-    transform: translateY(-3px) rotateY(0deg);
+  .next-btn {
+    background: var(--gold);
+    color: var(--navy-deep);
+    border: none;
+    padding: 11px 28px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 8px;
   }
-  .card:focus-visible .face.back { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+  .next-btn:hover { background: var(--gold-light); }
+  .next-btn:focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
 
-  .log {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(214,184,119,0.18);
-    border-radius: 6px;
-    padding: 18px 20px;
+  .skip-btn {
+    background: none;
+    border: none;
+    color: var(--slate);
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 6px;
   }
-  .log h2 {
+  .skip-btn:hover { color: var(--cream); }
+
+  .stage-caption {
+    text-align: center;
+    font-size: 12px;
+    color: var(--slate);
+    margin-top: 10px;
+  }
+
+  /* ---- Roster panel ---- */
+  .roster h2 {
     font-family: "Iowan Old Style", Georgia, serif;
     font-size: 15px;
     color: var(--gold-light);
     margin: 0 0 4px;
     letter-spacing: 0.03em;
   }
-  .log .hint {
+  .roster .hint {
     font-size: 12px;
     color: var(--slate);
-    margin: 0 0 12px;
+    margin: 0 0 14px;
   }
-  .log ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+
+  .roster-grid {
     display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
-  .log li {
-    font-size: 13px;
-    line-height: 1.5;
-    border-left: 2px solid var(--gold);
-    padding-left: 10px;
-    color: #e6e0cf;
-    animation: fadein 0.4s ease;
+  @media (max-width: 480px) {
+    .roster-grid { grid-template-columns: 1fr; }
   }
-  .log li strong { color: var(--gold-light); }
-  @keyframes fadein { from{opacity:0; transform: translateY(4px);} to{opacity:1; transform:none;} }
+
+  .roster-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(214,184,119,0.2);
+    border-radius: 6px;
+    padding: 11px 14px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--cream);
+    font-size: 13.5px;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .roster-item:hover:not(:disabled) {
+    background: rgba(214,184,119,0.1);
+    border-color: var(--gold);
+  }
+  .roster-item:active:not(:disabled) { transform: scale(0.98); }
+  .roster-item:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+
+  .roster-item .name-txt {
+    font-family: "Iowan Old Style", Georgia, serif;
+    font-weight: 600;
+  }
+
+  .roster-item.correct {
+    background: rgba(74,122,92,0.15);
+    border-color: var(--success);
+    cursor: default;
+  }
+  .roster-item.correct .check { color: var(--success); }
+
+  .roster-item.skipped {
+    background: rgba(166,106,46,0.15);
+    border-color: var(--amber);
+    cursor: default;
+  }
+  .roster-item.skipped .check { color: var(--amber); }
+
+  .roster-item:disabled { opacity: 0.85; }
+
+  .roster-item.wrong-shake {
+    animation: shake 0.4s;
+    border-color: var(--error);
+  }
+  @keyframes shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
+  }
+
+  .check { font-size: 14px; }
 
   .overlay {
     position: fixed;
@@ -316,54 +381,57 @@
   .overlay button:hover { background: var(--navy-deep); }
 
   @media (max-width: 560px) {
+    .wrap { padding: 20px 12px 44px; }
     .bar { gap: 14px; margin: 16px 0 20px; }
     .stat { min-width: 54px; }
     .stat .num { font-size: 18px; }
-    .log { padding: 14px 14px; }
+    .flashcard { padding: 22px 18px; min-height: 280px; }
     .overlay .panel { padding: 28px 22px; max-width: 92vw; }
   }
 
-  .sr-only {
-    position: absolute; width: 1px; height: 1px;
-    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .card-inner, .card:not(.flipped):not(.matched) .card-inner:hover, .log li { transition: none; animation: none; }
+    .progress-fill, .roster-item, .overlay { transition: none; }
+    .roster-item.wrong-shake { animation: none; }
   }
 </style>
 </head>
 <body>
-  <div>
+<div>
         <Form action="../Games.html">
             <input type="submit" value="Back to Games" class="button">
         </Form>
     </div>
 <div class="wrap">
   <header>
-    <div class="eyebrow">A Memory Game</div>
+    <div class="eyebrow">Flashcards</div>
     <h1>Called to Serve</h1>
     <div class="spires" aria-hidden="true">
       <svg width="26" height="34" viewBox="0 0 26 34"><path d="M13 0 L20 14 L20 34 L6 34 L6 14 Z" fill="#d8b877" opacity="0.5"/></svg>
       <svg width="34" height="44" viewBox="0 0 34 44"><path d="M17 0 L27 18 L27 44 L7 44 L7 18 Z" fill="#d8b877" opacity="0.75"/></svg>
       <svg width="26" height="34" viewBox="0 0 26 34"><path d="M13 0 L20 14 L20 34 L6 34 L6 14 Z" fill="#d8b877" opacity="0.5"/></svg>
     </div>
-    <p class="sub">Match each leader's name with the clue that describes him. Learn the First Presidency and Quorum of the Twelve Apostles of The Church of Jesus Christ of Latter-day Saints as of March 2026.</p>
+    <p class="sub">Read the clue, then pick the leader it describes from the roster. Learn the First Presidency and Quorum of the Twelve Apostles of The Church of Jesus Christ of Latter-day Saints as of March 2026.</p>
   </header>
 
   <div class="bar">
-    <div class="stat"><div class="num" id="statMoves">0</div><div class="lbl">Moves</div></div>
-    <div class="stat"><div class="num" id="statMatches">0 / 15</div><div class="lbl">Matches</div></div>
+    <div class="stat"><div class="num" id="statProgress">0 / 15</div><div class="lbl">Matched</div></div>
+    <div class="stat"><div class="num" id="statStreak">0</div><div class="lbl">Streak</div></div>
     <div class="stat"><div class="num" id="statTime">0:00</div><div class="lbl">Time</div></div>
     <button class="newgame" id="newGameBtn">New Game</button>
   </div>
 
-  <div class="board" id="board" aria-label="Memory game board"></div>
+  <div class="layout">
+    <div class="card-stage">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="flashcard" id="flashcard"></div>
+      <p class="stage-caption" id="stageCaption">Card 1 of 15</p>
+    </div>
 
-  <div class="log">
-    <h2>Leaders You've Learned</h2>
-    <p class="hint">Each match unlocks a fuller fact about that leader.</p>
-    <ul id="logList"></ul>
+    <div class="roster">
+      <h2>The Roster</h2>
+      <p class="hint">Tap the name that matches the clue on the card.</p>
+      <div class="roster-grid" id="rosterGrid"></div>
+    </div>
   </div>
 </div>
 
@@ -382,117 +450,169 @@
     {
       name: "Dallin H. Oaks",
       role: "President of the Church",
-      clue: "18th President of the Church, sustained October 2025",
-      detail: "Before becoming an Apostle, he served as a Justice of the Utah Supreme Court and as president of Brigham Young University."
+      facts: [
+        "Born August 12, 1932, in Provo, Utah",
+        "Graduate of BYU (1954) and the University of Chicago Law School (1957); practiced and taught law in Chicago",
+        "Served as president of Brigham Young University from 1971 to 1980",
+        "Served as a justice of the Utah Supreme Court from 1980 until resigning in 1984 to accept his call as an Apostle",
+        "Sustained to the Quorum of the Twelve Apostles in 1984; set apart as President of the Church on October 14, 2025"
+      ]
     },
     {
       name: "Henry B. Eyring",
       role: "First Counselor, First Presidency",
-      clue: "First Counselor in the First Presidency and senior Apostle",
-      detail: "As the senior-most Apostle after President Oaks, he holds the office of President of the Quorum of the Twelve while serving in the First Presidency."
+      facts: [
+        "Born in Princeton, New Jersey, on May 31, 1933",
+        "Holds a physics degree from the University of Utah and MBA and doctoral degrees from Harvard University",
+        "Served as president of Ricks College (now BYU-Idaho) from 1971 to 1977",
+        "Served as Commissioner of the Church Educational System",
+        "Sustained to the Quorum of the Twelve Apostles in 1995; set apart as First Counselor in the First Presidency on October 14, 2025"
+      ]
     },
     {
       name: "D. Todd Christofferson",
       role: "Second Counselor, First Presidency",
-      clue: "Second Counselor in the First Presidency",
-      detail: "He was ordained an Apostle in 2008 and previously worked as an attorney before dedicating his life to full-time Church service."
+      facts: [
+        "Born in American Fork, Utah, and graduated high school in New Jersey",
+        "Earned his bachelor's degree from BYU and his law degree from Duke University",
+        "Served as a law clerk to U.S. District Judge John J. Sirica during the Watergate proceedings",
+        "Was associate general counsel of NationsBank Corporation (now Bank of America) before full-time Church service",
+        "Called to the Quorum of the Twelve Apostles on April 5, 2008; set apart as Second Counselor in the First Presidency on October 14, 2025"
+      ]
     },
     {
       name: "Dieter F. Uchtdorf",
       role: "Acting President, Quorum of the Twelve",
-      clue: "Acting President of the Quorum of the Twelve, born in Germany",
-      detail: "A former airline captain for Lufthansa, he was set apart as Acting President of the Twelve in January 2026."
+      facts: [
+        "Born November 6, 1940, in Ostrava, Czechoslovakia; his family joined the Church in Zwickau, Germany, in 1947",
+        "Joined the German Air Force in 1959 and trained as a fighter pilot",
+        "Began flying for Lufthansa German Airlines in 1965 and eventually became senior vice president of flight operations and chief pilot",
+        "Sustained to the Quorum of the Twelve Apostles on October 2, 2004",
+        "Set apart as Acting President of the Quorum of the Twelve Apostles on January 8, 2026"
+      ]
     },
     {
       name: "David A. Bednar",
       role: "Quorum of the Twelve",
-      clue: "Former president of Brigham Young University–Idaho",
-      detail: "He led BYU–Idaho before being ordained an Apostle in 2004, one of the youngest called in recent decades."
+      facts: [
+        "Born June 15, 1952, in Oakland, California",
+        "Served a full-time mission in southern Germany",
+        "Earned a doctoral degree in organizational behavior from Purdue University",
+        "Taught business management at Texas Tech University and the University of Arkansas before Church service",
+        "Served as president of BYU-Idaho (then Ricks College) from 1997 to 2004; ordained an Apostle on October 7, 2004"
+      ]
     },
     {
       name: "Quentin L. Cook",
       role: "Quorum of the Twelve",
-      clue: "Former attorney and healthcare company executive",
-      detail: "Before his call in 2007, he practiced law and led a major hospital corporation."
+      facts: [
+        "A native of Logan, Utah; earned a bachelor's degree in political science from Utah State University and a law degree from Stanford University",
+        "Served a full-time mission in the British Mission",
+        "Was a managing partner at a San Francisco Bay Area law firm before moving into healthcare",
+        "Became president and CEO of a California healthcare system, then vice chairman of Sutter Health",
+        "Sustained to the Quorum of the Twelve Apostles on October 6, 2007"
+      ]
     },
     {
       name: "Neil L. Andersen",
       role: "Quorum of the Twelve",
-      clue: "Called as an Apostle in 2009",
-      detail: "He has spoken widely on strengthening youth and young single adults across the worldwide Church."
+      facts: [
+        "Named an Apostle on April 4, 2009, after serving as senior member of the Presidency of the Seventy",
+        "Named to the First Quorum of the Seventy in April 1993, at age 41",
+        "Led the Church's work in southern Brazil and later oversaw the Church in western Europe",
+        "Supervised Church audiovisual production, including the filming of \"The Testaments: Of One Fold and One Shepherd\"",
+        "Speaks French, Portuguese, and Spanish in addition to English"
+      ]
     },
     {
       name: "Ronald A. Rasband",
       role: "Quorum of the Twelve",
-      clue: "Former business executive, called an Apostle in 2015",
-      detail: "He spent decades in corporate leadership roles, including at a major chemical manufacturing company, before his call."
+      facts: [
+        "Born February 6, 1951, in Salt Lake City, Utah",
+        "Joined Huntsman Container Company in 1976 and became president and COO of Huntsman Chemical Corporation in 1987",
+        "Served a full-time mission in the Eastern States Mission, then later presided over the New York New York North Mission",
+        "Named to the First Quorum of the Seventy on April 1, 2000",
+        "Called to the Quorum of the Twelve Apostles on October 3, 2015"
+      ]
     },
     {
       name: "Gary E. Stevenson",
       role: "Quorum of the Twelve",
-      clue: "Served as Presiding Bishop before becoming an Apostle",
-      detail: "He oversaw the Church's temporal affairs as Presiding Bishop from 2012 until his call to the Twelve in 2015."
+      facts: [
+        "Born August 6, 1955, in Ogden, Utah, and raised in Cache Valley",
+        "Served a full-time mission in the Japan Fukuoka Mission and later presided over the Japan Nagoya Mission",
+        "Cofounded ICON Health & Fitness, an exercise equipment company, serving as its president and COO",
+        "Served as Presiding Bishop of the Church from 2012 to 2015",
+        "Called to the Quorum of the Twelve Apostles on October 3, 2015"
+      ]
     },
     {
       name: "Dale G. Renlund",
       role: "Quorum of the Twelve",
-      clue: "A cardiologist before his call as an Apostle",
-      detail: "He practiced as a heart-transplant physician and researcher before being ordained an Apostle in 2015."
+      facts: [
+        "Born November 13, 1952, in Salt Lake City, Utah, to Swedish immigrant parents",
+        "Earned B.A. and M.D. degrees from the University of Utah, with further medical training at Johns Hopkins Hospital",
+        "Served a full-time mission in Sweden as a young man",
+        "Worked as a cardiologist and was medical director of the Utah Transplantation Affiliated Hospitals Cardiac Transplant Program",
+        "Sustained to the Quorum of the Twelve Apostles on October 3, 2015"
+      ]
     },
     {
       name: "Gerrit W. Gong",
       role: "Quorum of the Twelve",
-      clue: "First Apostle of Asian American descent",
-      detail: "Called in March 2018, he previously worked in academia, diplomacy, and business before full-time Church service."
+      facts: [
+        "Born December 23, 1953, in Redwood City, California",
+        "Served a full-time mission in Taiwan",
+        "Earned a master's degree and doctorate in international relations from Oxford University as a Rhodes Scholar",
+        "Served as special assistant to a U.S. ambassador in Beijing and worked at the U.S. State Department",
+        "Sustained to the Quorum of the Twelve Apostles on March 31, 2018, as the Church's first Apostle of Asian descent"
+      ]
     },
     {
       name: "Ulisses Soares",
       role: "Quorum of the Twelve",
-      clue: "From Brazil, called an Apostle in 2018",
-      detail: "He is one of the first Apostles from Latin America and served in Brazil before his call to the Twelve."
+      facts: [
+        "Born in São Paulo, Brazil, on October 2, 1958",
+        "Earned a bachelor's degree in accounting and economics from a Brazilian university in 1985, then an MBA",
+        "Worked as an accountant and auditor for multinational corporations in Brazil before full-time Church service",
+        "Served as president of the Portugal Porto Mission from 2000 to 2003",
+        "Sustained to the Quorum of the Twelve Apostles on March 31, 2018"
+      ]
     },
     {
       name: "Patrick Kearon",
       role: "Quorum of the Twelve",
-      clue: "Born in Bahrain, known for refugee humanitarian work",
-      detail: "Raised largely in England, he championed the Church's global refugee response before his call as an Apostle in 2023."
+      facts: [
+        "Born in Carlisle, England, on July 18, 1961",
+        "Joined the Church as a convert on Christmas Eve, 1987",
+        "Lived and worked in the United Kingdom, Saudi Arabia, and the United States, and ran his own communications consultancy",
+        "Served as president of the Church's Europe Area, where he became known for his advocacy on behalf of refugees",
+        "Called to the Quorum of the Twelve Apostles on December 7, 2023"
+      ]
     },
     {
       name: "Gérald Caussé",
       role: "Quorum of the Twelve",
-      clue: "From France, served as Presiding Bishop",
-      detail: "He led the Church's temporal affairs as Presiding Bishop before being called to the Twelve in November 2025."
+      facts: [
+        "Born in Bordeaux, France, on May 20, 1963",
+        "Earned a master's degree in business from ESSEC Business School in Paris",
+        "Worked in the food industry, serving as general manager of a food distribution company in France",
+        "Served as Presiding Bishop of the Church from October 2015 to November 2025",
+        "Called to the Quorum of the Twelve Apostles on November 6, 2025"
+      ]
     },
     {
       name: "Clark G. Gilbert",
       role: "Quorum of the Twelve",
-      clue: "Former president of BYU–Pathway Worldwide",
-      detail: "The newest member of the Twelve, called in February 2026, he previously led educational initiatives across the Church's university system."
+      facts: [
+        "Born June 18, 1970, in Oakland, California; spent most of his childhood in Phoenix, Arizona",
+        "Earned a bachelor's degree from BYU, a master's degree from Stanford, and a doctorate from Harvard",
+        "Served as CEO of Deseret Digital Media and later president of the Deseret News",
+        "Served as president of BYU-Idaho and as the inaugural president of BYU-Pathway Worldwide",
+        "Called to the Quorum of the Twelve Apostles on February 11, 2026, filling the vacancy left by the death of Jeffrey R. Holland"
+      ]
     }
   ];
-
-  const boardEl = document.getElementById("board");
-  const logList = document.getElementById("logList");
-  const statMoves = document.getElementById("statMoves");
-  const statMatches = document.getElementById("statMatches");
-  const statTime = document.getElementById("statTime");
-  const overlay = document.getElementById("overlay");
-  const overlayText = document.getElementById("overlayText");
-
-  let cards = [];
-  let flipped = [];
-  let matchedCount = 0;
-  let moves = 0;
-  let lockBoard = false;
-  let timerId = null;
-  let seconds = 0;
-  let started = false;
-
-  const templeIconSVG = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 3 L30 18 L30 36 L10 36 L10 18 Z" fill="#d8b877"/>
-      <rect x="17" y="24" width="6" height="12" fill="#1c2c4c"/>
-      <circle cx="20" cy="10" r="2" fill="#1c2c4c"/>
-    </svg>`;
 
   const PHOTOS = {
     'Dallin H. Oaks': 'data:image/jpeg;base64,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',
@@ -520,30 +640,52 @@
     const last = words.length > 1 ? words[words.length - 1][0] : "";
     return (first + last).toUpperCase();
   }
-
   function getAvatarColor(name){
     let hash = 0;
-    for (let i = 0; i < name.length; i++){
-      hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-    }
+    for (let i = 0; i < name.length; i++){ hash = (hash * 31 + name.charCodeAt(i)) >>> 0; }
     return AVATAR_COLORS[hash % AVATAR_COLORS.length];
   }
 
+  const templeIconSVG = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 3 L30 18 L30 36 L10 36 L10 18 Z" fill="#d8b877"/>
+      <rect x="17" y="24" width="6" height="12" fill="#1c2c4c"/>
+      <circle cx="20" cy="10" r="2" fill="#1c2c4c"/>
+    </svg>`;
+
+  const rosterEl = document.getElementById("rosterGrid");
+  const flashcardEl = document.getElementById("flashcard");
+  const progressFill = document.getElementById("progressFill");
+  const stageCaption = document.getElementById("stageCaption");
+  const statProgress = document.getElementById("statProgress");
+  const statStreak = document.getElementById("statStreak");
+  const statTime = document.getElementById("statTime");
+  const overlay = document.getElementById("overlay");
+  const overlayText = document.getElementById("overlayText");
+
+  let queue = [];
+  let roundClue = [];
+  let queuePos = 0;
+  let matchedCount = 0;
+  let streak = 0;
+  let bestStreak = 0;
+  let awaitingNext = false;
+  let timerId = null;
+  let seconds = 0;
+  let started = false;
+
+  // Roster is displayed in a fixed, alphabetical-by-surname order for easy reference.
+  const rosterOrder = [...LEADERS].sort((a, b) => {
+    const lastA = a.name.trim().split(" ").pop();
+    const lastB = b.name.trim().split(" ").pop();
+    return lastA.localeCompare(lastB);
+  });
+
   function shuffle(arr){
-    for(let i = arr.length - 1; i > 0; i--){
+    for (let i = arr.length - 1; i > 0; i--){
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
-  }
-
-  function buildDeck(){
-    const deck = [];
-    LEADERS.forEach((leader, idx) => {
-      deck.push({ pairId: idx, type: "name", leader });
-      deck.push({ pairId: idx, type: "clue", leader });
-    });
-    return shuffle(deck);
   }
 
   function formatTime(s){
@@ -551,139 +693,134 @@
     const sec = s % 60;
     return m + ":" + String(sec).padStart(2, "0");
   }
-
   function startTimer(){
     if (timerId) return;
-    timerId = setInterval(() => {
-      seconds++;
-      statTime.textContent = formatTime(seconds);
-    }, 1000);
+    timerId = setInterval(() => { seconds++; statTime.textContent = formatTime(seconds); }, 1000);
   }
+  function stopTimer(){ clearInterval(timerId); timerId = null; }
 
-  function stopTimer(){
-    clearInterval(timerId);
-    timerId = null;
-  }
-
-  function render(){
-    boardEl.innerHTML = "";
-    cards.forEach((cardData, i) => {
-      const el = document.createElement("div");
-      el.className = "card";
-      el.setAttribute("role", "button");
-      el.setAttribute("tabindex", "0");
-      el.dataset.index = i;
-      const label = cardData.type === "name" ? cardData.leader.name : cardData.leader.clue;
-      el.setAttribute("aria-label", "Face-down card");
-
-      const photo = PHOTOS[cardData.leader.name];
-      const avatarHTML = cardData.type === "name"
-        ? (photo
-            ? `<img class="avatar" src="${photo}" alt="${cardData.leader.name}">`
-            : `<div class="avatar" style="background:${getAvatarColor(cardData.leader.name)}">${getInitials(cardData.leader.name)}</div>`)
-        : "";
-
-      el.innerHTML = `
-        <div class="card-inner">
-          <div class="face back">${templeIconSVG}</div>
-          <div class="face front">
-            <div class="kicker">${cardData.type === "name" ? "Leader" : "Clue"}</div>
-            ${avatarHTML}
-            <div class="${cardData.type === "name" ? "name" : "clue"}">${label}</div>
-          </div>
-        </div>
-      `;
-      el.addEventListener("click", () => handleFlip(i));
-      el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " "){
-          e.preventDefault();
-          handleFlip(i);
-        }
-      });
-      boardEl.appendChild(el);
+  function renderRoster(){
+    rosterEl.innerHTML = "";
+    rosterOrder.forEach(leader => {
+      const btn = document.createElement("button");
+      btn.className = "roster-item";
+      btn.type = "button";
+      btn.dataset.name = leader.name;
+      btn.innerHTML = `<span class="name-txt">${leader.name}</span><span class="check"></span>`;
+      btn.addEventListener("click", () => handleGuess(leader));
+      rosterEl.appendChild(btn);
     });
   }
 
-  function handleFlip(i){
-    if (lockBoard) return;
-    const el = boardEl.children[i];
-    if (el.classList.contains("flipped") || el.classList.contains("matched")) return;
-    if (flipped.length === 2) return;
-
-    if (!started){
-      started = true;
-      startTimer();
-    }
-
-    el.classList.add("flipped");
-    flipped.push(i);
-
-    if (flipped.length === 2){
-      moves++;
-      statMoves.textContent = moves;
-      checkMatch();
-    }
+  function getRosterBtn(name){
+    return rosterEl.querySelector(`.roster-item[data-name="${CSS.escape(name)}"]`);
   }
 
-  function checkMatch(){
-    const [i1, i2] = flipped;
-    const c1 = cards[i1];
-    const c2 = cards[i2];
-    const el1 = boardEl.children[i1];
-    const el2 = boardEl.children[i2];
+  function renderClueCard(){
+    const leader = queue[queuePos];
+    flashcardEl.classList.remove("correct-flash", "skip-flash");
+    flashcardEl.innerHTML = `
+      <div class="icon">${templeIconSVG}</div>
+      <div class="kicker">Clue ${queuePos + 1} of ${queue.length}</div>
+      <div class="clue-text">${roundClue[queuePos]}</div>
+      <div class="hint">Choose the matching name from the roster</div>
+      <button class="skip-btn" id="skipBtn" type="button">I don't know — show the answer</button>
+    `;
+    document.getElementById("skipBtn").addEventListener("click", () => revealAnswer(leader, "skipped"));
+    stageCaption.textContent = `Card ${queuePos + 1} of ${queue.length}`;
+  }
 
-    if (c1.pairId === c2.pairId && c1.type !== c2.type){
-      lockBoard = true;
-      setTimeout(() => {
-        el1.classList.add("matched");
-        el2.classList.add("matched");
-        flipped = [];
-        lockBoard = false;
-        matchedCount++;
-        statMatches.textContent = matchedCount + " / 15";
-        addToLog(c1.leader);
-        if (matchedCount === LEADERS.length){
-          finishGame();
-        }
-      }, 450);
+  function renderAnswerCard(leader, outcome){
+    flashcardEl.classList.toggle("correct-flash", outcome === "correct");
+    flashcardEl.classList.toggle("skip-flash", outcome === "skipped");
+    const factsList = leader.facts.map(f => `<li>${f}</li>`).join("");
+    flashcardEl.innerHTML = `
+      ${PHOTOS[leader.name]
+        ? `<img class="avatar-big" src="${PHOTOS[leader.name]}" alt="${leader.name}">`
+        : `<div class="avatar-big" style="background:${getAvatarColor(leader.name)}">${getInitials(leader.name)}</div>`}
+      <div class="answer-name">${leader.name}</div>
+      <div class="answer-role">${leader.role}</div>
+      <ul class="answer-facts">${factsList}</ul>
+      <button class="next-btn" id="nextBtn" type="button">${queuePos + 1 < queue.length ? "Next Card" : "Finish"}</button>
+    `;
+    document.getElementById("nextBtn").addEventListener("click", advance);
+  }
+
+  function handleGuess(leader){
+    if (awaitingNext) return;
+    const current = queue[queuePos];
+    const btn = getRosterBtn(leader.name);
+
+    if (leader.name === current.name){
+      awaitingNext = true;
+      matchedCount++;
+      streak++;
+      bestStreak = Math.max(bestStreak, streak);
+      statStreak.textContent = streak;
+      statProgress.textContent = matchedCount + " / " + queue.length;
+      progressFill.style.width = (matchedCount / queue.length * 100) + "%";
+      btn.classList.add("correct");
+      btn.disabled = true;
+      btn.querySelector(".check").textContent = "✓";
+      revealAnswer(current, "correct");
     } else {
-      lockBoard = true;
-      setTimeout(() => {
-        el1.classList.remove("flipped");
-        el2.classList.remove("flipped");
-        flipped = [];
-        lockBoard = false;
-      }, 3000);
+      streak = 0;
+      statStreak.textContent = streak;
+      btn.classList.add("wrong-shake");
+      setTimeout(() => btn.classList.remove("wrong-shake"), 400);
     }
   }
 
-  function addToLog(leader){
-    const li = document.createElement("li");
-    li.innerHTML = `<strong>${leader.name}</strong> — ${leader.role}. ${leader.detail}`;
-    logList.prepend(li);
+  function revealAnswer(leader, outcome){
+    awaitingNext = true;
+    if (outcome === "skipped"){
+      const btn = getRosterBtn(leader.name);
+      if (btn && !btn.disabled){
+        btn.classList.add("skipped");
+        btn.disabled = true;
+        btn.querySelector(".check").textContent = "–";
+      }
+      streak = 0;
+      statStreak.textContent = streak;
+    }
+    renderAnswerCard(leader, outcome);
+  }
+
+  function advance(){
+    awaitingNext = false;
+    queuePos++;
+    if (queuePos >= queue.length){
+      finishGame();
+      return;
+    }
+    renderClueCard();
   }
 
   function finishGame(){
     stopTimer();
-    overlayText.textContent = `You matched all 15 leaders in ${moves} moves and ${formatTime(seconds)}.`;
+    overlayText.textContent = `You matched ${matchedCount} of ${queue.length} leaders in ${formatTime(seconds)}, with a best streak of ${bestStreak}.`;
     overlay.classList.add("show");
   }
 
   function newGame(){
     stopTimer();
-    cards = buildDeck();
-    flipped = [];
+    queue = shuffle([...LEADERS]);
+    roundClue = queue.map(leader => leader.facts[Math.floor(Math.random() * leader.facts.length)]);
+    queuePos = 0;
     matchedCount = 0;
-    moves = 0;
+    streak = 0;
+    bestStreak = 0;
     seconds = 0;
     started = false;
-    lockBoard = false;
-    statMoves.textContent = "0";
-    statMatches.textContent = "0 / 15";
+    awaitingNext = false;
+    statProgress.textContent = "0 / " + queue.length;
+    statStreak.textContent = "0";
     statTime.textContent = "0:00";
-    logList.innerHTML = "";
+    progressFill.style.width = "0%";
     overlay.classList.remove("show");
-    render();
+    renderRoster();
+    renderClueCard();
+    if (!started){ started = true; startTimer(); }
   }
 
   document.getElementById("newGameBtn").addEventListener("click", newGame);
