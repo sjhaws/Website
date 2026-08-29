@@ -14,6 +14,14 @@
   const ENEMY_SPEED_VARIATION = 0.15;
   const ENEMY_SPEED_VARIATION_SHIP = 0.25;
   const LEVEL_X_SCALE = 2;
+  // The "platform" texture is generated on a 64x64 canvas but only the top
+  // PLATFORM_VISUAL_HEIGHT pixels are actually painted (see makeTexture("platform", ...)).
+  // Sprites default to a 64x64 frame centered on their (x, y), so the visual
+  // top edge of a platform sits PLATFORM_FRAME_HALF px above its y position.
+  const PLATFORM_FRAME_HALF = 32;
+  const PLATFORM_VISUAL_HEIGHT = 20;
+  const ENEMY_DISPLAY_WIDTH = 56;
+  const ENEMY_DISPLAY_HEIGHT = 44;
 
   const LEVEL_LAYOUTS = [
     {
@@ -782,6 +790,11 @@
         for (let i = 0; i < tiles; i += 1) {
           const tile = ledges.create(platform.x + i * 64, platform.y, "platform");
           tile.refreshBody();
+          // Shrink the collision box to match the painted bar at the top of the
+          // 64x64 texture frame instead of the whole (mostly transparent) frame,
+          // so the walkable surface lines up with what's actually drawn on screen.
+          tile.body.setSize(64, PLATFORM_VISUAL_HEIGHT);
+          tile.body.setOffset(0, 0);
         }
       });
       this.ledges = ledges;
@@ -836,6 +849,20 @@
       }
     }
 
+    // Dynamic Arcade bodies interpret setSize(w, h) in the sprite's original,
+    // pre-scale texture space: the real on-screen box ends up being w*scaleX by
+    // h*scaleY. Since setDisplaySize() changes that scale to whatever the source
+    // image's native dimensions require, calling body.setSize(28, 48) after it
+    // does NOT reliably produce a 28x48 box - the real size depends on the raw
+    // pixel dimensions of the loaded artwork. This helper divides out the
+    // current scale so the resulting body always matches the requested size in
+    // actual display pixels, regardless of the source image's native size.
+    setDisplayBodyBox(sprite, boxWidth, boxHeight) {
+      const scaleX = sprite.scaleX || 1;
+      const scaleY = sprite.scaleY || 1;
+      sprite.body.setSize(boxWidth / scaleX, boxHeight / scaleY, true);
+    }
+
     buildPlayer() {
       const playerTexture = this.isShipLevel ? "ship" : "nephi";
       const playerY = this.isShipLevel ? this.waterlineY - 44 : this.groundY - 60;
@@ -845,12 +872,12 @@
       }
       this.player.setCollideWorldBounds(true);
       if (this.isShipLevel) {
-        this.player.body.setSize(50, 26, true);
+        this.setDisplayBodyBox(this.player, 50, 26);
         this.player.body.setAllowGravity(false);
         this.player.setBounce(0);
         this.player.setDragX(900);
       } else {
-        this.player.body.setSize(28, 48, true);
+        this.setDisplayBodyBox(this.player, 28, 48);
         this.player.setBounce(0.05);
         this.player.setDragX(1100);
 
@@ -867,7 +894,8 @@
       const platformAnchors = this.getExpandedPlatforms(layout.platforms).map((platform) => ({
         left: platform.x,
         right: platform.x + platform.width,
-        top: platform.y - 20,
+        // True visual top surface of the platform (see PLATFORM_FRAME_HALF note above).
+        top: platform.y - PLATFORM_FRAME_HALF,
       }));
 
       layout.enemies.forEach((x) => {
@@ -876,8 +904,8 @@
         const y = this.isShipLevel ? this.waterlineY + 34 + ((worldX / 300) % 2) * 12 : this.getLandEnemyY(worldX, platformAnchors);
         const texture = this.chooseEnemyTexture(worldX);
         const enemy = this.enemies.create(worldX, y, texture);
-        enemy.setDisplaySize(56, 44);
-        enemy.body.setSize(40, 34, true);
+        enemy.setDisplaySize(ENEMY_DISPLAY_WIDTH, ENEMY_DISPLAY_HEIGHT);
+        this.setDisplayBodyBox(enemy, 40, 34);
         const speedVariation = this.isShipLevel ? ENEMY_SPEED_VARIATION_SHIP : ENEMY_SPEED_VARIATION;
         const speedMultiplier = 1 + Phaser.Math.FloatBetween(-speedVariation, speedVariation);
         enemy.setData("speed", ENEMY_SPEED * speedMultiplier);
@@ -907,12 +935,12 @@
     }
 
     getLandEnemyY(x, platformAnchors) {
+      // Position the enemy's center so its feet (bottom of its display box)
+      // land exactly on the surface, whether that's a platform's visual top
+      // edge or the ground line.
       const platform = platformAnchors.find((anchor) => x >= anchor.left && x <= anchor.right);
-      if (platform) {
-        return platform.top;
-      }
-
-      return this.groundY - 20;
+      const surfaceY = platform ? platform.top : this.groundY;
+      return surfaceY - ENEMY_DISPLAY_HEIGHT / 2;
     }
 
     buildScrolls() {
@@ -1394,7 +1422,7 @@
       default: "arcade",
       arcade: {
         gravity: { y: GRAVITY_Y },
-        debug: true,
+        debug: false,
       },
     },
     scene: [BootScene, StoryScene, GameScene, EndingScene],
