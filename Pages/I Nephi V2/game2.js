@@ -503,6 +503,10 @@
       this.buildTouchControls();
       this.setupInputs();
       this.applyCamera();
+
+      if (this.physics.world.debugGraphic) {
+        this.physics.world.debugGraphic.setDepth(1000);
+      }
     }
 
     buildBackdrop() {
@@ -853,6 +857,7 @@
         this.physics.add.collider(this.player, this.groundTiles);
         this.physics.add.collider(this.player, this.ledges);
       }
+      console.log(`[Nephi Journey] Player body: size=${this.player.body.width}x${this.player.body.height}, offset=${this.player.body.offset.x},${this.player.body.offset.y}, enabled=${this.player.body.enable}`);
     }
 
     buildEnemies() {
@@ -897,6 +902,7 @@
         this.enemyConfigs.push(enemy);
       });
 
+      console.log(`[Nephi Journey] Built ${this.enemies.getLength()} enemies for level ${this.levelIndex}.`);
       this.physics.add.overlap(this.player, this.enemies, this.handleEnemyHit, null, this);
     }
 
@@ -1317,6 +1323,7 @@
     }
 
     handleEnemyHit(player, enemy) {
+      console.log(`[Nephi Journey] Overlap fired with ${enemy.texture.key} at x=${Math.round(enemy.x)}.`);
       if (this.time.now < this.invincibleUntil || this.levelFinished) {
         return;
       }
@@ -1387,7 +1394,7 @@
       default: "arcade",
       arcade: {
         gravity: { y: GRAVITY_Y },
-        debug: false,
+        debug: true,
       },
     },
     scene: [BootScene, StoryScene, GameScene, EndingScene],

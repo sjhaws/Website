@@ -7,6 +7,19 @@ const SHIPS = [
     { name: 'Submarine', size: 3 },
     { name: 'Destroyer', size: 2 }
 ];
+// Map each ship name to its artwork file (images are drawn bow-up / vertical)
+const SHIP_IMAGES = {
+    Carrier: '../../assets/carrier.png',
+    Battleship: '../../assets/battleship.png',
+    Cruiser: '../../assets/cruiser.png',
+    Submarine: '../../assets/submarine.png',
+    Destroyer: '../../assets/destroyer.png'
+};
+const CELL_SIZE = 32;
+const CELL_GAP = 2;
+const BOARD_PADDING = 8;
+const CELL_STEP = CELL_SIZE + CELL_GAP;
+
 let playerBoard = [], enemyBoard = [], playerShips = [], enemyShips = [], playerHits = 0, enemyHits = 0, turn = 'player', gameOver = false;
 let placingShips = true;
 let currentShipIdx = 0;
@@ -222,9 +235,59 @@ function endGame(winner) {
     restartBtn.style.display = 'block';
 }
 
+// Overlay a scaled ship image spanning exactly the cells the ship occupies.
+// Horizontal ships are made by rotating the (naturally vertical) artwork 90deg.
+function renderShipImages(ships, boardDiv) {
+    boardDiv.querySelectorAll('.ship-img-overlay').forEach(el => el.remove());
+    ships.forEach(ship => {
+        if (!ship.coords || ship.coords.length === 0) return;
+        const size = ship.coords.length;
+        const [startRow, startCol] = ship.coords[0];
+        const isHorizontal = size > 1 && ship.coords[0][0] === ship.coords[1][0];
+        const left = BOARD_PADDING + startCol * CELL_STEP;
+        const top = BOARD_PADDING + startRow * CELL_STEP;
+        const spanLength = size * CELL_SIZE + (size - 1) * CELL_GAP;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'ship-img-overlay';
+        wrapper.style.left = left + 'px';
+        wrapper.style.top = top + 'px';
+
+        const img = document.createElement('img');
+        img.src = SHIP_IMAGES[ship.name];
+        img.alt = ship.name;
+        img.draggable = false;
+
+        if (isHorizontal) {
+            // Wrapper matches the horizontal footprint; the image is kept at its
+            // natural vertical dimensions, centered, then rotated 90deg to fit.
+            wrapper.style.width = spanLength + 'px';
+            wrapper.style.height = CELL_SIZE + 'px';
+            wrapper.style.overflow = 'hidden';
+            img.style.position = 'absolute';
+            img.style.top = '50%';
+            img.style.left = '50%';
+            img.style.width = CELL_SIZE + 'px';
+            img.style.height = spanLength + 'px';
+            img.style.objectFit = 'fill';
+            img.style.transform = 'translate(-50%, -50%) rotate(90deg)';
+        } else {
+            wrapper.style.width = CELL_SIZE + 'px';
+            wrapper.style.height = spanLength + 'px';
+            img.style.width = CELL_SIZE + 'px';
+            img.style.height = spanLength + 'px';
+            img.style.objectFit = 'fill';
+        }
+
+        wrapper.appendChild(img);
+        boardDiv.appendChild(wrapper);
+    });
+}
+
 function renderBoards() {
     renderBoard(playerBoard, playerBoardDiv, true, false);
     renderBoard(enemyBoard, enemyBoardDiv, false, true);
+    renderShipImages(playerShips, playerBoardDiv);
 }
 
 function resetGame() {

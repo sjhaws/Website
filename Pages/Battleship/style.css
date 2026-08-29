@@ -19,6 +19,7 @@ h1, h2, h3, h4, h5, h6, button, input, label, p, a, .menu {
     margin-top: 32px;
 }
 .board {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(10, 32px);
     grid-template-rows: repeat(10, 32px);
@@ -29,6 +30,8 @@ h1, h2, h3, h4, h5, h6, button, input, label, p, a, .menu {
     box-shadow: 0 2px 16px #43B047, 0 0 8px #000000;
 }
 .cell {
+    position: relative;
+    z-index: 2;
     width: 32px;
     height: 32px;
     background: white;
@@ -43,7 +46,7 @@ h1, h2, h3, h4, h5, h6, button, input, label, p, a, .menu {
     text-shadow: none;
 }
 .cell.ship {
-    background: #049CD8;
+    background: transparent;
     color: #FBD000;
 }
 .cell.hit {
@@ -53,6 +56,15 @@ h1, h2, h3, h4, h5, h6, button, input, label, p, a, .menu {
 .cell.miss {
     background: #43B047;
     color: #fff;
+}
+.ship-img-overlay {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+}
+.ship-img-overlay img {
+    display: block;
+    image-rendering: pixelated;
 }
 .label {
     text-align: center;
