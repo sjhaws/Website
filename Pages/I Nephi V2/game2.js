@@ -23,6 +23,40 @@
   const ENEMY_DISPLAY_WIDTH = 56;
   const ENEMY_DISPLAY_HEIGHT = 44;
 
+  // Scroll popup: the box auto-sizes around whatever text it's given (see
+  // fitScrollPopupText/layoutScrollPopup) instead of using a fixed height,
+  // since scroll messages range from a single short line up to several
+  // full verses of scripture.
+  const SCROLL_POPUP_TOP = 118;
+  const SCROLL_POPUP_WIDTH = 640;
+  const SCROLL_POPUP_WRAP_WIDTH = 560;
+  const SCROLL_POPUP_PADDING_TOP = 14;
+  const SCROLL_POPUP_PADDING_BOTTOM = 14;
+  const SCROLL_POPUP_TITLE_GAP = 8;
+  const SCROLL_POPUP_BASE_FONT = 17;
+  const SCROLL_POPUP_MIN_FONT = 11;
+  const SCROLL_POPUP_MAX_TEXT_HEIGHT = 260;
+
+  // Story/ending panel: same idea as the scroll popup above, but here the
+  // story text ranges from a one-line summary up to a full multi-paragraph
+  // scripture passage (Level 2's is 1000+ characters with several verse
+  // breaks), so it needs several fallback levels - shrink the font, then
+  // tighten line spacing, then tighten paragraph spacing - before finally
+  // just accepting whatever fits so nothing ever overlaps.
+  const STORY_PANEL_MAX_WIDTH = 860;
+  const STORY_PANEL_SIDE_PADDING = 34;
+  const STORY_PANEL_TOP_BOTTOM_PADDING = 24;
+  const STORY_TOP_MARGIN = 18;
+  const STORY_BOTTOM_MARGIN = 46;
+  const STORY_ELEMENT_GAP = 12;
+  const STORY_TIGHT_ELEMENT_GAP = 6;
+  const STORY_NAME_FONT = 20;
+  const STORY_TITLE_FONT = 28;
+  const STORY_BUTTON_FONT = 22;
+  const STORY_HINT_FONT = 13;
+  const STORY_BASE_FONT = 19;
+  const STORY_MIN_FONT = 12;
+
   const LEVEL_LAYOUTS = [
     {
       platforms: [
@@ -357,61 +391,125 @@
 
       this.cameras.main.setBackgroundColor(0x10141a);
 
+      const panelWidth = Math.min(STORY_PANEL_MAX_WIDTH, width - 40);
+      const wrapWidth = panelWidth - STORY_PANEL_SIDE_PADDING * 2;
+
       const panel = this.add
-        .rectangle(width / 2, height / 2, Math.min(840, width - 40), 360, 0x101820, 0.92)
+        .rectangle(width / 2, height / 2, panelWidth, 360, 0x101820, 0.92)
         .setStrokeStyle(4, 0x5a6d7f, 1);
 
-      this.add
-        .text(width / 2, height / 2 - 120, level.name, {
+      // All content pieces are created with origin (0.5, 0) - centered
+      // horizontally, anchored at their own TOP edge - so they can be
+      // stacked top-to-bottom purely from measured heights, with no
+      // hardcoded offsets that long text could blow past.
+      const nameText = this.add
+        .text(width / 2, 0, level.name, {
           fontFamily: "Verdana",
-          fontSize: "22px",
+          fontSize: `${STORY_NAME_FONT}px`,
           color: "#f2c14e",
           fontStyle: "bold",
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5, 0);
 
-      this.add
-        .text(width / 2, height / 2 - 70, level.title, {
+      const titleText = this.add
+        .text(width / 2, 0, level.title, {
           fontFamily: "Verdana",
-          fontSize: "34px",
+          fontSize: `${STORY_TITLE_FONT}px`,
           color: "#f7edd9",
           fontStyle: "bold",
           align: "center",
-          wordWrap: { width: Math.min(760, width - 80) },
+          wordWrap: { width: wrapWidth },
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5, 0);
 
-      this.add
-        .text(width / 2, height / 2 + 5, level.story, {
+      const storyText = this.add
+        .text(width / 2, 0, level.story, {
           fontFamily: "Verdana",
-          fontSize: "20px",
+          fontSize: `${STORY_BASE_FONT}px`,
           color: "#d7e2ea",
           align: "center",
-          wordWrap: { width: Math.min(760, width - 80) },
+          wordWrap: { width: wrapWidth },
           lineSpacing: 8,
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5, 0);
 
       const startButton = this.add
-        .text(width / 2, height / 2 + 120, "Start", {
+        .text(width / 2, 0, "Start", {
           fontFamily: "Verdana",
-          fontSize: "24px",
+          fontSize: `${STORY_BUTTON_FONT}px`,
           color: "#111",
           backgroundColor: "#f2c14e",
-          padding: { left: 22, right: 22, top: 12, bottom: 12 },
+          padding: { left: 22, right: 22, top: 10, bottom: 10 },
           fontStyle: "bold",
         })
-        .setOrigin(0.5)
+        .setOrigin(0.5, 0)
         .setInteractive({ useHandCursor: true });
 
       const hint = this.add
-        .text(width / 2, height / 2 + 170, "Use arrow keys, space, or touch buttons to play.", {
+        .text(width / 2, 0, "Use arrow keys, space, or touch buttons to play.", {
           fontFamily: "Verdana",
-          fontSize: "14px",
+          fontSize: `${STORY_HINT_FONT}px`,
           color: "#9fb3c8",
           align: "center",
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5, 0);
+
+      const maxContentHeight = height - STORY_TOP_MARGIN - STORY_BOTTOM_MARGIN - STORY_PANEL_TOP_BOTTOM_PADDING * 2;
+
+      const measureTotalHeight = (gap) =>
+        nameText.height +
+        gap +
+        titleText.height +
+        gap +
+        storyText.height +
+        gap +
+        startButton.height +
+        gap +
+        hint.height;
+
+      // Stage 1: shrink the story font down to its floor.
+      let storyFontSize = STORY_BASE_FONT;
+      while (measureTotalHeight(STORY_ELEMENT_GAP) > maxContentHeight && storyFontSize > STORY_MIN_FONT) {
+        storyFontSize -= 1;
+        storyText.setFontSize(storyFontSize);
+      }
+
+      // Stage 2: still too tall (typically only for the longest scripture
+      // passages) - tighten the line spacing.
+      if (measureTotalHeight(STORY_ELEMENT_GAP) > maxContentHeight) {
+        storyText.setLineSpacing(3);
+      }
+
+      // Stage 3: still too tall - the gaps between paragraphs in the source
+      // text (blank lines) are costing as much vertical space as several
+      // lines of prose. Collapse them to single line breaks; this keeps
+      // every word but stops each verse from reserving a full blank line.
+      let gap = STORY_ELEMENT_GAP;
+      if (measureTotalHeight(gap) > maxContentHeight) {
+        storyText.setText(level.story.replace(/\n{2,}/g, "\n"));
+        gap = STORY_TIGHT_ELEMENT_GAP;
+      }
+
+      // Whatever the result, lay everything out top-to-bottom from the
+      // measured heights so nothing ever overlaps, even in the worst case.
+      const totalHeight = measureTotalHeight(gap);
+      const panelHeight = Math.min(
+        height - STORY_TOP_MARGIN * 2,
+        totalHeight + STORY_PANEL_TOP_BOTTOM_PADDING * 2
+      );
+      panel.setSize(panelWidth, panelHeight);
+      panel.setPosition(width / 2, height / 2);
+
+      let cursorY = height / 2 - panelHeight / 2 + STORY_PANEL_TOP_BOTTOM_PADDING;
+      nameText.setPosition(width / 2, cursorY);
+      cursorY += nameText.height + gap;
+      titleText.setPosition(width / 2, cursorY);
+      cursorY += titleText.height + gap;
+      storyText.setPosition(width / 2, cursorY);
+      cursorY += storyText.height + gap;
+      startButton.setPosition(width / 2, cursorY);
+      cursorY += startButton.height + gap;
+      hint.setPosition(width / 2, cursorY);
 
       const startGame = () => {
         this.scene.start("GameScene", { levelIndex });
@@ -428,7 +526,6 @@
           color: "#708090",
         })
         .setOrigin(0.5);
-
     }
   }
 
@@ -1054,7 +1151,7 @@
         padding: { left: 10, right: 10, top: 6, bottom: 6 },
       }).setOrigin(1, 0).setScrollFactor(0);
 
-      this.scrollPopupBg = this.add.rectangle(this.scale.width / 2, 150, 620, 92, 0x101820, 0.92)
+      this.scrollPopupBg = this.add.rectangle(this.scale.width / 2, 150, SCROLL_POPUP_WIDTH, 92, 0x101820, 0.92)
         .setStrokeStyle(3, 0xf2c14e, 1)
         .setScrollFactor(0)
         .setVisible(false)
@@ -1062,10 +1159,10 @@
 
       this.scrollPopupText = this.add.text(this.scale.width / 2, 150, "", {
         fontFamily: "Verdana",
-        fontSize: "17px",
+        fontSize: `${SCROLL_POPUP_BASE_FONT}px`,
         color: "#f7edd9",
         align: "center",
-        wordWrap: { width: 560 },
+        wordWrap: { width: SCROLL_POPUP_WRAP_WIDTH },
         lineSpacing: 6,
       }).setOrigin(0.5).setScrollFactor(0).setVisible(false).setDepth(51);
 
@@ -1261,6 +1358,10 @@
             enemy.setData("direction", -1);
           }
           enemy.body.updateFromGameObject();
+
+          // These enemies patrol vertically instead of left/right, so mirror
+          // them top-to-bottom instead of left-to-right when they turn around.
+          enemy.flipY = enemy.getData("direction") < 0;
         } else {
           const direction = enemy.getData("direction");
           const minX = enemy.getData("minX");
@@ -1284,6 +1385,10 @@
             enemy.setData("direction", -1);
             enemy.setData("nextTurnAt", time + Phaser.Math.Between(turnRange.min, turnRange.max));
           }
+
+          // Art faces right by default (same convention as the player sprite),
+          // so mirror it whenever the enemy is currently heading left.
+          enemy.flipX = enemy.getData("direction") < 0;
         }
       });
     }
@@ -1299,6 +1404,13 @@
       }
     }
 
+    // Shared by showScrollPopup (how long the box stays up) and collectScroll
+    // (how long invincibility lasts) so the two can never drift apart - see
+    // note in collectScroll about why that matters.
+    getScrollDisplayDuration(message) {
+      return Phaser.Math.Clamp(1800 + message.length * 12, 2200, 9000);
+    }
+
     collectScroll(player, scroll) {
       if (!scroll.active) {
         return;
@@ -1310,8 +1422,48 @@
       if (this.scrollCountText) {
         this.scrollCountText.setText(`Scrolls: ${this.scrollsCollected}/${this.totalScrolls || 2}`);
       }
-      this.invincibleUntil = this.time.now + INVINCIBILITY_MS;
+      // Long scroll text can keep the popup on screen well past the base
+      // invincibility window, so the tint was quietly expiring before the
+      // player ever got the popup out of the way to actually see it. Make
+      // invincibility last at least as long as the popup, plus a bit extra
+      // so there's a clear window to notice the color change once it closes.
+      const popupDuration = this.getScrollDisplayDuration(popupText);
+      this.invincibleUntil = this.time.now + Math.max(INVINCIBILITY_MS, popupDuration + 1500);
       this.showScrollPopup(popupText);
+    }
+
+    // Shrinks the font (down to a floor) until the wrapped message fits within
+    // a sane height, so extremely long scroll text (some are full paragraphs
+    // of scripture) doesn't grow the popup past the playable screen.
+    fitScrollPopupText(message) {
+      let fontSize = SCROLL_POPUP_BASE_FONT;
+      this.scrollPopupText.setFontSize(fontSize);
+      this.scrollPopupText.setText(message);
+      while (this.scrollPopupText.height > SCROLL_POPUP_MAX_TEXT_HEIGHT && fontSize > SCROLL_POPUP_MIN_FONT) {
+        fontSize -= 1;
+        this.scrollPopupText.setFontSize(fontSize);
+      }
+    }
+
+    // Resizes and repositions the background box, title, and body text as a
+    // group so the box always fully encloses whatever text was just set,
+    // instead of using a fixed box size that longer messages could overflow.
+    layoutScrollPopup() {
+      const titleHeight = this.scrollPopupTitle.height;
+      const textHeight = this.scrollPopupText.height;
+      const boxHeight =
+        SCROLL_POPUP_PADDING_TOP + titleHeight + SCROLL_POPUP_TITLE_GAP + textHeight + SCROLL_POPUP_PADDING_BOTTOM;
+      const boxCenterY = SCROLL_POPUP_TOP + boxHeight / 2;
+      const centerX = this.scale.width / 2;
+
+      this.scrollPopupBg.setSize(SCROLL_POPUP_WIDTH, boxHeight);
+      this.scrollPopupBg.setPosition(centerX, boxCenterY);
+
+      const titleCenterY = SCROLL_POPUP_TOP + SCROLL_POPUP_PADDING_TOP + titleHeight / 2;
+      this.scrollPopupTitle.setPosition(centerX, titleCenterY);
+
+      const textCenterY = titleCenterY + titleHeight / 2 + SCROLL_POPUP_TITLE_GAP + textHeight / 2;
+      this.scrollPopupText.setPosition(centerX, textCenterY);
     }
 
     showScrollPopup(message) {
@@ -1320,7 +1472,9 @@
       }
 
       this.scrollPopupTitle.setText("Scroll Found");
-      this.scrollPopupText.setText(message);
+      this.fitScrollPopupText(message);
+      this.layoutScrollPopup();
+
       this.scrollPopupBg.setVisible(true);
       this.scrollPopupText.setVisible(true);
       this.scrollPopupTitle.setVisible(true);
@@ -1335,7 +1489,9 @@
         ease: "Sine.easeOut",
       });
 
-      this.scrollPopupTimer = this.time.delayedCall(2200, () => {
+      // Give longer scroll text more time on screen to actually be read.
+      const displayMs = this.getScrollDisplayDuration(message);
+      this.scrollPopupTimer = this.time.delayedCall(displayMs, () => {
         this.tweens.add({
           targets: [this.scrollPopupBg, this.scrollPopupText, this.scrollPopupTitle],
           alpha: 0,
