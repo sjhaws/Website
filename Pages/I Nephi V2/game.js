@@ -14,6 +14,48 @@
   const ENEMY_SPEED_VARIATION = 0.15;
   const ENEMY_SPEED_VARIATION_SHIP = 0.25;
   const LEVEL_X_SCALE = 2;
+  // The "platform" texture is generated on a 64x64 canvas but only the top
+  // PLATFORM_VISUAL_HEIGHT pixels are actually painted (see makeTexture("platform", ...)).
+  // Sprites default to a 64x64 frame centered on their (x, y), so the visual
+  // top edge of a platform sits PLATFORM_FRAME_HALF px above its y position.
+  const PLATFORM_FRAME_HALF = 32;
+  const PLATFORM_VISUAL_HEIGHT = 20;
+  const ENEMY_DISPLAY_WIDTH = 56;
+  const ENEMY_DISPLAY_HEIGHT = 44;
+
+  // Scroll popup: the box auto-sizes around whatever text it's given (see
+  // fitScrollPopupText/layoutScrollPopup) instead of using a fixed height,
+  // since scroll messages range from a single short line up to several
+  // full verses of scripture.
+  const SCROLL_POPUP_TOP = 118;
+  const SCROLL_POPUP_WIDTH = 640;
+  const SCROLL_POPUP_WRAP_WIDTH = 560;
+  const SCROLL_POPUP_PADDING_TOP = 14;
+  const SCROLL_POPUP_PADDING_BOTTOM = 14;
+  const SCROLL_POPUP_TITLE_GAP = 8;
+  const SCROLL_POPUP_BASE_FONT = 17;
+  const SCROLL_POPUP_MIN_FONT = 11;
+  const SCROLL_POPUP_MAX_TEXT_HEIGHT = 260;
+
+  // Story/ending panel: same idea as the scroll popup above, but here the
+  // story text ranges from a one-line summary up to a full multi-paragraph
+  // scripture passage (Level 2's is 1000+ characters with several verse
+  // breaks), so it needs several fallback levels - shrink the font, then
+  // tighten line spacing, then tighten paragraph spacing - before finally
+  // just accepting whatever fits so nothing ever overlaps.
+  const STORY_PANEL_MAX_WIDTH = 860;
+  const STORY_PANEL_SIDE_PADDING = 34;
+  const STORY_PANEL_TOP_BOTTOM_PADDING = 24;
+  const STORY_TOP_MARGIN = 18;
+  const STORY_BOTTOM_MARGIN = 46;
+  const STORY_ELEMENT_GAP = 12;
+  const STORY_TIGHT_ELEMENT_GAP = 6;
+  const STORY_NAME_FONT = 20;
+  const STORY_TITLE_FONT = 28;
+  const STORY_BUTTON_FONT = 22;
+  const STORY_HINT_FONT = 13;
+  const STORY_BASE_FONT = 19;
+  const STORY_MIN_FONT = 12;
 
   const LEVEL_LAYOUTS = [
     {
@@ -221,6 +263,7 @@
       this.load.image('scorpion', '../../assets/Scorpion.png');
       this.load.image('scroll', '../../assets/Scroll.png');
       this.load.image('tent', '../../assets/Tent.png');
+      this.load.image('city', '../../assets/City.png');
 
       this.load.on('loaderror', (file) => {
         console.error(`[Nephi Journey] Failed to load "${file.key}" from "${file.src}". Check that the file exists at that path (case-sensitive) relative to index.html.`);
@@ -349,61 +392,125 @@
 
       this.cameras.main.setBackgroundColor(0x10141a);
 
+      const panelWidth = Math.min(STORY_PANEL_MAX_WIDTH, width - 40);
+      const wrapWidth = panelWidth - STORY_PANEL_SIDE_PADDING * 2;
+
       const panel = this.add
-        .rectangle(width / 2, height / 2, Math.min(840, width - 40), 360, 0x101820, 0.92)
+        .rectangle(width / 2, height / 2, panelWidth, 360, 0x101820, 0.92)
         .setStrokeStyle(4, 0x5a6d7f, 1);
 
-      this.add
-        .text(width / 2, height / 2 - 120, level.name, {
+      // All content pieces are created with origin (0.5, 0) - centered
+      // horizontally, anchored at their own TOP edge - so they can be
+      // stacked top-to-bottom purely from measured heights, with no
+      // hardcoded offsets that long text could blow past.
+      const nameText = this.add
+        .text(width / 2, 0, level.name, {
           fontFamily: "Verdana",
-          fontSize: "22px",
+          fontSize: `${STORY_NAME_FONT}px`,
           color: "#f2c14e",
           fontStyle: "bold",
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5, 0);
 
-      this.add
-        .text(width / 2, height / 2 - 70, level.title, {
+      const titleText = this.add
+        .text(width / 2, 0, level.title, {
           fontFamily: "Verdana",
-          fontSize: "34px",
+          fontSize: `${STORY_TITLE_FONT}px`,
           color: "#f7edd9",
           fontStyle: "bold",
           align: "center",
-          wordWrap: { width: Math.min(760, width - 80) },
+          wordWrap: { width: wrapWidth },
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5, 0);
 
-      this.add
-        .text(width / 2, height / 2 + 5, level.story, {
+      const storyText = this.add
+        .text(width / 2, 0, level.story, {
           fontFamily: "Verdana",
-          fontSize: "20px",
+          fontSize: `${STORY_BASE_FONT}px`,
           color: "#d7e2ea",
           align: "center",
-          wordWrap: { width: Math.min(760, width - 80) },
+          wordWrap: { width: wrapWidth },
           lineSpacing: 8,
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5, 0);
 
       const startButton = this.add
-        .text(width / 2, height / 2 + 120, "Start", {
+        .text(width / 2, 0, "Start", {
           fontFamily: "Verdana",
-          fontSize: "24px",
+          fontSize: `${STORY_BUTTON_FONT}px`,
           color: "#111",
           backgroundColor: "#f2c14e",
-          padding: { left: 22, right: 22, top: 12, bottom: 12 },
+          padding: { left: 22, right: 22, top: 10, bottom: 10 },
           fontStyle: "bold",
         })
-        .setOrigin(0.5)
+        .setOrigin(0.5, 0)
         .setInteractive({ useHandCursor: true });
 
       const hint = this.add
-        .text(width / 2, height / 2 + 170, "Use arrow keys, space, or touch buttons to play.", {
+        .text(width / 2, 0, "Use arrow keys, space, or touch buttons to play.", {
           fontFamily: "Verdana",
-          fontSize: "14px",
+          fontSize: `${STORY_HINT_FONT}px`,
           color: "#9fb3c8",
           align: "center",
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5, 0);
+
+      const maxContentHeight = height - STORY_TOP_MARGIN - STORY_BOTTOM_MARGIN - STORY_PANEL_TOP_BOTTOM_PADDING * 2;
+
+      const measureTotalHeight = (gap) =>
+        nameText.height +
+        gap +
+        titleText.height +
+        gap +
+        storyText.height +
+        gap +
+        startButton.height +
+        gap +
+        hint.height;
+
+      // Stage 1: shrink the story font down to its floor.
+      let storyFontSize = STORY_BASE_FONT;
+      while (measureTotalHeight(STORY_ELEMENT_GAP) > maxContentHeight && storyFontSize > STORY_MIN_FONT) {
+        storyFontSize -= 1;
+        storyText.setFontSize(storyFontSize);
+      }
+
+      // Stage 2: still too tall (typically only for the longest scripture
+      // passages) - tighten the line spacing.
+      if (measureTotalHeight(STORY_ELEMENT_GAP) > maxContentHeight) {
+        storyText.setLineSpacing(3);
+      }
+
+      // Stage 3: still too tall - the gaps between paragraphs in the source
+      // text (blank lines) are costing as much vertical space as several
+      // lines of prose. Collapse them to single line breaks; this keeps
+      // every word but stops each verse from reserving a full blank line.
+      let gap = STORY_ELEMENT_GAP;
+      if (measureTotalHeight(gap) > maxContentHeight) {
+        storyText.setText(level.story.replace(/\n{2,}/g, "\n"));
+        gap = STORY_TIGHT_ELEMENT_GAP;
+      }
+
+      // Whatever the result, lay everything out top-to-bottom from the
+      // measured heights so nothing ever overlaps, even in the worst case.
+      const totalHeight = measureTotalHeight(gap);
+      const panelHeight = Math.min(
+        height - STORY_TOP_MARGIN * 2,
+        totalHeight + STORY_PANEL_TOP_BOTTOM_PADDING * 2
+      );
+      panel.setSize(panelWidth, panelHeight);
+      panel.setPosition(width / 2, height / 2);
+
+      let cursorY = height / 2 - panelHeight / 2 + STORY_PANEL_TOP_BOTTOM_PADDING;
+      nameText.setPosition(width / 2, cursorY);
+      cursorY += nameText.height + gap;
+      titleText.setPosition(width / 2, cursorY);
+      cursorY += titleText.height + gap;
+      storyText.setPosition(width / 2, cursorY);
+      cursorY += storyText.height + gap;
+      startButton.setPosition(width / 2, cursorY);
+      cursorY += startButton.height + gap;
+      hint.setPosition(width / 2, cursorY);
 
       const startGame = () => {
         this.scene.start("GameScene", { levelIndex });
@@ -420,7 +527,6 @@
           color: "#708090",
         })
         .setOrigin(0.5);
-
     }
   }
 
@@ -503,6 +609,10 @@
       this.buildTouchControls();
       this.setupInputs();
       this.applyCamera();
+
+      if (this.physics.world.debugGraphic) {
+        this.physics.world.debugGraphic.setDepth(1000);
+      }
     }
 
     buildBackdrop() {
@@ -609,28 +719,27 @@
     }
 
     drawCityBackdrop(bg, accentColor, stoneColor) {
-      const cityBlocks = [
-        { x: 240, y: 318, w: 180, h: 100, tower: true },
-        { x: 460, y: 290, w: 140, h: 128, tower: false },
-        { x: 720, y: 304, w: 210, h: 114, tower: true },
-        { x: 1020, y: 276, w: 180, h: 142, tower: false },
-        { x: 1300, y: 296, w: 220, h: 122, tower: true },
-        { x: 1600, y: 264, w: 170, h: 154, tower: false },
-        { x: 1960, y: 286, w: 230, h: 132, tower: true },
-        { x: 2320, y: 300, w: 190, h: 118, tower: false },
+      // A spread of overlapping City.png silhouettes reads as a continuous
+      // skyline across the level, the same way the old hand-drawn blocks did.
+      const skyline = [
+        { x: 260, y: 210, width: 440, height: 214, alpha: 0.2 },
+        { x: 760, y: 186, width: 480, height: 240, alpha: 0.24 },
+        { x: 1340, y: 202, width: 450, height: 220, alpha: 0.18 },
+        { x: 1900, y: 192, width: 470, height: 232, alpha: 0.22 },
+        { x: 2480, y: 206, width: 440, height: 212, alpha: 0.16 },
+        { x: 3040, y: 196, width: 470, height: 228, alpha: 0.2 },
       ];
 
-      cityBlocks.forEach((block, index) => {
-        bg.fillStyle(stoneColor, 0.18 + (index % 2) * 0.03);
-        bg.fillRect(block.x, block.y, block.w, block.h);
-        if (block.tower) {
-          this.drawTower(bg, block.x + block.w * 0.55, block.y, 58, 138, accentColor, 0.22);
-        }
+      skyline.forEach((spot) => {
+        this.add
+          .image(spot.x, spot.y, "city")
+          .setOrigin(0.5, 0)
+          .setDisplaySize(spot.width, spot.height)
+          .setTint(stoneColor)
+          .setAlpha(spot.alpha)
+          .setScrollFactor(0.2);
       });
 
-      this.drawDome(bg, 1840, 250, 160, 110, accentColor, 0.2);
-      this.drawTower(bg, 2940, 270, 72, 150, accentColor, 0.24);
-      this.drawTower(bg, 3600, 286, 66, 130, accentColor, 0.18);
       this.drawWallBand(bg, 0x3b342f, 0.12, 250);
       this.drawBanner(bg, 920, 278, accentColor, 0.18);
       this.drawBanner(bg, 3220, 300, accentColor, 0.16);
@@ -684,9 +793,15 @@
     }
 
     drawTent(bg, x, y, width, height, color, alpha) {
-      bg.fillStyle(color, alpha);
-      bg.fillTriangle(x, y + height, x + width / 2, y, x + width, y + height);
-      bg.fillRect(x + width * 0.46, y + height * 0.46, width * 0.08, height * 0.54);
+      // Matches the old triangle's bounding box exactly: left edge at x,
+      // right edge at x + width, top at y, bottom at y + height.
+      return this.add
+        .image(x + width / 2, y, "tent")
+        .setOrigin(0.5, 0)
+        .setDisplaySize(width, height)
+        .setTint(color)
+        .setAlpha(alpha)
+        .setScrollFactor(0.2);
     }
 
     drawSun(bg, x, y, radius, color, alpha) {
@@ -778,6 +893,11 @@
         for (let i = 0; i < tiles; i += 1) {
           const tile = ledges.create(platform.x + i * 64, platform.y, "platform");
           tile.refreshBody();
+          // Shrink the collision box to match the painted bar at the top of the
+          // 64x64 texture frame instead of the whole (mostly transparent) frame,
+          // so the walkable surface lines up with what's actually drawn on screen.
+          tile.body.setSize(64, PLATFORM_VISUAL_HEIGHT);
+          tile.body.setOffset(0, 0);
         }
       });
       this.ledges = ledges;
@@ -832,6 +952,20 @@
       }
     }
 
+    // Dynamic Arcade bodies interpret setSize(w, h) in the sprite's original,
+    // pre-scale texture space: the real on-screen box ends up being w*scaleX by
+    // h*scaleY. Since setDisplaySize() changes that scale to whatever the source
+    // image's native dimensions require, calling body.setSize(28, 48) after it
+    // does NOT reliably produce a 28x48 box - the real size depends on the raw
+    // pixel dimensions of the loaded artwork. This helper divides out the
+    // current scale so the resulting body always matches the requested size in
+    // actual display pixels, regardless of the source image's native size.
+    setDisplayBodyBox(sprite, boxWidth, boxHeight) {
+      const scaleX = sprite.scaleX || 1;
+      const scaleY = sprite.scaleY || 1;
+      sprite.body.setSize(boxWidth / scaleX, boxHeight / scaleY, true);
+    }
+
     buildPlayer() {
       const playerTexture = this.isShipLevel ? "ship" : "nephi";
       const playerY = this.isShipLevel ? this.waterlineY - 44 : this.groundY - 60;
@@ -841,18 +975,19 @@
       }
       this.player.setCollideWorldBounds(true);
       if (this.isShipLevel) {
-        this.player.body.setSize(50, 26, true);
+        this.setDisplayBodyBox(this.player, 50, 26);
         this.player.body.setAllowGravity(false);
         this.player.setBounce(0);
         this.player.setDragX(900);
       } else {
-        this.player.body.setSize(28, 48, true);
+        this.setDisplayBodyBox(this.player, 28, 48);
         this.player.setBounce(0.05);
         this.player.setDragX(1100);
 
         this.physics.add.collider(this.player, this.groundTiles);
         this.physics.add.collider(this.player, this.ledges);
       }
+      console.log(`[Nephi Journey] Player body: size=${this.player.body.width}x${this.player.body.height}, offset=${this.player.body.offset.x},${this.player.body.offset.y}, enabled=${this.player.body.enable}`);
     }
 
     buildEnemies() {
@@ -862,7 +997,8 @@
       const platformAnchors = this.getExpandedPlatforms(layout.platforms).map((platform) => ({
         left: platform.x,
         right: platform.x + platform.width,
-        top: platform.y - 20,
+        // True visual top surface of the platform (see PLATFORM_FRAME_HALF note above).
+        top: platform.y - PLATFORM_FRAME_HALF,
       }));
 
       layout.enemies.forEach((x) => {
@@ -871,8 +1007,8 @@
         const y = this.isShipLevel ? this.waterlineY + 34 + ((worldX / 300) % 2) * 12 : this.getLandEnemyY(worldX, platformAnchors);
         const texture = this.chooseEnemyTexture(worldX);
         const enemy = this.enemies.create(worldX, y, texture);
-        enemy.setDisplaySize(56, 44);
-        enemy.body.setSize(40, 34, true);
+        enemy.setDisplaySize(ENEMY_DISPLAY_WIDTH, ENEMY_DISPLAY_HEIGHT);
+        this.setDisplayBodyBox(enemy, 40, 34);
         const speedVariation = this.isShipLevel ? ENEMY_SPEED_VARIATION_SHIP : ENEMY_SPEED_VARIATION;
         const speedMultiplier = 1 + Phaser.Math.FloatBetween(-speedVariation, speedVariation);
         enemy.setData("speed", ENEMY_SPEED * speedMultiplier);
@@ -897,16 +1033,17 @@
         this.enemyConfigs.push(enemy);
       });
 
+      console.log(`[Nephi Journey] Built ${this.enemies.getLength()} enemies for level ${this.levelIndex}.`);
       this.physics.add.overlap(this.player, this.enemies, this.handleEnemyHit, null, this);
     }
 
     getLandEnemyY(x, platformAnchors) {
+      // Position the enemy's center so its feet (bottom of its display box)
+      // land exactly on the surface, whether that's a platform's visual top
+      // edge or the ground line.
       const platform = platformAnchors.find((anchor) => x >= anchor.left && x <= anchor.right);
-      if (platform) {
-        return platform.top;
-      }
-
-      return this.groundY - 20;
+      const surfaceY = platform ? platform.top : this.groundY;
+      return surfaceY - ENEMY_DISPLAY_HEIGHT / 2;
     }
 
     buildScrolls() {
@@ -1020,7 +1157,7 @@
         padding: { left: 10, right: 10, top: 6, bottom: 6 },
       }).setOrigin(1, 0).setScrollFactor(0);
 
-      this.scrollPopupBg = this.add.rectangle(this.scale.width / 2, 150, 620, 92, 0x101820, 0.92)
+      this.scrollPopupBg = this.add.rectangle(this.scale.width / 2, 150, SCROLL_POPUP_WIDTH, 92, 0x101820, 0.92)
         .setStrokeStyle(3, 0xf2c14e, 1)
         .setScrollFactor(0)
         .setVisible(false)
@@ -1028,10 +1165,10 @@
 
       this.scrollPopupText = this.add.text(this.scale.width / 2, 150, "", {
         fontFamily: "Verdana",
-        fontSize: "17px",
+        fontSize: `${SCROLL_POPUP_BASE_FONT}px`,
         color: "#f7edd9",
         align: "center",
-        wordWrap: { width: 560 },
+        wordWrap: { width: SCROLL_POPUP_WRAP_WIDTH },
         lineSpacing: 6,
       }).setOrigin(0.5).setScrollFactor(0).setVisible(false).setDepth(51);
 
@@ -1227,6 +1364,10 @@
             enemy.setData("direction", -1);
           }
           enemy.body.updateFromGameObject();
+
+          // These enemies patrol vertically instead of left/right, so mirror
+          // them top-to-bottom instead of left-to-right when they turn around.
+          enemy.flipY = enemy.getData("direction") < 0;
         } else {
           const direction = enemy.getData("direction");
           const minX = enemy.getData("minX");
@@ -1250,6 +1391,10 @@
             enemy.setData("direction", -1);
             enemy.setData("nextTurnAt", time + Phaser.Math.Between(turnRange.min, turnRange.max));
           }
+
+          // Art faces right by default (same convention as the player sprite),
+          // so mirror it whenever the enemy is currently heading left.
+          enemy.flipX = enemy.getData("direction") < 0;
         }
       });
     }
@@ -1265,6 +1410,13 @@
       }
     }
 
+    // Shared by showScrollPopup (how long the box stays up) and collectScroll
+    // (how long invincibility lasts) so the two can never drift apart - see
+    // note in collectScroll about why that matters.
+    getScrollDisplayDuration(message) {
+      return Phaser.Math.Clamp(1800 + message.length * 12, 2200, 9000);
+    }
+
     collectScroll(player, scroll) {
       if (!scroll.active) {
         return;
@@ -1276,8 +1428,48 @@
       if (this.scrollCountText) {
         this.scrollCountText.setText(`Scrolls: ${this.scrollsCollected}/${this.totalScrolls || 2}`);
       }
-      this.invincibleUntil = this.time.now + INVINCIBILITY_MS;
+      // Long scroll text can keep the popup on screen well past the base
+      // invincibility window, so the tint was quietly expiring before the
+      // player ever got the popup out of the way to actually see it. Make
+      // invincibility last at least as long as the popup, plus a bit extra
+      // so there's a clear window to notice the color change once it closes.
+      const popupDuration = this.getScrollDisplayDuration(popupText);
+      this.invincibleUntil = this.time.now + Math.max(INVINCIBILITY_MS, popupDuration + 1500);
       this.showScrollPopup(popupText);
+    }
+
+    // Shrinks the font (down to a floor) until the wrapped message fits within
+    // a sane height, so extremely long scroll text (some are full paragraphs
+    // of scripture) doesn't grow the popup past the playable screen.
+    fitScrollPopupText(message) {
+      let fontSize = SCROLL_POPUP_BASE_FONT;
+      this.scrollPopupText.setFontSize(fontSize);
+      this.scrollPopupText.setText(message);
+      while (this.scrollPopupText.height > SCROLL_POPUP_MAX_TEXT_HEIGHT && fontSize > SCROLL_POPUP_MIN_FONT) {
+        fontSize -= 1;
+        this.scrollPopupText.setFontSize(fontSize);
+      }
+    }
+
+    // Resizes and repositions the background box, title, and body text as a
+    // group so the box always fully encloses whatever text was just set,
+    // instead of using a fixed box size that longer messages could overflow.
+    layoutScrollPopup() {
+      const titleHeight = this.scrollPopupTitle.height;
+      const textHeight = this.scrollPopupText.height;
+      const boxHeight =
+        SCROLL_POPUP_PADDING_TOP + titleHeight + SCROLL_POPUP_TITLE_GAP + textHeight + SCROLL_POPUP_PADDING_BOTTOM;
+      const boxCenterY = SCROLL_POPUP_TOP + boxHeight / 2;
+      const centerX = this.scale.width / 2;
+
+      this.scrollPopupBg.setSize(SCROLL_POPUP_WIDTH, boxHeight);
+      this.scrollPopupBg.setPosition(centerX, boxCenterY);
+
+      const titleCenterY = SCROLL_POPUP_TOP + SCROLL_POPUP_PADDING_TOP + titleHeight / 2;
+      this.scrollPopupTitle.setPosition(centerX, titleCenterY);
+
+      const textCenterY = titleCenterY + titleHeight / 2 + SCROLL_POPUP_TITLE_GAP + textHeight / 2;
+      this.scrollPopupText.setPosition(centerX, textCenterY);
     }
 
     showScrollPopup(message) {
@@ -1286,7 +1478,9 @@
       }
 
       this.scrollPopupTitle.setText("Scroll Found");
-      this.scrollPopupText.setText(message);
+      this.fitScrollPopupText(message);
+      this.layoutScrollPopup();
+
       this.scrollPopupBg.setVisible(true);
       this.scrollPopupText.setVisible(true);
       this.scrollPopupTitle.setVisible(true);
@@ -1301,7 +1495,9 @@
         ease: "Sine.easeOut",
       });
 
-      this.scrollPopupTimer = this.time.delayedCall(2200, () => {
+      // Give longer scroll text more time on screen to actually be read.
+      const displayMs = this.getScrollDisplayDuration(message);
+      this.scrollPopupTimer = this.time.delayedCall(displayMs, () => {
         this.tweens.add({
           targets: [this.scrollPopupBg, this.scrollPopupText, this.scrollPopupTitle],
           alpha: 0,
@@ -1317,6 +1513,7 @@
     }
 
     handleEnemyHit(player, enemy) {
+      console.log(`[Nephi Journey] Overlap fired with ${enemy.texture.key} at x=${Math.round(enemy.x)}.`);
       if (this.time.now < this.invincibleUntil || this.levelFinished) {
         return;
       }
