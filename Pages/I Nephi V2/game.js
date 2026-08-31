@@ -278,7 +278,7 @@
       this.load.image('tent', '../../assets/Tent.png');
       this.load.image('city', '../../assets/City.png');
       this.load.image('guard', '../../assets/Guard.png');
-      this.load.image('laban', '../../assets/Laban.png');
+      this.load.image('laban', '../../assets/Laben.png');
 
       this.load.on('loaderror', (file) => {
         console.error(`[Nephi Journey] Failed to load "${file.key}" from "${file.src}". Check that the file exists at that path (case-sensitive) relative to index.html.`);
@@ -338,28 +338,6 @@
         g.fillRect(28, 32, 8, 20);
         g.lineStyle(3, 0x6b4a2f, 1);
         g.strokeTriangle(8, 52, 32, 10, 56, 52);
-      });
-
-      makeTexture("goal-gate", (g) => {
-        g.fillStyle(0x8b7a68, 1);
-        g.fillRect(12, 18, 12, 38);
-        g.fillRect(40, 18, 12, 38);
-        g.fillRect(10, 16, 44, 10);
-        g.fillStyle(0xf2c14e, 1);
-        g.fillRect(24, 30, 16, 26);
-        g.lineStyle(3, 0x5d5149, 1);
-        g.strokeRect(12, 18, 12, 38);
-        g.strokeRect(40, 18, 12, 38);
-      });
-
-      makeTexture("goal-book", (g) => {
-        g.fillStyle(0x6c4a2e, 1);
-        g.fillRoundedRect(10, 12, 44, 40, 6);
-        g.fillStyle(0xe6edf4, 1);
-        g.fillRect(16, 18, 14, 28);
-        g.fillRect(32, 18, 14, 28);
-        g.lineStyle(3, 0x3a2417, 1);
-        g.strokeRoundedRect(10, 12, 44, 40, 6);
       });
 
       makeTexture("goal-shore", (g) => {
@@ -1093,7 +1071,8 @@
       } else if (goalTextureKey === "city") {
         this.goal.setDisplaySize(150, 105);
       } else if (goalTextureKey === "laban") {
-        this.goal.setDisplaySize(72, 104);
+        // Width matches the guard sprite's height (GUARD_DISPLAY_HEIGHT).
+        this.goal.setDisplaySize(GUARD_DISPLAY_HEIGHT, 104);
       } else {
         this.goal.setScale(this.levelIndex === 2 ? 1.18 : 1.1);
       }
