@@ -22,6 +22,19 @@
   const PLATFORM_VISUAL_HEIGHT = 20;
   const ENEMY_DISPLAY_WIDTH = 56;
   const ENEMY_DISPLAY_HEIGHT = 44;
+  const ENEMY_BODY_WIDTH = 40;
+  const ENEMY_BODY_HEIGHT = 34;
+  // Nephi's own sprite/hitbox dimensions (see buildPlayer) - kept here as
+  // named constants so other things (like the guard sizing below) can be
+  // defined relative to them instead of duplicating magic numbers.
+  const PLAYER_DISPLAY_WIDTH = 40;
+  const PLAYER_DISPLAY_HEIGHT = 60;
+  const PLAYER_BODY_WIDTH = 28;
+  const PLAYER_BODY_HEIGHT = 48;
+  // Guards (Level 3) should stand 10% taller than Nephi, both visually and
+  // in their collision box, while keeping the same width as other enemies.
+  const GUARD_DISPLAY_HEIGHT = PLAYER_DISPLAY_HEIGHT * 1.1;
+  const GUARD_BODY_HEIGHT = PLAYER_BODY_HEIGHT * 1.1;
 
   // Scroll popup: the box auto-sizes around whatever text it's given (see
   // fitScrollPopupText/layoutScrollPopup) instead of using a fixed height,
@@ -264,6 +277,7 @@
       this.load.image('scroll', '../../assets/Scroll.png');
       this.load.image('tent', '../../assets/Tent.png');
       this.load.image('city', '../../assets/City.png');
+      this.load.image('guard', '../../assets/Guard.png');
 
       this.load.on('loaderror', (file) => {
         console.error(`[Nephi Journey] Failed to load "${file.key}" from "${file.src}". Check that the file exists at that path (case-sensitive) relative to index.html.`);
@@ -971,7 +985,7 @@
       const playerY = this.isShipLevel ? this.waterlineY - 44 : this.groundY - 60;
       this.player = this.physics.add.sprite(90, playerY, playerTexture);
       if (!this.isShipLevel) {
-        this.player.setDisplaySize(40, 60);
+        this.player.setDisplaySize(PLAYER_DISPLAY_WIDTH, PLAYER_DISPLAY_HEIGHT);
       }
       this.player.setCollideWorldBounds(true);
       if (this.isShipLevel) {
@@ -980,7 +994,7 @@
         this.player.setBounce(0);
         this.player.setDragX(900);
       } else {
-        this.setDisplayBodyBox(this.player, 28, 48);
+        this.setDisplayBodyBox(this.player, PLAYER_BODY_WIDTH, PLAYER_BODY_HEIGHT);
         this.player.setBounce(0.05);
         this.player.setDragX(1100);
 
@@ -1004,11 +1018,16 @@
       layout.enemies.forEach((x) => {
         const worldX = x * LEVEL_X_SCALE;
         const supportPlatform = platformAnchors.find((anchor) => worldX >= anchor.left && worldX <= anchor.right);
-        const y = this.isShipLevel ? this.waterlineY + 34 + ((worldX / 300) % 2) * 12 : this.getLandEnemyY(worldX, platformAnchors);
         const texture = this.chooseEnemyTexture(worldX);
+        const isGuard = texture === "guard";
+        const displayHeight = isGuard ? GUARD_DISPLAY_HEIGHT : ENEMY_DISPLAY_HEIGHT;
+        const bodyHeight = isGuard ? GUARD_BODY_HEIGHT : ENEMY_BODY_HEIGHT;
+        const y = this.isShipLevel
+          ? this.waterlineY + 34 + ((worldX / 300) % 2) * 12
+          : this.getLandEnemyY(worldX, platformAnchors, displayHeight);
         const enemy = this.enemies.create(worldX, y, texture);
-        enemy.setDisplaySize(ENEMY_DISPLAY_WIDTH, ENEMY_DISPLAY_HEIGHT);
-        this.setDisplayBodyBox(enemy, 40, 34);
+        enemy.setDisplaySize(ENEMY_DISPLAY_WIDTH, displayHeight);
+        this.setDisplayBodyBox(enemy, ENEMY_BODY_WIDTH, bodyHeight);
         const speedVariation = this.isShipLevel ? ENEMY_SPEED_VARIATION_SHIP : ENEMY_SPEED_VARIATION;
         const speedMultiplier = 1 + Phaser.Math.FloatBetween(-speedVariation, speedVariation);
         enemy.setData("speed", ENEMY_SPEED * speedMultiplier);
@@ -1037,13 +1056,14 @@
       this.physics.add.overlap(this.player, this.enemies, this.handleEnemyHit, null, this);
     }
 
-    getLandEnemyY(x, platformAnchors) {
+    getLandEnemyY(x, platformAnchors, displayHeight = ENEMY_DISPLAY_HEIGHT) {
       // Position the enemy's center so its feet (bottom of its display box)
       // land exactly on the surface, whether that's a platform's visual top
-      // edge or the ground line.
+      // edge or the ground line. displayHeight is passed in per-enemy since
+      // guards are taller than the other enemies (see GUARD_DISPLAY_HEIGHT).
       const platform = platformAnchors.find((anchor) => x >= anchor.left && x <= anchor.right);
       const surfaceY = platform ? platform.top : this.groundY;
-      return surfaceY - ENEMY_DISPLAY_HEIGHT / 2;
+      return surfaceY - displayHeight / 2;
     }
 
     buildScrolls() {
@@ -1248,6 +1268,11 @@
     }
 
     chooseEnemyTexture(x) {
+      // Level 3 ("The Streets of Jerusalem") is patrolled by city guards
+      // rather than the desert wildlife used everywhere else.
+      if (this.levelIndex === 2) {
+        return "guard";
+      }
       return (Math.floor(x / ENEMY_SPACING) % 2 === 0) ? "snake" : "scorpion";
     }
 
