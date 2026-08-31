@@ -6,7 +6,10 @@
   const GRAVITY_Y = 1400;
   const PLAYER_SPEED = 220;
   const PLAYER_JUMP = 840;
-  const INVINCIBILITY_MS = 5000;
+  // Invincibility now always runs for a fixed window starting the instant the
+  // game resumes from a scroll popup (see collectScroll), rather than being
+  // tied to how long the popup happened to stay open.
+  const INVINCIBILITY_MS = 3000;
   const ENEMY_SPACING = 300;
   const ENEMY_RANGE = 20;
   const LAND_ENEMY_RANGE = ENEMY_RANGE * 6;
@@ -46,6 +49,7 @@
   const SCROLL_POPUP_PADDING_TOP = 14;
   const SCROLL_POPUP_PADDING_BOTTOM = 14;
   const SCROLL_POPUP_TITLE_GAP = 8;
+  const SCROLL_POPUP_BUTTON_GAP = 14;
   const SCROLL_POPUP_BASE_FONT = 17;
   const SCROLL_POPUP_MIN_FONT = 11;
   const SCROLL_POPUP_MAX_TEXT_HEIGHT = 260;
@@ -282,6 +286,13 @@
 
       this.load.on('loaderror', (file) => {
         console.error(`[Nephi Journey] Failed to load "${file.key}" from "${file.src}". Check that the file exists at that path (case-sensitive) relative to index.html.`);
+        if (file.key === 'laban') {
+          // "Laben.png" is an easy typo for "Laban.png" (the more common
+          // spelling) - if the first attempt 404s, try the alternate
+          // spelling automatically instead of leaving the goal blank.
+          console.warn('[Nephi Journey] Retrying "laban" as "../../assets/Laban.png"...');
+          this.load.image('laban', '../../assets/Laban.png');
+        }
       });
     }
 
@@ -584,6 +595,7 @@
       this.waterlineY = 346;
       this.invincibleUntil = 0;
       this.levelFinished = false;
+      this.gamePaused = false;
       this.scrollsCollected = 0;
       this.touchState = { left: false, right: false, jumpQueued: false };
 
@@ -1063,7 +1075,8 @@
     }
 
     buildGoal() {
-      const goalY = this.isShipLevel ? this.waterlineY - 46 : this.groundY - 58;
+      let goalY = this.isShipLevel ? this.waterlineY - 46 : this.groundY - 58;
+      let labelOffsetY = -70;
       const goalTextureKey = this.getGoalTextureKey();
       this.goal = this.physics.add.staticSprite(WORLD_WIDTH - 92, goalY, goalTextureKey);
       if (goalTextureKey === "tent") {
@@ -1071,14 +1084,30 @@
       } else if (goalTextureKey === "city") {
         this.goal.setDisplaySize(150, 105);
       } else if (goalTextureKey === "laban") {
-        // Width matches the guard sprite's height (GUARD_DISPLAY_HEIGHT).
-        this.goal.setDisplaySize(GUARD_DISPLAY_HEIGHT, 104);
+        // Fix the width to match 2.25x the guard sprite's height (3x, then
+        // scaled down another 25%), and derive the display height from
+        // Laban.png's own native aspect ratio instead of a second hardcoded
+        // number - otherwise the art gets squished/stretched to whatever
+        // arbitrary box we picked.
+        const targetWidth = GUARD_DISPLAY_HEIGHT * 3 * 0.75;
+        const aspectRatio = this.goal.height / this.goal.width;
+        const targetHeight = targetWidth * aspectRatio;
+        this.goal.setDisplaySize(targetWidth, targetHeight);
+        // Put Laban's own vertical midpoint on the same plane Nephi stands
+        // on, rather than aligning his feet to it like the other, smaller
+        // goal icons do.
+        goalY = this.groundY;
+        this.goal.setY(goalY);
+        // The fixed -70 label offset was tuned for the old, much smaller
+        // icons; scale it off Laban's actual height so the label still
+        // sits just above his head instead of over his torso.
+        labelOffsetY = -(targetHeight / 2 + 20);
       } else {
         this.goal.setScale(this.levelIndex === 2 ? 1.18 : 1.1);
       }
       this.goal.refreshBody();
       this.goal.setDepth(5);
-      this.goalLabel = this.add.text(WORLD_WIDTH - 120, goalY - 70, this.getGoalLabel(), {
+      this.goalLabel = this.add.text(WORLD_WIDTH - 120, goalY + labelOffsetY, this.getGoalLabel(), {
         fontFamily: "Verdana",
         fontSize: "14px",
         color: "#f7edd9",
@@ -1186,6 +1215,20 @@
         fontStyle: "bold",
         letterSpacing: 1,
       }).setOrigin(0.5).setScrollFactor(0).setVisible(false).setDepth(51);
+
+      this.scrollPopupButton = this.add.text(this.scale.width / 2, 150, "Proceed", {
+        fontFamily: "Verdana",
+        fontSize: "16px",
+        color: "#111",
+        backgroundColor: "#f2c14e",
+        padding: { left: 20, right: 20, top: 8, bottom: 8 },
+        fontStyle: "bold",
+      })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setVisible(false)
+        .setDepth(51)
+        .setInteractive({ useHandCursor: true });
     }
 
     buildTouchControls() {
@@ -1296,7 +1339,7 @@
     }
 
     update(time) {
-      if (!this.player || this.levelFinished) {
+      if (!this.player || this.levelFinished || this.gamePaused) {
         return;
       }
 
@@ -1422,13 +1465,6 @@
       }
     }
 
-    // Shared by showScrollPopup (how long the box stays up) and collectScroll
-    // (how long invincibility lasts) so the two can never drift apart - see
-    // note in collectScroll about why that matters.
-    getScrollDisplayDuration(message) {
-      return Phaser.Math.Clamp(1800 + message.length * 12, 2200, 9000);
-    }
-
     collectScroll(player, scroll) {
       if (!scroll.active) {
         return;
@@ -1440,14 +1476,27 @@
       if (this.scrollCountText) {
         this.scrollCountText.setText(`Scrolls: ${this.scrollsCollected}/${this.totalScrolls || 2}`);
       }
-      // Long scroll text can keep the popup on screen well past the base
-      // invincibility window, so the tint was quietly expiring before the
-      // player ever got the popup out of the way to actually see it. Make
-      // invincibility last at least as long as the popup, plus a bit extra
-      // so there's a clear window to notice the color change once it closes.
-      const popupDuration = this.getScrollDisplayDuration(popupText);
-      this.invincibleUntil = this.time.now + Math.max(INVINCIBILITY_MS, popupDuration + 1500);
-      this.showScrollPopup(popupText);
+
+      // Freeze gameplay while the player reads the scroll text - both the
+      // Arcade physics step (so nothing moves or collides) and our own
+      // update() loop (see the gamePaused check there, which also covers
+      // the ship level's manual, non-physics position updates).
+      this.gamePaused = true;
+      this.physics.world.pause();
+
+      this.showScrollPopup(popupText, () => {
+        this.physics.world.resume();
+        this.gamePaused = false;
+        // Invincibility starts fresh from the moment the game resumes, not
+        // from when the scroll was picked up.
+        this.invincibleUntil = this.time.now + INVINCIBILITY_MS;
+        // Space (and Up/W) can also close the popup, so clear their "just
+        // pressed" state - otherwise that same keypress also registers as a
+        // jump input the instant update() starts running again.
+        this.cursors.up.reset();
+        this.keySpace.reset();
+        this.keyW.reset();
+      });
     }
 
     // Shrinks the font (down to a floor) until the wrapped message fits within
@@ -1463,14 +1512,22 @@
       }
     }
 
-    // Resizes and repositions the background box, title, and body text as a
-    // group so the box always fully encloses whatever text was just set,
-    // instead of using a fixed box size that longer messages could overflow.
+    // Resizes and repositions the background box, title, body text, and
+    // Proceed button as a group so the box always fully encloses whatever
+    // text was just set, instead of using a fixed box size that longer
+    // messages could overflow.
     layoutScrollPopup() {
       const titleHeight = this.scrollPopupTitle.height;
       const textHeight = this.scrollPopupText.height;
+      const buttonHeight = this.scrollPopupButton.height;
       const boxHeight =
-        SCROLL_POPUP_PADDING_TOP + titleHeight + SCROLL_POPUP_TITLE_GAP + textHeight + SCROLL_POPUP_PADDING_BOTTOM;
+        SCROLL_POPUP_PADDING_TOP +
+        titleHeight +
+        SCROLL_POPUP_TITLE_GAP +
+        textHeight +
+        SCROLL_POPUP_BUTTON_GAP +
+        buttonHeight +
+        SCROLL_POPUP_PADDING_BOTTOM;
       const boxCenterY = SCROLL_POPUP_TOP + boxHeight / 2;
       const centerX = this.scale.width / 2;
 
@@ -1482,46 +1539,51 @@
 
       const textCenterY = titleCenterY + titleHeight / 2 + SCROLL_POPUP_TITLE_GAP + textHeight / 2;
       this.scrollPopupText.setPosition(centerX, textCenterY);
+
+      const buttonCenterY = textCenterY + textHeight / 2 + SCROLL_POPUP_BUTTON_GAP + buttonHeight / 2;
+      this.scrollPopupButton.setPosition(centerX, buttonCenterY);
     }
 
-    showScrollPopup(message) {
-      if (this.scrollPopupTimer) {
-        this.scrollPopupTimer.remove(false);
-      }
-
+    // Shows the scroll popup and pauses gameplay until the player clicks
+    // Proceed, then calls onProceed (used by collectScroll to resume the
+    // game and start invincibility from that exact moment).
+    showScrollPopup(message, onProceed) {
       this.scrollPopupTitle.setText("Scroll Found");
       this.fitScrollPopupText(message);
       this.layoutScrollPopup();
 
-      this.scrollPopupBg.setVisible(true);
-      this.scrollPopupText.setVisible(true);
-      this.scrollPopupTitle.setVisible(true);
-      this.scrollPopupBg.setAlpha(0);
-      this.scrollPopupText.setAlpha(0);
-      this.scrollPopupTitle.setAlpha(0);
+      const elements = [this.scrollPopupBg, this.scrollPopupText, this.scrollPopupTitle, this.scrollPopupButton];
+      elements.forEach((element) => {
+        element.setVisible(true);
+        element.setAlpha(0);
+      });
 
       this.tweens.add({
-        targets: [this.scrollPopupBg, this.scrollPopupText, this.scrollPopupTitle],
+        targets: elements,
         alpha: 1,
         duration: 180,
         ease: "Sine.easeOut",
       });
 
-      // Give longer scroll text more time on screen to actually be read.
-      const displayMs = this.getScrollDisplayDuration(message);
-      this.scrollPopupTimer = this.time.delayedCall(displayMs, () => {
+      const proceed = () => {
+        this.scrollPopupButton.off("pointerdown", proceed);
+        this.input.keyboard.off("keydown-ENTER", proceed);
+        this.input.keyboard.off("keydown-SPACE", proceed);
         this.tweens.add({
-          targets: [this.scrollPopupBg, this.scrollPopupText, this.scrollPopupTitle],
+          targets: elements,
           alpha: 0,
           duration: 220,
           ease: "Sine.easeIn",
           onComplete: () => {
-            this.scrollPopupBg.setVisible(false);
-            this.scrollPopupText.setVisible(false);
-            this.scrollPopupTitle.setVisible(false);
+            elements.forEach((element) => element.setVisible(false));
+            onProceed();
           },
         });
-      });
+      };
+
+      this.scrollPopupButton.on("pointerdown", proceed);
+      this.input.keyboard.on("keydown-ENTER", proceed);
+      this.input.keyboard.on("keydown-SPACE", proceed);
     }
 
     handleEnemyHit(player, enemy) {
