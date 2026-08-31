@@ -278,6 +278,7 @@
       this.load.image('tent', '../../assets/Tent.png');
       this.load.image('city', '../../assets/City.png');
       this.load.image('guard', '../../assets/Guard.png');
+      this.load.image('laban', '../../assets/Laban.png');
 
       this.load.on('loaderror', (file) => {
         console.error(`[Nephi Journey] Failed to load "${file.key}" from "${file.src}". Check that the file exists at that path (case-sensitive) relative to index.html.`);
@@ -1089,6 +1090,10 @@
       this.goal = this.physics.add.staticSprite(WORLD_WIDTH - 92, goalY, goalTextureKey);
       if (goalTextureKey === "tent") {
         this.goal.setDisplaySize(90, 60);
+      } else if (goalTextureKey === "city") {
+        this.goal.setDisplaySize(150, 105);
+      } else if (goalTextureKey === "laban") {
+        this.goal.setDisplaySize(72, 104);
       } else {
         this.goal.setScale(this.levelIndex === 2 ? 1.18 : 1.1);
       }
@@ -1111,9 +1116,12 @@
         case 3:
           return "tent";
         case 1:
-          return "goal-gate";
+          // End of Level 2 ("Back to Jerusalem") - reusing the same 'city'
+          // texture already loaded for the Level 3 skyline backdrop.
+          return "city";
         case 2:
-          return "goal-book";
+          // End of Level 3 ("The Streets of Jerusalem") - confronting Laban.
+          return "laban";
         case 4:
           return "goal-shore";
         case 5:
