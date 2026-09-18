@@ -1,6 +1,6 @@
 # Game behavior specs
 
-These docs describe how each screen-based game behaves today, so the React rewrite can be checked against them. They are written from the legacy source (tag `legacy-static`), which stays playable during the migration from `public/legacy/`, so you can compare old and new side by side.
+These docs describe how each game behaved before the React rewrite, so the rewrite can be checked against them. They were written from the legacy source (tag `legacy-static`). The old pages stay playable under `/legacy/` during the migration, so you can compare old and new side by side.
 
 Each doc has the same sections:
 
@@ -15,11 +15,11 @@ Each doc has the same sections:
 
 | Game | Legacy source | New route | Doc |
 |---|---|---|---|
-| Rock Paper Scissors | `Pages/RPSApp-master/` | `/games/rock-paper-scissors` | [rock-paper-scissors.md](rock-paper-scissors.md) |
-| Memory Game | `Pages/MemoryGame-master/` | `/games/memory-game` | [memory-game.md](memory-game.md) |
-| Battleship | `Pages/Battleship/` | `/games/battleship` | [battleship.md](battleship.md) |
-| Resistor Challenge | `Pages/ResistorsJS-master/` | `/games/resistor-challenge` | [resistor-challenge.md](resistor-challenge.md) |
-| Apostle Flashcards | `Pages/LDS Flashcards/` | `/games/apostle-flashcards` | [apostle-flashcards.md](apostle-flashcards.md) |
+| Rock Paper Scissors | `public/legacy/Pages/RPSApp-master/` | `/games/rock-paper-scissors` | [rock-paper-scissors.md](rock-paper-scissors.md) |
+| Memory Game | `public/legacy/Pages/MemoryGame-master/` | `/games/memory-game` | [memory-game.md](memory-game.md) |
+| Battleship | `public/legacy/Pages/Battleship/` | `/games/battleship` | [battleship.md](battleship.md) |
+| Resistor Challenge | `public/legacy/Pages/ResistorsJS-master/` | `/games/resistor-challenge` | [resistor-challenge.md](resistor-challenge.md) |
+| Apostle Flashcards | `public/legacy/Pages/LDS Flashcards/` | `/games/apostle-flashcards` | [apostle-flashcards.md](apostle-flashcards.md) |
 
 ### Canvas games
 
@@ -27,11 +27,11 @@ These aren't rewritten. Each is an ES module that exports `start(container)`, wh
 
 | Game | Legacy source | New route | Doc |
 |---|---|---|---|
-| Retro Dungeon Crawler | `Pages/RetroCrawler/` | `/games/retro-dungeon-crawler` | [retro-dungeon-crawler.md](retro-dungeon-crawler.md) |
-| Carmen Racing | `Pages/Carmen Racing/` | `/games/carmen-racing` | [carmen-racing.md](carmen-racing.md) |
-| I, Nephi | `Pages/I Nephi V2/` | `/games/i-nephi` | [i-nephi.md](i-nephi.md) |
+| Retro Dungeon Crawler | `public/legacy/Pages/RetroCrawler/` | `/games/retro-dungeon-crawler` | [retro-dungeon-crawler.md](retro-dungeon-crawler.md) |
+| Carmen Racing | `public/legacy/Pages/Carmen Racing/` | `/games/carmen-racing` | [carmen-racing.md](carmen-racing.md) |
+| I, Nephi | `public/legacy/Pages/I Nephi V2/` | `/games/i-nephi` | [i-nephi.md](i-nephi.md) |
 
-Because the canvas games are ES modules, their legacy pages need to be served over HTTP (for example `python3 -m http.server` from the repo root). Opening the HTML files directly (`file://`) no longer works.
+These three are now rebuilt in React (see each doc's **Status**). Their old pages are still in `public/legacy/` for comparison, but the site no longer links to them.
 
 ## Shared across games
 

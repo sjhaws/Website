@@ -63,7 +63,7 @@ export function start(container) {
       <button type="button" class="${styles.start}">Start</button>
       <button type="button" class="${styles.arrow} ${styles.arrowRight}" aria-label="Right">→</button>
       <div class="${styles.instructions}">
-        Use <b class="${styles.key}">←</b> and <b class="${styles.key}">→</b> to steer. Avoid obstacles and collect flags!<br>
+        Use the <b>left</b> and <b>right</b> arrow keys to steer. Avoid obstacles and collect flags!<br>
         Press <b>Space</b> to start or restart.<br>
         <span class="${styles.small}">On mobile, use the arrow buttons.</span>
       </div>

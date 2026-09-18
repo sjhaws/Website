@@ -27,7 +27,7 @@ Then open http://localhost:5173.
 - `src/games/registry.ts`: the list of games on the Games menu
 - `src/games/<slug>/`: one folder per game, with its code, styles and images
 - `src/games/GameHost.tsx`: runs a canvas game (a module exporting `start(container)`, which returns `stop()`) while its page is open
-- `src/pages/`: Home, Games, Just for Fun and About
+- `src/pages/`: Home, Games, Sandbox and About
 - `src/styles/tokens.css`: the site's colors, fonts and sizes
 - `public/legacy/`: the old static site. Games that haven't been rebuilt in React yet are linked from the Games menu and open from here.
 - `docs/games/`: how each game behaves, the decisions for its rebuild, and a checklist to test it against

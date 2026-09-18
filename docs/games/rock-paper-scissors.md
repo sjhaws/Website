@@ -1,6 +1,6 @@
 # Rock Paper Scissors
 
-- **Legacy:** `Pages/RPSApp-master/` (`index.html`, `js/main.js`, `css/main.css`, `images/`)
+- **Legacy:** `public/legacy/Pages/RPSApp-master/` (`index.html`, `js/main.js`, `css/main.css`, `images/`)
 - **New route:** `/games/rock-paper-scissors`
 
 Endless rounds against a computer that picks at random. The only state is three running totals.

@@ -103,11 +103,11 @@ export function Component() {
               Degree focusing on Human Resources.
             </p>
             <p>
-              For the first 4 years of my carreer, I worked as an in HR starting
-              as an Assistant and working my way up to Generalist and
-              Constultant. I then joined the IT department to help build a new
-              HRIS system in house, got trained as a developer and system
-              administrator, and worked on the project for 3 years.
+              For the first 4 years of my career, I worked in HR starting as an
+              Assistant and working my way up to Generalist and Consultant. I
+              then joined the IT department to help build a new HRIS system in
+              house, got trained as a developer and system administrator, and
+              worked on the project for 3 years.
             </p>
             <p>
               After that project ended, I worked as the IT Manager for a growing
@@ -120,7 +120,7 @@ export function Component() {
             <p>
               After 4 years, they were purchased by a larger company and I was
               moved to a new position as the IT Project Manager working with
-              NetSuite, Workday, our Active Directory (hyrbrid).
+              NetSuite, Workday, and our Active Directory (hybrid).
             </p>
           </>
         )}
@@ -139,11 +139,11 @@ export function Component() {
             <p>
               My friends and family know me best for my eclectic hobbies, and
               above are two of the most unique. I enjoy riding my recumbent
-              trike and making atisanal cheeses.
+              trike and making artisanal cheeses.
             </p>
             <p>
-              Some of my other hobbies include tinking with my Linux box,
-              working on an augmented reality app for a company call Aryzon,
+              Some of my other hobbies include tinkering with my Linux box,
+              working on an augmented reality app for a company called Aryzon,
               playing retro video games, water fights, and racquetball.
             </p>
             <img
@@ -158,16 +158,15 @@ export function Component() {
             <h2>Family</h2>
             <hr />
             <p>
-              A few years after gratuating from Utah State University, I ran
+              A few years after graduating from Utah State University, I ran
               into one of my friends from college. Unknown to her, I had wanted
               to date her in college but didn't have the courage to ask her out.
               After a few months of catching up, we started dating and were
               quickly married.
             </p>
             <p>
-              We now have a four more members of our family, all of whom get
-              their stubbornness from their father and kindess from their
-              mother.
+              We now have four more members of our family, all of whom get their
+              stubbornness from their father and kindness from their mother.
             </p>
           </>
         )}

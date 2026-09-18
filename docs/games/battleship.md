@@ -1,6 +1,6 @@
 # Battleship
 
-- **Legacy:** `Pages/Battleship/` (`index.html`, `game.js`, `style.css`); ship art in `assets/*.webp`
+- **Legacy:** `public/legacy/Pages/Battleship/` (`index.html`, `game.js`, `style.css`); ship art in `public/legacy/assets/*.webp`
 - **New route:** `/games/battleship`
 
 Classic Battleship against a computer. Place five ships, then take turns firing until one fleet is sunk.

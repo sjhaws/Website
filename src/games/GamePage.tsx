@@ -16,10 +16,7 @@ export function GamePage({
       <title>{`${title} · HawsFun`}</title>
       <div className={styles.top}>
         <Link to="/games" className={styles.back}>
-          <span className={styles.arrow} aria-hidden="true">
-            ←
-          </span>{' '}
-          Back to Games
+          <span aria-hidden="true">&lt;</span> Back to Games
         </Link>
         <h1 className={styles.title}>{title}</h1>
       </div>

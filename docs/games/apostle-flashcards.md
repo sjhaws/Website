@@ -1,6 +1,6 @@
 # Apostle Flashcards
 
-- **Legacy:** `Pages/LDS Flashcards/called-to-serve-flashcards.html`. One self-contained file holding all the CSS, JS, leader data and 15 photos embedded as base64.
+- **Legacy:** `public/legacy/Pages/LDS Flashcards/called-to-serve-flashcards.html`. One self-contained file holding all the CSS, JS, leader data and 15 photos embedded as base64.
 - **New route:** `/games/apostle-flashcards`
 
 "Called to Serve — Flashcards". Each card shows one fact about a member of the First Presidency or the Quorum of the Twelve Apostles, and you pick that leader's name from a roster.

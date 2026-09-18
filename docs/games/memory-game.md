@@ -1,6 +1,6 @@
 # Memory Game
 
-- **Legacy:** `Pages/MemoryGame-master/` (`index.html`, `js/main.js`, `css/main.css`, `images/`, plus Bootstrap 3 in `css/bootstrap16/`)
+- **Legacy:** `public/legacy/Pages/MemoryGame-master/` (`index.html`, `js/main.js`, `css/main.css`, `images/`, plus Bootstrap 3 in `css/bootstrap16/`)
 - **New route:** `/games/memory-game`
 
 Find the 10 pairs of animals among 20 face-down cards. The game counts tries and time.

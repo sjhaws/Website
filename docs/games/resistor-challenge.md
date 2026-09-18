@@ -1,6 +1,6 @@
 # Resistor Challenge
 
-- **Legacy:** `Pages/ResistorsJS-master/` (`index.html`, `index.js`, `main.css`, `download.jpeg`, `Color code.png`)
+- **Legacy:** `public/legacy/Pages/ResistorsJS-master/` (`index.html`, `index.js`, `main.css`, `download.jpeg`, `Color code.png`)
 - **New route:** `/games/resistor-challenge`
 
 Read the color bands on a resistor and type its resistance and tolerance. You get as many correct as you can in 60 seconds.

@@ -18,12 +18,6 @@
   text-decoration: none;
 }
 
-/* Press Start 2P has no arrow glyphs, so draw this one in the system font. */
-.arrow {
-  font-family: var(--font-body);
-  font-size: 1.4em;
-}
-
 .back:hover {
   color: var(--color-white);
   text-decoration: underline;

@@ -1,7 +1,8 @@
 # Carmen Racing
 
-- **Legacy:** `Pages/Carmen Racing/` (`game.js` module, `index.html`, `style.css`); sprites in `assets/Carmen.webp`, `car.webp`, `tree.webp`
+- **Legacy:** `public/legacy/Pages/Carmen Racing/` (`game.js` module, `index.html`, `style.css`); sprites in `public/legacy/assets/`
 - **New route:** `/games/carmen-racing`
+- **Status:** rebuilt in React in `src/games/carmen-racing/` (2026-09-18). Every **Fix** and **Decided** item below is done; use the regression checklist to test it. The legacy copy is no longer linked from the site and can be deleted once you're happy with the React version.
 - **Type:** canvas game, moved into React as-is through `start(container)` / `stop()`
 
 An endless top-down racer on a three-lane road. Dodge cars, collect flags, and the road keeps speeding up.
@@ -48,7 +49,7 @@ While running it holds:
 | Behavior | Action |
 |---|---|
 | Movement is per frame, so on a 120 Hz or 144 Hz display the whole game runs 2 to 2.4 times faster | **Fix:** scale movement by elapsed time |
-| The ← and → in the instructions show as `_` in the Press Start 2P font | **Fix** |
+| The ← and → in the instructions show as `_` in the Press Start 2P font | **Fix:** the instructions now say "left and right arrow keys" in words |
 | The on-screen arrows only respond to touch, so in a narrow desktop window they show but don't work with a mouse | **Fix:** use pointer events |
 | Whether the game counts as "mobile" is rechecked every frame, so resizing mid-race changes the top speed | **Fix:** decide once per race |
 | Space and the arrow keys also scroll the page | **Fix:** `preventDefault()` for game keys |

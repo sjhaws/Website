@@ -25,12 +25,6 @@
   text-shadow: 1px 1px 0 #ff00c8;
 }
 
-/* Press Start 2P has no arrow glyphs, so draw these in the system font. */
-.key {
-  font-family: var(--font-body);
-  font-size: 1.3em;
-}
-
 .small {
   font-size: 0.9em;
 }

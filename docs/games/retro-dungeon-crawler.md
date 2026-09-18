@@ -1,7 +1,8 @@
 # Retro Dungeon Crawler
 
-- **Legacy:** `Pages/RetroCrawler/` (`game.js` module, `index.html`, `style.css`)
+- **Legacy:** `public/legacy/Pages/RetroCrawler/` (`game.js` module, `index.html`, `style.css`)
 - **New route:** `/games/retro-dungeon-crawler`
+- **Status:** rebuilt in React in `src/games/retro-dungeon-crawler/` (2026-09-18). Every **Fix** and **Decided** item below is done; use the regression checklist to test it. The legacy copy is no longer linked from the site and can be deleted once you're happy with the React version.
 - **Type:** canvas game, moved into React as-is through `start(container)` / `stop()`
 
 Walk a randomly generated dungeon from the top-left corner to the exit in the bottom-right, avoiding enemies. Each level adds more enemies.
