@@ -2,6 +2,7 @@
 
 - **Legacy:** `public/legacy/Pages/RPSApp-master/` (`index.html`, `js/main.js`, `css/main.css`, `images/`)
 - **New route:** `/games/rock-paper-scissors`
+- **Status:** rebuilt in React in `src/games/rock-paper-scissors/` (2026-09-18). Every **Fix** and **Decided** item below is done, and the rules have unit tests (`npm test`). Totals are saved under the browser storage key `hawsfun.rock-paper-scissors.totals`. The legacy copy is no longer linked from the site and can be deleted once you're happy with the React version.
 
 Endless rounds against a computer that picks at random. The only state is three running totals.
 

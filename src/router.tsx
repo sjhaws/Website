@@ -15,6 +15,10 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'games', element: <GamesPage /> },
       {
+        path: 'games/rock-paper-scissors',
+        lazy: () => import('./games/rock-paper-scissors/route.tsx'),
+      },
+      {
         path: 'games/retro-dungeon-crawler',
         lazy: () => import('./games/retro-dungeon-crawler/route.tsx'),
       },

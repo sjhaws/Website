@@ -25,11 +25,7 @@ export const GAMES: GameInfo[] = [
     title: 'Resistor Challenge',
     legacyUrl: '/legacy/Pages/ResistorsJS-master/index.html',
   },
-  {
-    slug: 'rock-paper-scissors',
-    title: 'Rock Paper Scissors',
-    legacyUrl: '/legacy/Pages/RPSApp-master/index.html',
-  },
+  { slug: 'rock-paper-scissors', title: 'Rock Paper Scissors' },
   { slug: 'retro-dungeon-crawler', title: 'Retro Dungeon Crawler' },
   { slug: 'i-nephi', title: 'I, Nephi' },
   {
