@@ -15,9 +15,6 @@ export function GamePage({
     <article className={styles.page}>
       <title>{`${title} · HawsFun`}</title>
       <div className={styles.top}>
-        <Link to="/games" className={styles.back}>
-          <span aria-hidden="true">&lt;</span> Back to Games
-        </Link>
         <h1 className={styles.title}>{title}</h1>
       </div>
       {children}
