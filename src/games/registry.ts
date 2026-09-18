@@ -15,11 +15,7 @@ export const GAMES: GameInfo[] = [
     title: 'Apostle Flashcards',
     legacyUrl: '/legacy/Pages/LDS Flashcards/called-to-serve-flashcards.html',
   },
-  {
-    slug: 'memory-game',
-    title: 'Memory Game',
-    legacyUrl: '/legacy/Pages/MemoryGame-master/index.html',
-  },
+  { slug: 'memory-game', title: 'Memory Game' },
   {
     slug: 'resistor-challenge',
     title: 'Resistor Challenge',

@@ -1,0 +1,206 @@
+.game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 24px;
+}
+
+.difficulty {
+  display: flex;
+  gap: 8px;
+}
+
+.stats {
+  display: flex;
+  gap: 32px;
+  margin: 0;
+}
+
+.stats div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.stats dt {
+  font-size: 0.7rem;
+}
+
+.stats dd {
+  min-width: 4ch;
+  margin: 0;
+  font-size: 1.1rem;
+  text-align: left;
+}
+
+/* Reserves space so the board doesn't jump when the win message appears. */
+.status {
+  min-height: 1.6rem;
+}
+
+.win {
+  margin: 0;
+  color: var(--color-green);
+  font-size: clamp(0.7rem, 2.5vw, 1rem);
+  text-shadow: 2px 2px 0 var(--color-bg);
+}
+
+.board {
+  display: grid;
+  gap: clamp(6px, 1.5vw, 12px);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.easy {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 900px;
+}
+
+.hard {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1000px;
+}
+
+@media (min-width: 600px) {
+  .easy {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 760px) {
+  .hard {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+.card {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  perspective: 800px;
+}
+
+.card:disabled {
+  cursor: default;
+}
+
+.inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.35s ease;
+  transform-style: preserve-3d;
+}
+
+.flipped .inner {
+  transform: rotateY(180deg);
+}
+
+.back,
+.front {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 3px solid var(--color-text);
+  border-radius: 12px;
+  backface-visibility: hidden;
+}
+
+/* Card back: the HawsFun logo on a blue checkerboard. */
+.back {
+  background-color: var(--color-blue);
+  background-image:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.18) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.18) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.18) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.18) 75%);
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+  background-size: 16px 16px;
+  box-shadow: var(--shadow-retro-box);
+}
+
+.back img {
+  width: 55%;
+  height: auto;
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.5));
+}
+
+.card:hover:not(:disabled) .back {
+  background-color: var(--color-red);
+}
+
+.front {
+  background: var(--color-white);
+  transform: rotateY(180deg);
+}
+
+.front img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* The animals are cut-outs, so give them some room. */
+.easy .front img {
+  padding: 10%;
+}
+
+/* Space photos are square, on black, and fill the card. */
+.hard .front {
+  background: var(--color-bg);
+}
+
+.matched .front {
+  border-color: var(--color-green);
+  box-shadow: 0 0 14px var(--color-green);
+}
+
+.credits {
+  max-width: 1000px;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  text-align: left;
+  text-shadow: none;
+}
+
+.credits summary {
+  cursor: pointer;
+  text-align: center;
+}
+
+.credits ul {
+  columns: 2 280px;
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inner {
+    transition: none;
+  }
+}

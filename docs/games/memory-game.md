@@ -2,6 +2,7 @@
 
 - **Legacy:** `public/legacy/Pages/MemoryGame-master/` (`index.html`, `js/main.js`, `css/main.css`, `images/`, plus Bootstrap 3 in `css/bootstrap16/`)
 - **New route:** `/games/memory-game`
+- **Status:** rebuilt in React in `src/games/memory-game/` (2026-09-18). Every **Fix** and **Decided** item below is done, and the game rules have unit tests (`npm test`). Images were resized to 360 px WebP (1.5 MB → 282 KB). All 14 Hard-mode space images were replaced with NASA photos so they match. Four of the originals (Mars, Neptune, Uranus, Venus) also carried VectorStock watermarks. Credits are listed under the board in Hard mode, and sources are in `assets/space/CREDITS.md`. The watermarked originals were removed from `public/legacy/`. The legacy copy is no longer linked from the site and can be deleted once you're happy with the React version.
 
 Find the 10 pairs of animals among 20 face-down cards. The game counts tries and time.
 
