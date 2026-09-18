@@ -1,0 +1,34 @@
+.page {
+  max-width: var(--page-width);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.title {
+  margin: 40px 0 32px;
+}
+
+.logo {
+  display: block;
+  height: 90px;
+  width: auto;
+  margin: 32px auto 0;
+}
+
+.logo + .title {
+  margin-top: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tagline {
+  margin: 40px 0 0;
+  font-size: 0.8rem;
+}

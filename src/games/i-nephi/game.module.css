@@ -1,0 +1,8 @@
+/* Phaser scales its 960×540 canvas to fit this box, so it needs a real height:
+   16:9 at full width, but never taller than the screen allows. */
+.host {
+  width: 100%;
+  height: min(56.25vw, calc(100vh - 150px));
+  min-height: 240px;
+  margin-top: 16px;
+}

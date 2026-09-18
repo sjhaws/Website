@@ -1,0 +1,45 @@
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  padding: 12px 20px;
+  border: 2px solid var(--color-text);
+  border-radius: var(--radius-button);
+  background: var(--color-blue);
+  box-shadow: var(--shadow-retro-box);
+  color: var(--color-text);
+  font-family: var(--font-retro);
+  font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  text-shadow: var(--shadow-retro-text);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    box-shadow 0.2s;
+}
+
+.button:hover {
+  border-color: var(--color-bg);
+  background: var(--color-red);
+  box-shadow: var(--shadow-retro-box-hover);
+  color: var(--color-white);
+}
+
+.large {
+  min-height: 110px;
+}
+
+.small {
+  display: inline-flex;
+  min-height: 0;
+  padding: 10px 16px;
+  font-size: 0.75rem;
+}
+
+.button[aria-pressed='true'] {
+  background: var(--color-green);
+}

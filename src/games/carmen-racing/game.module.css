@@ -1,0 +1,101 @@
+.game {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+  color: #fff600;
+}
+
+.canvas {
+  max-width: 100%;
+  border: 4px solid #fff600;
+  background: #444;
+  box-shadow:
+    0 0 24px #ff00c8,
+    0 0 12px #00fff7;
+  image-rendering: pixelated;
+}
+
+.instructions {
+  margin-top: 18px;
+  color: var(--color-white);
+  font-size: 0.7rem;
+  line-height: 1.9;
+  text-shadow: 1px 1px 0 #ff00c8;
+}
+
+/* Press Start 2P has no arrow glyphs, so draw these in the system font. */
+.key {
+  font-family: var(--font-body);
+  font-size: 1.3em;
+}
+
+.small {
+  font-size: 0.9em;
+}
+
+.restart {
+  display: none;
+  margin-top: 18px;
+  padding: 10px 32px;
+  border: 2px solid #00fff7;
+  border-radius: 8px;
+  background: #ff00c8;
+  box-shadow: 0 2px 12px #00fff7;
+  color: #fff600;
+  font-family: var(--font-retro);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.restart:hover {
+  border-color: #ff00c8;
+  background: #fff600;
+  color: #ff00c8;
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 20;
+  display: none;
+  width: 48px;
+  height: 48px;
+  border: 2px solid #fff600;
+  border-radius: 50%;
+  background: #222;
+  box-shadow: 0 2px 12px #00fff7;
+  color: #fff600;
+  font-size: 2.2rem;
+  line-height: 1;
+  transform: translateY(-50%);
+  touch-action: none;
+}
+
+.arrowLeft {
+  left: 8px;
+}
+
+.arrowRight {
+  right: 8px;
+}
+
+.start {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  z-index: 30;
+  display: none;
+  width: 140px;
+  height: 54px;
+  border: 2px solid #fff600;
+  border-radius: 12px;
+  background: #00fff7;
+  box-shadow: 0 2px 12px #ff00c8;
+  color: #222;
+  font-family: var(--font-retro);
+  font-size: 1.2rem;
+  transform: translate(-50%, -50%);
+  touch-action: none;
+}

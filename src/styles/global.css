@@ -1,0 +1,43 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-retro);
+  line-height: 1.6;
+  text-shadow: var(--shadow-retro-text);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.4;
+}
+
+h1 {
+  font-size: clamp(1.1rem, 3.5vw, 2rem);
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-glow);
+  outline-offset: 3px;
+}

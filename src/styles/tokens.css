@@ -1,0 +1,24 @@
+/* HawsFun's retro palette and type, shared by every page. Individual games may
+   use their own look inside the play area. */
+:root {
+  --color-bg: #000;
+  --color-text: #fbd000;
+  --color-green: #43b047;
+  --color-blue: #049cd8;
+  --color-red: #e52521;
+  --color-white: #fff;
+  --color-glow: #fff600;
+  --color-muted: #9aa4b2;
+
+  --font-retro: 'Press Start 2P', system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --shadow-retro-text: 2px 2px 0 var(--color-green), 4px 4px 0 var(--color-bg);
+  --shadow-retro-box: 0 2px 16px var(--color-green), 0 0 8px var(--color-bg);
+  --shadow-retro-box-hover:
+    0 2px 24px var(--color-glow), 0 0 12px var(--color-green);
+
+  --radius-button: 18px;
+  --page-width: 1100px;
+  --gutter: 16px;
+}

@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Serve the React app for every path that isn't a real file, so refreshing
+# /games/battleship works. Files that exist (like /legacy/...) are served as-is.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
