@@ -22,6 +22,11 @@ export function HomePage() {
             Behind the Curtain
           </RetroLink>
         </li>
+                <li>
+          <RetroLink to="" size="large">
+            Intentionally Blank
+          </RetroLink>
+        </li>
       </ul>
       <p className={styles.tagline}>
         You never know what you might find
