@@ -9,11 +9,11 @@ const SHIPS = [
 ];
 // Map each ship name to its artwork file (images are drawn bow-up / vertical)
 const SHIP_IMAGES = {
-    Carrier: '../../assets/carrier.png',
-    Battleship: '../../assets/battleship.png',
-    Cruiser: '../../assets/cruiser.png',
-    Submarine: '../../assets/submarine.png',
-    Destroyer: '../../assets/destroyer.png'
+    Carrier: '../../assets/carrier.webp',
+    Battleship: '../../assets/battleship.webp',
+    Cruiser: '../../assets/cruiser.webp',
+    Submarine: '../../assets/submarine.webp',
+    Destroyer: '../../assets/destroyer.webp'
 };
 const CELL_SIZE = 32;
 const CELL_GAP = 2;

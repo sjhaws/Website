@@ -275,24 +275,17 @@
     }
 
     preload() {
-      this.load.image('nephi', '../../assets/Nephi.png');
-      this.load.image('snake', '../../assets/Snake.png');
-      this.load.image('scorpion', '../../assets/Scorpion.png');
-      this.load.image('scroll', '../../assets/Scroll.png');
-      this.load.image('tent', '../../assets/Tent.png');
-      this.load.image('city', '../../assets/City.png');
-      this.load.image('guard', '../../assets/Guard.png');
-      this.load.image('laban', '../../assets/Laben.png');
+      this.load.image('nephi', '../../assets/Nephi.webp');
+      this.load.image('snake', '../../assets/Snake.webp');
+      this.load.image('scorpion', '../../assets/Scorpion.webp');
+      this.load.image('scroll', '../../assets/Scroll.webp');
+      this.load.image('tent', '../../assets/Tent.webp');
+      this.load.image('city', '../../assets/City.webp');
+      this.load.image('guard', '../../assets/Guard.webp');
+      this.load.image('laban', '../../assets/Laban.webp');
 
       this.load.on('loaderror', (file) => {
         console.error(`[Nephi Journey] Failed to load "${file.key}" from "${file.src}". Check that the file exists at that path (case-sensitive) relative to index.html.`);
-        if (file.key === 'laban') {
-          // "Laben.png" is an easy typo for "Laban.png" (the more common
-          // spelling) - if the first attempt 404s, try the alternate
-          // spelling automatically instead of leaving the goal blank.
-          console.warn('[Nephi Journey] Retrying "laban" as "../../assets/Laban.png"...');
-          this.load.image('laban', '../../assets/Laban.png');
-        }
       });
     }
 
@@ -724,7 +717,7 @@
     }
 
     drawCityBackdrop(bg, accentColor, stoneColor) {
-      // A spread of overlapping City.png silhouettes reads as a continuous
+      // A spread of overlapping City.webp silhouettes reads as a continuous
       // skyline across the level, the same way the old hand-drawn blocks did.
       const skyline = [
         { x: 260, y: 210, width: 440, height: 214, alpha: 0.2 },
@@ -1086,7 +1079,7 @@
       } else if (goalTextureKey === "laban") {
         // Fix the width to match 2.25x the guard sprite's height (3x, then
         // scaled down another 25%), and derive the display height from
-        // Laban.png's own native aspect ratio instead of a second hardcoded
+        // Laban.webp's own native aspect ratio instead of a second hardcoded
         // number - otherwise the art gets squished/stretched to whatever
         // arbitrary box we picked.
         const targetWidth = GUARD_DISPLAY_HEIGHT * 3 * 0.75;

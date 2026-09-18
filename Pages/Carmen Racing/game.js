@@ -17,7 +17,7 @@ const FPS = 60;
 
 // Sprites (8-bit style, simple shapes/colors)
 const carImg = new Image();
-carImg.src = '../../assets/Carmen.png';
+carImg.src = '../../assets/Carmen.webp';
 function drawCar(x, y) {
     if (carImg.complete) {
         ctx.drawImage(carImg, x, y, CAR_W, CAR_H);
@@ -26,7 +26,7 @@ function drawCar(x, y) {
     }
 }
 const obstacleImg = new Image();
-obstacleImg.src = '../../assets/car.png';
+obstacleImg.src = '../../assets/car.webp';
 function drawObstacle(x, y) {
     if (obstacleImg.complete) {
         ctx.drawImage(obstacleImg, x, y, OBSTACLE_W, OBSTACLE_H);
@@ -42,7 +42,7 @@ function drawFlag(x, y) {
 }
 // Tree sprite
 const treeImg = new Image();
-treeImg.src = '../../assets/tree.png';
+treeImg.src = '../../assets/tree.webp';
 function drawTree(x, y) {
     if (treeImg.complete) {
         ctx.drawImage(treeImg, x, y, 24, 32);
