@@ -15,6 +15,10 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'games', element: <GamesPage /> },
       {
+        path: 'games/battleship',
+        lazy: () => import('./games/battleship/route.tsx'),
+      },
+      {
         path: 'games/memory-game',
         lazy: () => import('./games/memory-game/route.tsx'),
       },

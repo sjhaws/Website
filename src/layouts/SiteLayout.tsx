@@ -7,8 +7,7 @@ export function SiteLayout() {
     <>
       <header className={styles.header}>
         <Link to="/" className={styles.brand}>
-          <img src={logo} alt="" />
-          HawsFun
+          <img src={logo} alt="HawsFun" />
         </Link>
         <nav className={styles.nav} aria-label="Main">
           <NavLink to="/games">Games</NavLink>

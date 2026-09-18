@@ -2,6 +2,7 @@
 
 - **Legacy:** `public/legacy/Pages/Battleship/` (`index.html`, `game.js`, `style.css`); ship art in `public/legacy/assets/*.webp`
 - **New route:** `/games/battleship`
+- **Status:** rebuilt in React in `src/games/battleship/` (2026-09-18). Every **Fix** and **Decided** item below is done, and the rules and game flow have unit tests (`npm test`). Two additions: a placement preview under the pointer, and a **Start Battle** button, so the battle no longer starts the moment the last ship is placed (you can re-Randomize or change difficulty first). The legacy copy is no longer linked from the site and can be deleted once you're happy with the React version.
 
 Classic Battleship against a computer. Place five ships, then take turns firing until one fleet is sunk.
 

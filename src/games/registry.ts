@@ -24,11 +24,7 @@ export const GAMES: GameInfo[] = [
   { slug: 'rock-paper-scissors', title: 'Rock Paper Scissors' },
   { slug: 'retro-dungeon-crawler', title: 'Retro Dungeon Crawler' },
   { slug: 'i-nephi', title: 'I, Nephi' },
-  {
-    slug: 'battleship',
-    title: 'Battleship',
-    legacyUrl: '/legacy/Pages/Battleship/index.html',
-  },
+  { slug: 'battleship', title: 'Battleship' },
   { slug: 'carmen-racing', title: 'Carmen Racing' },
 ]
 
