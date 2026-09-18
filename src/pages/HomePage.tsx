@@ -5,7 +5,7 @@ export function HomePage() {
   return (
     <div className={styles.page}>
       <title>HawsFun</title>
-      <h1 className={styles.title}>Welcome to the HawsFun Sandbox</h1>
+      <h1 className={styles.title}>Welcome to HawsFun</h1>
       <ul className={styles.grid}>
         <li>
           <RetroLink to="/games" size="large">
@@ -14,7 +14,7 @@ export function HomePage() {
         </li>
         <li>
           <RetroLink to="/fun" size="large">
-            Just for Fun
+            Sandbox
           </RetroLink>
         </li>
         <li>

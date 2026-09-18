@@ -9,7 +9,7 @@ export function ErrorPage() {
     ? `${error.status} ${error.statusText}`
     : error instanceof Error
       ? error.message
-      : 'Unknown error'
+      : 'Oops, sorry, we have some unregistered gremlins in the system. Please try again.'
 
   return (
     <div className={styles.page}>
