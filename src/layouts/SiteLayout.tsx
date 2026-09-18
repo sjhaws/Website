@@ -12,7 +12,7 @@ export function SiteLayout() {
         </Link>
         <nav className={styles.nav} aria-label="Main">
           <NavLink to="/games">Games</NavLink>
-          <NavLink to="/fun">Just for Fun</NavLink>
+          <NavLink to="/fun">Sandbox</NavLink>
           <NavLink to="/about">Behind the Curtain</NavLink>
         </nav>
       </header>
