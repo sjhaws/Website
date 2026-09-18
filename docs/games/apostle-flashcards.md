@@ -2,6 +2,7 @@
 
 - **Legacy:** `public/legacy/Pages/LDS Flashcards/called-to-serve-flashcards.html`. One self-contained file holding all the CSS, JS, leader data and 15 photos embedded as base64.
 - **New route:** `/games/apostle-flashcards`
+- **Status:** rebuilt in React in `src/games/apostle-flashcards/` (2026-09-18). Every **Fix** and **Decided** item below is done, and the rules and the leader data have unit tests (`npm test`). The data is in `leaders.ts` (with `LEADERS_AS_OF`), and the photos are `photos/<slug>.jpg`. **Open question:** four clues fit more than one leader: Rasband's and Stevenson's identical "Called to the Quorum of the Twelve Apostles on October 3, 2015", Renlund's "Sustained … October 3, 2015", and Soares's "Sustained … March 31, 2018" (Gong was sustained the same day). The legacy copy is no longer linked from the site and can be deleted once you're happy with the React version.
 
 "Called to Serve — Flashcards". Each card shows one fact about a member of the First Presidency or the Quorum of the Twelve Apostles, and you pick that leader's name from a roster.
 

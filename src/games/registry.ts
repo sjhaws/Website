@@ -10,11 +10,7 @@ export interface GameInfo {
 
 // Order matches the Games menu.
 export const GAMES: GameInfo[] = [
-  {
-    slug: 'apostle-flashcards',
-    title: 'Apostle Flashcards',
-    legacyUrl: '/legacy/Pages/LDS Flashcards/called-to-serve-flashcards.html',
-  },
+  { slug: 'apostle-flashcards', title: 'Apostle Flashcards' },
   { slug: 'memory-game', title: 'Memory Game' },
   { slug: 'resistor-challenge', title: 'Resistor Challenge' },
   { slug: 'rock-paper-scissors', title: 'Rock Paper Scissors' },
