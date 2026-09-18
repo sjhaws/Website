@@ -16,11 +16,7 @@ export const GAMES: GameInfo[] = [
     legacyUrl: '/legacy/Pages/LDS Flashcards/called-to-serve-flashcards.html',
   },
   { slug: 'memory-game', title: 'Memory Game' },
-  {
-    slug: 'resistor-challenge',
-    title: 'Resistor Challenge',
-    legacyUrl: '/legacy/Pages/ResistorsJS-master/index.html',
-  },
+  { slug: 'resistor-challenge', title: 'Resistor Challenge' },
   { slug: 'rock-paper-scissors', title: 'Rock Paper Scissors' },
   { slug: 'retro-dungeon-crawler', title: 'Retro Dungeon Crawler' },
   { slug: 'i-nephi', title: 'I, Nephi' },

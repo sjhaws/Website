@@ -2,6 +2,7 @@
 
 - **Legacy:** `public/legacy/Pages/ResistorsJS-master/` (`index.html`, `index.js`, `main.css`, `download.jpeg`, `Color code.png`)
 - **New route:** `/games/resistor-challenge`
+- **Status:** rebuilt in React in `src/games/resistor-challenge/` (2026-09-18). Every **Fix** and **Decided** item below is done, and the answer parsing, scoring and high scores have unit tests (`npm test`). The clock now shows time left (60 → 0). A **Rules** button in the round opens the rules and color chart in a pop-up (Close, Escape or a click outside closes it). The clock keeps running while it's open, because the chart is effectively the answer key. A skip shows the answer you missed. The color chart image (from TheEngineeringProjects.com, with their web address on it) and the downloaded resistor symbol were replaced with a built-in table and drawings. High scores are saved under `hawsfun.resistor-challenge.high-scores`. The legacy copy is no longer linked from the site and can be deleted once you're happy with the React version.
 
 Read the color bands on a resistor and type its resistance and tolerance. You get as many correct as you can in 60 seconds.
 

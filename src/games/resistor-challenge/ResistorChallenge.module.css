@@ -1,0 +1,269 @@
+.game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.game h2 {
+  margin: 0;
+  font-size: clamp(0.9rem, 3vw, 1.3rem);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.symbol {
+  width: min(100%, 420px);
+  height: auto;
+  color: var(--color-text);
+  filter: drop-shadow(3px 3px 0 var(--color-green));
+}
+
+.footer {
+  margin: 12px 0 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  text-shadow: none;
+}
+
+/* Long text reads better in the body font. */
+.prose {
+  max-width: 640px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  text-align: left;
+  text-shadow: none;
+}
+
+.prose p {
+  margin: 0 0 12px;
+  color: var(--color-white);
+}
+
+.chart {
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  text-shadow: none;
+}
+
+.chart caption {
+  max-width: 480px;
+  margin: 0 auto 10px;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.chart th,
+.chart td {
+  padding: 5px 14px;
+  border-bottom: 1px solid #333;
+  color: var(--color-white);
+  text-align: left;
+}
+
+.chart th {
+  color: var(--color-text);
+}
+
+.swatch {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 8px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  vertical-align: -0.2em;
+}
+
+.gameOver {
+  margin: 0;
+  color: var(--color-green);
+  font-size: clamp(0.7rem, 2.5vw, 0.95rem);
+  text-shadow: 2px 2px 0 var(--color-bg);
+}
+
+.scores {
+  min-width: 200px;
+  margin: 0;
+  padding-left: 2.5em;
+  font-size: 1rem;
+  line-height: 2;
+  text-align: left;
+}
+
+.newScore {
+  color: var(--color-white);
+  text-shadow: 2px 2px 0 var(--color-red);
+}
+
+.stats {
+  display: flex;
+  gap: 36px;
+  margin: 0;
+}
+
+.stats div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.stats dt {
+  font-size: 0.7rem;
+}
+
+.stats dd {
+  min-width: 2.5ch;
+  margin: 0;
+  font-size: 1.2rem;
+  text-align: left;
+}
+
+.hurry {
+  color: var(--color-red);
+}
+
+.drawing {
+  width: min(100%, 600px);
+  height: auto;
+}
+
+.bandLabel {
+  fill: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 18px;
+}
+
+.answer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px 20px;
+}
+
+.answer label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.7rem;
+  text-align: left;
+}
+
+.answer input {
+  width: 11em;
+  padding: 8px 10px;
+  border: 2px solid var(--color-text);
+  border-radius: 8px;
+  background: #111;
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+}
+
+.feedback {
+  min-height: 1.6em;
+  margin: 0;
+  font-size: clamp(0.6rem, 2vw, 0.8rem);
+}
+
+.correct {
+  color: var(--color-green);
+  text-shadow: 2px 2px 0 var(--color-bg);
+}
+
+.wrong {
+  color: var(--color-red);
+  text-shadow: 2px 2px 0 var(--color-bg);
+}
+
+.skipped {
+  color: var(--color-white);
+  text-shadow: 2px 2px 0 var(--color-bg);
+}
+
+/* Rules pop-up */
+.dialog {
+  width: min(720px, calc(100vw - 32px));
+  max-height: 85vh;
+  padding: 0;
+  border: 3px solid var(--color-text);
+  border-radius: 14px;
+  background: #0b0b0b;
+  box-shadow: var(--shadow-retro-box);
+  color: var(--color-text);
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px 24px;
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.dialogHeader h2 {
+  margin: 0;
+  font-size: clamp(0.9rem, 3vw, 1.2rem);
+}
+
+.dialogNote {
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  text-shadow: none;
+}
+
+.close {
+  padding: 8px 14px;
+  border: 2px solid var(--color-text);
+  border-radius: 10px;
+  background: var(--color-blue);
+  color: var(--color-text);
+  font-family: var(--font-retro);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--color-red);
+  color: var(--color-white);
+}
+
+/* Keep the chart inside a phone-width screen or pop-up. */
+@media (max-width: 480px) {
+  .chart {
+    font-size: 0.85rem;
+  }
+
+  .chart th,
+  .chart td {
+    padding: 5px 8px;
+  }
+
+  .dialogBody {
+    padding: 14px 12px 20px;
+  }
+}
