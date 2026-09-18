@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
 import { getGame } from './registry.ts'
 import styles from './GamePage.module.css'
 
