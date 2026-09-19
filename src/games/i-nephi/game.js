@@ -23,7 +23,6 @@ const ENEMY_RANGE = 20
 const LAND_ENEMY_RANGE = ENEMY_RANGE * 6
 const ENEMY_SPEED = 55
 const ENEMY_SPEED_VARIATION = 0.15
-const ENEMY_SPEED_VARIATION_SHIP = 0.25
 const LEVEL_X_SCALE = 2
 // The "platform" texture is generated on a 64x64 canvas but only the top
 // PLATFORM_VISUAL_HEIGHT pixels are actually painted (see makeTexture("platform", ...)).
@@ -115,8 +114,25 @@ const WALKERS = {
 //   lower rows less, and the bottom row not at all.
 // - `box`: a part that moves by up to `move` [x, y] pixels, rising `lift`
 //   pixels as it moves right.
+// - `wag`: the columns of a rectangle bend up and down, the left column
+//   `bend` pixels, columns further right less, and the right one not at all.
 // - `hide`: a rectangle left out on some `steps` of the loop.
 const CRAWLERS = {
+  // Sharks and whales swim tail first on the left, so their tails beat.
+  shark: {
+    key: 'shark-swim',
+    art: 'shark',
+    display: [74, 38],
+    fps: 10,
+    parts: [{ wag: [0, 0, 108, 114], bend: 2 }],
+  },
+  whale: {
+    key: 'whale-swim',
+    art: 'whale',
+    display: [122, 56],
+    fps: 6,
+    parts: [{ wag: [0, 0, 180, 168], bend: 3 }],
+  },
   snake: {
     key: 'snake-slither',
     art: 'snake',
@@ -154,6 +170,8 @@ const CRAWLERS = {
 
 // Each kind of enemy's animation, by the name chooseEnemyTexture gives it.
 const ENEMY_ANIMS = {
+  shark: CRAWLERS.shark,
+  whale: CRAWLERS.whale,
   guard: WALKERS.guard,
   snake: CRAWLERS.snake,
   scorpion: CRAWLERS.scorpion,
@@ -213,6 +231,21 @@ function drawCrawlStep(pen, crawler, step) {
     }
   }
   pen.copy([0, 0, pen.width, pen.height], [0, 0], source)
+
+  for (const part of parts) {
+    if (!part.wag) {
+      continue
+    }
+    // Bend its columns, more the further left they are.
+    const [x, y, w, h] = part.wag
+    const bend = part.bend * Math.cos(turn(part))
+    pen.clear(part.wag)
+    for (let column = 0; column < w; column++) {
+      const weight = ((w - 1 - column) / (w - 1)) ** 1.5
+      const dy = pen.toArt([0, Math.round(bend * weight)])[1]
+      pen.copy([x + column, y, 1, h], [0, dy], source)
+    }
+  }
 
   for (const part of parts) {
     if (!part.sway) {
@@ -349,6 +382,34 @@ function setAnimSize(sprite, spec) {
   const [width, height] = spec.display
   sprite.setDisplaySize((width * sprite.width) / artWidth, height)
 }
+
+// The family's boat on level 6: its size on screen, how far its middle rides
+// above the waterline, and its hitbox (the hull and the heads above it, in
+// pixels on screen from the art's top left).
+const BOAT_DISPLAY = [104, 80]
+const BOAT_RIDE = 20
+const BOAT_HULL = [12, 40, 80, 28]
+
+// Level 6's sharks and whales cruise back and forth under the water. Now and
+// then one near the boat dashes under where the boat is, surges up through
+// the surface and dives again. Speeds are in pixels a second; `depth` is how far below the
+// waterline each cruises, and `hitbox` covers its body, in pixels on screen
+// from the art's top left.
+const SEA_CREATURES = {
+  shark: { speed: 85, rise: 175, depth: [70, 120], hitbox: [12, 12, 56, 14] },
+  whale: { speed: 50, rise: 120, depth: [90, 140], hitbox: [18, 14, 98, 30] },
+}
+// How far each cruises either side of where it starts.
+const SEA_RANGE = 280
+// It only rises at a boat within this distance, across.
+const SEA_REACH = 380
+// Milliseconds between rises.
+const SEA_WAIT = [1800, 4500]
+// How far above the waterline the middle of a rising creature gets.
+const SEA_BREACH = 2
+// How close across it gets before surging up.
+const SEA_STRIKE = 60
+const SEA_PACE_VARIATION = 0.2
 
 // Scroll popup: the box auto-sizes around whatever text it's given (see
 // fitScrollPopupText/layoutScrollPopup) instead of using a fixed height,
@@ -607,6 +668,15 @@ class BootScene extends Phaser.Scene {
       new URL('./assets/Scroll.webp', import.meta.url).href,
     )
     this.load.image('tent', new URL('./assets/Tent.webp', import.meta.url).href)
+    this.load.image('ship', new URL('./assets/Ship.webp', import.meta.url).href)
+    this.load.image(
+      'shark',
+      new URL('./assets/Shark.webp', import.meta.url).href,
+    )
+    this.load.image(
+      'whale',
+      new URL('./assets/Whale.webp', import.meta.url).href,
+    )
     this.load.image('city', new URL('./assets/City.webp', import.meta.url).href)
     this.load.image(
       'guard',
@@ -704,18 +774,6 @@ class BootScene extends Phaser.Scene {
       g.fillTriangle(32, 12, 50, 28, 32, 28)
       g.lineStyle(3, 0x2c4054, 1)
       g.strokeTriangle(6, 48, 58, 48, 50, 30)
-    })
-
-    makeTexture('ship', (g) => {
-      g.fillStyle(0x5c7994, 1)
-      g.fillTriangle(8, 48, 56, 48, 46, 30)
-      g.fillStyle(0x3e2b1f, 1)
-      g.fillRect(18, 30, 28, 10)
-      g.fillStyle(0xc9f2ff, 1)
-      g.fillRect(30, 10, 4, 30)
-      g.fillTriangle(32, 12, 50, 28, 32, 28)
-      g.lineStyle(3, 0x2c4054, 1)
-      g.strokeTriangle(8, 48, 56, 48, 46, 30)
     })
   }
 }
@@ -1364,17 +1422,19 @@ class GameScene extends Phaser.Scene {
   }
 
   buildWaterWorld() {
+    const depth = WORLD_HEIGHT - this.waterlineY
     const water = this.add.graphics().setAlpha(0.95)
     water.fillStyle(0x144b73, 0.95)
-    water.fillRect(
-      0,
-      this.waterlineY,
-      WORLD_WIDTH,
-      WORLD_HEIGHT - this.waterlineY,
-    )
-    water.lineStyle(3, 0x7fd5f1, 0.18)
+    water.fillRect(0, this.waterlineY, WORLD_WIDTH, depth)
+
+    // The surface, drawn in front of the sea creatures and the boat's hull
+    // (depth 4) and see-through, so they look underwater.
+    const surface = this.add.graphics().setDepth(4)
+    surface.fillStyle(0x144b73, 0.4)
+    surface.fillRect(0, this.waterlineY + 2, WORLD_WIDTH, depth)
+    surface.lineStyle(3, 0x7fd5f1, 0.18)
     for (let x = 0; x < WORLD_WIDTH; x += 52) {
-      water.strokeEllipse(
+      surface.strokeEllipse(
         x + 26,
         this.waterlineY + 12 + (x % 104 === 0 ? 8 : 0),
         52,
@@ -1382,7 +1442,7 @@ class GameScene extends Phaser.Scene {
       )
     }
 
-    const foam = this.add.graphics().setAlpha(0.16)
+    const foam = this.add.graphics().setAlpha(0.16).setDepth(4)
     foam.fillStyle(0xc9f2ff, 1)
     for (let x = 0; x < WORLD_WIDTH; x += 160) {
       foam.fillEllipse(x + 80, this.waterlineY + 20, 170, 20)
@@ -1404,7 +1464,9 @@ class GameScene extends Phaser.Scene {
   }
 
   buildPlayer() {
-    const playerY = this.isShipLevel ? this.waterlineY - 44 : this.groundY - 60
+    const playerY = this.isShipLevel
+      ? this.waterlineY - BOAT_RIDE
+      : this.groundY - 60
     this.player = this.isShipLevel
       ? this.physics.add.sprite(90, playerY, 'ship')
       : this.physics.add.sprite(90, playerY, WALKERS.nephi.key, FRAME_STILL)
@@ -1413,7 +1475,11 @@ class GameScene extends Phaser.Scene {
     }
     this.player.setCollideWorldBounds(true)
     if (this.isShipLevel) {
-      this.setDisplayBodyBox(this.player, 50, 26)
+      this.player.setDisplaySize(...BOAT_DISPLAY)
+      const [x, y, w, h] = BOAT_HULL
+      const { scaleX, scaleY } = this.player
+      this.player.body.setSize(w / scaleX, h / scaleY, false)
+      this.player.body.setOffset(x / scaleX, y / scaleY)
       this.player.body.setAllowGravity(false)
       this.player.setBounce(0)
       this.player.setDragX(900)
@@ -1443,8 +1509,12 @@ class GameScene extends Phaser.Scene {
       }),
     )
 
-    layout.enemies.forEach((x) => {
+    layout.enemies.forEach((x, index) => {
       const worldX = x * LEVEL_X_SCALE
+      if (this.isShipLevel) {
+        this.addSeaCreature(worldX, index % 3 === 1 ? 'whale' : 'shark')
+        return
+      }
       const supportPlatform = platformAnchors.find(
         (anchor) => worldX >= anchor.left && worldX <= anchor.right,
       )
@@ -1454,18 +1524,14 @@ class GameScene extends Phaser.Scene {
         ? GUARD_DISPLAY_HEIGHT
         : ENEMY_DISPLAY_HEIGHT
       const bodyHeight = isGuard ? GUARD_BODY_HEIGHT : ENEMY_BODY_HEIGHT
-      const y = this.isShipLevel
-        ? this.waterlineY + 34 + ((worldX / 300) % 2) * 12
-        : this.getLandEnemyY(worldX, platformAnchors, displayHeight)
+      const y = this.getLandEnemyY(worldX, platformAnchors, displayHeight)
       const anim = ENEMY_ANIMS[texture]
       const enemy = this.enemies.create(worldX, y, anim.key, FRAME_STILL)
       setAnimSize(enemy, anim)
       this.setDisplayBodyBox(enemy, ENEMY_BODY_WIDTH, bodyHeight)
-      const speedVariation = this.isShipLevel
-        ? ENEMY_SPEED_VARIATION_SHIP
-        : ENEMY_SPEED_VARIATION
       const speedMultiplier =
-        1 + Phaser.Math.FloatBetween(-speedVariation, speedVariation)
+        1 +
+        Phaser.Math.FloatBetween(-ENEMY_SPEED_VARIATION, ENEMY_SPEED_VARIATION)
       enemy.setData('speed', ENEMY_SPEED * speedMultiplier)
       // Enemies never stop moving. Each keeps its own pace, from a random
       // point in the loop, so they don't all move in lockstep.
@@ -1474,27 +1540,20 @@ class GameScene extends Phaser.Scene {
         startFrame: Phaser.Math.Between(0, ANIM_STEPS - 1),
         timeScale: speedMultiplier,
       })
-      if (this.isShipLevel) {
-        enemy.body.setAllowGravity(false)
-        enemy.setData('minY', this.waterlineY - 74)
-        enemy.setData('maxY', this.waterlineY + 36)
-        enemy.setData('direction', Math.random() < 0.5 ? -1 : 1)
+      if (supportPlatform) {
+        const enemyPadding = 20
+        enemy.setData('minX', supportPlatform.left + enemyPadding)
+        enemy.setData('maxX', supportPlatform.right - enemyPadding)
       } else {
-        if (supportPlatform) {
-          const enemyPadding = 20
-          enemy.setData('minX', supportPlatform.left + enemyPadding)
-          enemy.setData('maxX', supportPlatform.right - enemyPadding)
-        } else {
-          enemy.setData('minX', worldX - LAND_ENEMY_RANGE * LEVEL_X_SCALE)
-          enemy.setData('maxX', worldX + LAND_ENEMY_RANGE * LEVEL_X_SCALE)
-        }
-        enemy.setData('direction', Math.random() < 0.5 ? -1 : 1)
-        const turnRange = this.getEnemyTurnDelayRange()
-        enemy.setData(
-          'nextTurnAt',
-          this.time.now + Phaser.Math.Between(turnRange.min, turnRange.max),
-        )
+        enemy.setData('minX', worldX - LAND_ENEMY_RANGE * LEVEL_X_SCALE)
+        enemy.setData('maxX', worldX + LAND_ENEMY_RANGE * LEVEL_X_SCALE)
       }
+      enemy.setData('direction', Math.random() < 0.5 ? -1 : 1)
+      const turnRange = this.getEnemyTurnDelayRange()
+      enemy.setData(
+        'nextTurnAt',
+        this.time.now + Phaser.Math.Between(turnRange.min, turnRange.max),
+      )
       this.enemyConfigs.push(enemy)
     })
 
@@ -1505,6 +1564,130 @@ class GameScene extends Phaser.Scene {
       null,
       this,
     )
+  }
+
+  // A shark or whale for level 6, cruising at its own depth and pace.
+  addSeaCreature(x, kind) {
+    const anim = CRAWLERS[kind]
+    const [shallowest, deepest] = SEA_CREATURES[kind].depth
+    const cruiseY = this.waterlineY + Phaser.Math.Between(shallowest, deepest)
+    const enemy = this.enemies.create(x, cruiseY, anim.key, FRAME_STILL)
+    setAnimSize(enemy, anim)
+    const pace =
+      1 + Phaser.Math.FloatBetween(-SEA_PACE_VARIATION, SEA_PACE_VARIATION)
+    enemy.anims.play({
+      key: anim.key,
+      startFrame: Phaser.Math.Between(0, ANIM_STEPS - 1),
+      timeScale: pace,
+    })
+    enemy.setData({
+      kind,
+      pace,
+      cruiseY,
+      minX: x - SEA_RANGE,
+      maxX: x + SEA_RANGE,
+      mode: 'cruise',
+      // A little longer at first, to give the boat a moment.
+      nextRiseAt:
+        this.time.now + SEA_WAIT[0] + Phaser.Math.Between(...SEA_WAIT),
+    })
+    this.faceSeaCreature(enemy, Math.random() < 0.5 ? -1 : 1)
+    this.enemyConfigs.push(enemy)
+  }
+
+  // Turns a sea creature to swim left (-1) or right (1), and moves its
+  // hitbox to match: Arcade bodies don't flip with their sprites.
+  faceSeaCreature(enemy, direction) {
+    enemy.setData('direction', direction)
+    enemy.flipX = direction < 0
+    const [x, y, w, h] = SEA_CREATURES[enemy.getData('kind')].hitbox
+    const left = ANIM_MARGIN + x
+    const offsetX = enemy.flipX ? enemy.displayWidth - left - w : left
+    const { scaleX, scaleY } = enemy
+    enemy.body.setSize(w / scaleX, h / scaleY, false)
+    enemy.body.setOffset(offsetX / scaleX, y / scaleY)
+  }
+
+  // One step of a sea creature's swim: cruising, rising at the boat, or
+  // diving back down afterwards.
+  swim(enemy, time) {
+    const creature = SEA_CREATURES[enemy.getData('kind')]
+    const pace = enemy.getData('pace')
+    const speed = creature.speed * pace
+    const rise = creature.rise * pace
+    let direction = enemy.getData('direction')
+    let vx = direction * speed
+    let vy = 0
+
+    switch (enemy.getData('mode')) {
+      case 'cruise': {
+        const turn =
+          enemy.x <= enemy.getData('minX')
+            ? 1
+            : enemy.x >= enemy.getData('maxX')
+              ? -1
+              : direction
+        if (turn !== direction) {
+          this.faceSeaCreature(enemy, turn)
+          direction = turn
+          vx = direction * speed
+        }
+        // Ease back to cruising depth, as after a dive.
+        vy = Phaser.Math.Clamp(
+          (enemy.getData('cruiseY') - enemy.y) * 3,
+          -60,
+          60,
+        )
+        if (time >= enemy.getData('nextRiseAt')) {
+          const across = this.player.x - enemy.x
+          if (Math.abs(across) <= SEA_REACH) {
+            // Aim at where the boat is now, so it can still get away.
+            enemy.setData({ mode: 'rise', targetX: this.player.x })
+            this.faceSeaCreature(enemy, Math.sign(across) || direction)
+          } else {
+            enemy.setData('nextRiseAt', time + 400)
+          }
+        }
+        break
+      }
+      case 'rise': {
+        const dx = enemy.getData('targetX') - enemy.x
+        const dy = this.waterlineY - SEA_BREACH - enemy.y
+        if (dy >= 0) {
+          enemy.setData('mode', 'dive')
+        } else if (Math.abs(dx) > SEA_STRIKE) {
+          // Dash along underneath first...
+          vx = Math.sign(dx) * rise
+          vy = Phaser.Math.Clamp(
+            (enemy.getData('cruiseY') - enemy.y) * 3,
+            -60,
+            60,
+          )
+        } else {
+          // ...then surge up at the spot.
+          const distance = Math.hypot(dx, dy)
+          vx = (dx / distance) * rise
+          vy = (dy / distance) * rise
+        }
+        break
+      }
+      case 'dive': {
+        vy = rise * 0.7
+        if (enemy.y >= enemy.getData('cruiseY')) {
+          enemy.setData({
+            mode: 'cruise',
+            nextRiseAt: time + Phaser.Math.Between(...SEA_WAIT),
+          })
+        }
+        break
+      }
+    }
+
+    enemy.body.setVelocity(vx, vy)
+    // Nose up when rising, down when diving.
+    const tilt = Phaser.Math.RadToDeg(Math.atan2(vy, Math.abs(vx) + 1))
+    const angle = Phaser.Math.Clamp(tilt, -40, 40) * (enemy.flipX ? -1 : 1)
+    enemy.angle += (angle - enemy.angle) * 0.15
   }
 
   getLandEnemyY(x, platformAnchors, displayHeight = ENEMY_DISPLAY_HEIGHT) {
@@ -1528,7 +1711,7 @@ class GameScene extends Phaser.Scene {
 
     positions.forEach((x, index) => {
       const scrollY = this.isShipLevel
-        ? this.waterlineY - 34 - index * 8
+        ? this.waterlineY - 26
         : this.groundY - 90 - index * 16
       const scroll = this.scrolls.create(x, scrollY, 'scroll')
       scroll.setDisplaySize(34, 40)
@@ -1877,13 +2060,13 @@ class GameScene extends Phaser.Scene {
       this.player.setVelocityY(0)
       this.player.x = Phaser.Math.Clamp(
         this.player.x + shipMove * (this.game.loop.delta / 1000),
-        48,
-        WORLD_WIDTH - 60,
+        BOAT_DISPLAY[0] / 2,
+        WORLD_WIDTH - BOAT_DISPLAY[0] / 2,
       )
       const bob = Math.sin(time / 180) * 2.5
       const tilt =
         shipMove === 0 ? Math.sin(time / 280) * 1.2 : shipMove > 0 ? 1.8 : -1.8
-      this.player.y = this.waterlineY - 44 + bob
+      this.player.y = this.waterlineY - BOAT_RIDE + bob
       this.player.angle = tilt
       this.player.body.updateFromGameObject()
     } else {
@@ -1936,23 +2119,7 @@ class GameScene extends Phaser.Scene {
       const speed = enemy.getData('speed')
 
       if (this.isShipLevel) {
-        const direction = enemy.getData('direction')
-        const minY = enemy.getData('minY')
-        const maxY = enemy.getData('maxY')
-        enemy.body.setVelocityX(0)
-        enemy.y += direction * speed * (this.game.loop.delta / 1000)
-        if (enemy.y <= minY) {
-          enemy.y = minY
-          enemy.setData('direction', 1)
-        } else if (enemy.y >= maxY) {
-          enemy.y = maxY
-          enemy.setData('direction', -1)
-        }
-        enemy.body.updateFromGameObject()
-
-        // These enemies patrol vertically instead of left/right, so mirror
-        // them top-to-bottom instead of left-to-right when they turn around.
-        enemy.flipY = enemy.getData('direction') < 0
+        this.swim(enemy, time)
       } else {
         const direction = enemy.getData('direction')
         const minX = enemy.getData('minX')
