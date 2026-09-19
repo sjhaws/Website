@@ -2,7 +2,7 @@
 
 - **Legacy** (in the git tag `legacy-static`): `Pages/I Nephi V2/` (`game.js`, `index.html`, `README.md`); sprites in `assets/*.webp`
 - **New route:** `/games/i-nephi`
-- **Status:** rebuilt in React in `src/games/i-nephi/` (2026-09-18). Every **Fix** and **Decided** item below is done; use the regression checklist to test it. The legacy copy was deleted from the site on 2026-09-18.
+- **Status:** rebuilt in React in `src/games/i-nephi/` (2026-09-18). Every **Fix** and **Decided** item below is done; use the regression checklist to test it. The legacy copy was deleted from the site on 2026-09-18. Nephi got a walk animation on 2026-09-19 (see **How it plays**).
 - **Type:** Phaser 3 game (3.80.1, loaded from a CDN as a global), moved into React as-is through `start(container)` / `stop()`
 
 A six-level side-scrolling platformer following Nephi's journey from Jerusalem to the Promised Land. On the Games menu it's "I, Nephi"; the page title and README call it "Nephi Journey". The original V1 was retired.
@@ -23,7 +23,15 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 - **Controls:**
   - Move with ← / → or `A` / `D`.
   - Jump with ↑, `W` or Space.
-  - On-screen `<` `>` `^` buttons are always shown. The ship level has no jump button.
+  - **Touch screens** (no buttons are drawn; `touchControls.ts`, with tests): slide a finger anywhere in the game's box to walk, and tap or flick up to jump. A second finger touching down also jumps, so it works with one thumb or two. On the ship level, sliding steers and nothing jumps. A tap on a scroll message's button never makes Nephi jump afterwards.
+  - On a phone held upright, the game sits at the top of a taller box, and the space below it is part of the touch area, with a "Slide to walk · Tap to jump" hint, so a thumb needn't cover the game.
+  - The story card says how to play on the device in use: touch or keyboard.
+- **Animation:** every character's art is a single picture, so the game builds an 8-frame loop from each when it loads, by cutting out parts of the picture and moving them (`WALKERS`, `CRAWLERS` and `buildFrames` in `game.js`). Every move is a whole number of screen pixels, so the art doesn't shimmer.
+  - **Nephi and the guards walk:** their feet slide back and forth below their clothes, each lifting as it swings forward; their hands swing the opposite way (for a guard, his shield one way and his spear the other); and their bodies dip on each stride. Nephi walks while moving along the ground (20 frames a second), holds a stride in the air, and stands still otherwise. The boat on the ship level doesn't animate.
+  - **Snakes slither:** the raised neck and head sway, the tail tip wags, and the tongue flicks in and out (10 frames a second).
+  - **Scorpions scuttle:** the tail sways, the legs step in alternating pairs, and the claws open and close (12 frames a second).
+  - Enemies always move, each at a pace matching its speed and from a random point in its loop, so they're never in lockstep.
+  - While a scroll is open, Nephi stands still and every enemy freezes.
 - **Levels:** each is 10,000 px wide, and the goal sits at the far right.
 
   | # | Title | Goal label | Goal |
@@ -53,10 +61,13 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 ## Regression checklist
 
 - [ ] Level 1's story card appears; **Start**, Enter and Space all begin the level
-- [ ] Arrow keys, `A`/`D`, `W`/Space and the on-screen buttons move and jump
+- [ ] Arrow keys, `A`/`D` and `W`/Space move and jump, and no buttons are drawn on screen
+- [ ] On a phone: sliding walks either way, and a tap, a flick up or a second finger jumps; the page doesn't scroll or zoom while playing
+- [ ] Nephi's feet step and his hands swing while he walks either way; he stands still when stopped or reading a scroll, and holds a stride in the air
 - [ ] Landing on a snake or scorpion removes it; walking into one restarts the level
 - [ ] A scroll shows its message, and after **Proceed** you're briefly invincible
 - [ ] Reaching the goal moves on to the next level's story card
+- [ ] Snakes slither and flick their tongues, scorpions scuttle and snap their claws, and level 3's guards march, none in step with each other, and all freeze while a scroll is open
 - [ ] Level 3 has guards and Laban as the goal; level 6 is the ship, with left/right only
 - [ ] The ending screen appears after level 6, and **Play Again** returns to level 1
 - [ ] After leaving the game the canvas is gone, keys do nothing, and the game loop stops. Exactly one `document` `visibilitychange` listener per visit is expected to remain.

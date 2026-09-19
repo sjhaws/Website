@@ -5,6 +5,7 @@
 // one document visibilitychange listener, which Phaser never removes).
 
 import * as Phaser from 'phaser'
+import { SlideControls } from './touchControls.ts'
 
 const GAME_WIDTH = 960
 const GAME_HEIGHT = 540
@@ -45,6 +46,309 @@ const PLAYER_BODY_HEIGHT = 48
 // in their collision box, while keeping the same width as other enemies.
 const GUARD_DISPLAY_HEIGHT = PLAYER_DISPLAY_HEIGHT * 1.1
 const GUARD_BODY_HEIGHT = PLAYER_BODY_HEIGHT * 1.1
+
+// Each character's art is one still picture, so its animation is built from
+// it when the game loads (see buildFrames): parts of the picture are cut out
+// and moved, frame by frame. Positions are in the art's own pixels. Distances
+// moved are in pixels on screen, so everything moves by whole pixels and the
+// art stays crisp when it's shrunk. Frame 0 is the art as drawn, and each of
+// the ANIM_STEPS steps of the loop comes after it, following smooth curves.
+const ANIM_STEPS = 8
+// Room either side of the art, in pixels on screen, for parts to move into.
+const ANIM_MARGIN = 2
+const FRAME_STILL = 0
+// In the air Nephi holds the step where his front foot is at the top of its
+// swing.
+const FRAME_MID_AIR = 1 + (ANIM_STEPS * 3) / 4
+
+// Parts that move as a whole: a rectangle of the art (`round`: the oval
+// inside it). When one moves, what was behind it shows: nothing, a row of the
+// art stretched over the spot (`behindRow`), or, where the art has nothing to
+// show, a copy left in place when it moves in the direction `trail` [x, y].
+
+// Walkers: as they step, their feet slide back and forth below the hem of
+// their clothes, each lifting as it swings forward; their hands swing
+// `swing` pixels the opposite way, rising `raise` pixels when forward; and
+// their bodies dip on each stride.
+const WALKERS = {
+  nephi: {
+    key: 'nephi-walk',
+    art: 'nephi',
+    display: [PLAYER_DISPLAY_WIDTH, PLAYER_DISPLAY_HEIGHT],
+    fps: 20,
+    hemY: 164, // his feet are below this
+    feet: [26, 58, 110], // left edge, between the feet, right edge
+    stride: 3,
+    lift: 3,
+    dip: 1,
+    hands: [
+      // Held out in front. A copy left behind as it swings forward becomes
+      // a longer wrist.
+      { box: [93, 96, 25, 26], swing: -2, raise: 1, trail: [1, 0] },
+      // By his cloak, whose vertical stripes are stretched over its spot.
+      { box: [14, 114, 22, 26], swing: 2, raise: 1, behindRow: 141 },
+    ],
+  },
+  guard: {
+    key: 'guard-walk',
+    art: 'guard',
+    display: [ENEMY_DISPLAY_WIDTH, GUARD_DISPLAY_HEIGHT],
+    fps: 12,
+    hemY: 208,
+    feet: [44, 89, 138],
+    stride: 3,
+    lift: 3,
+    dip: 1,
+    hands: [
+      // The round shield covers his body, so swinging out it leaves a copy.
+      { box: [0, 118, 82, 88], round: true, swing: 2, trail: [-1, 0] },
+      // The spear, and the hand holding it.
+      { box: [138, 10, 26, 236], swing: -2 },
+      { box: [117, 130, 21, 30], swing: -2, trail: [1, 0] },
+    ],
+  },
+}
+
+// Crawlers: each part moves along its own curve, `speed` times a loop,
+// `phase` of a loop behind the others.
+// - `sway`: the rows of a rectangle bend sideways, the top row `bend` pixels,
+//   lower rows less, and the bottom row not at all.
+// - `box`: a part that moves by up to `move` [x, y] pixels, rising `lift`
+//   pixels as it moves right.
+// - `hide`: a rectangle left out on some `steps` of the loop.
+const CRAWLERS = {
+  snake: {
+    key: 'snake-slither',
+    art: 'snake',
+    display: [ENEMY_DISPLAY_WIDTH, ENEMY_DISPLAY_HEIGHT],
+    fps: 10,
+    parts: [
+      // Its tongue flicks in and out...
+      { hide: [138, 40, 26, 14], steps: [2, 3, 6, 7] },
+      // ...its raised neck and head sway...
+      { sway: [70, 0, 98, 78], bend: 2 },
+      // ...and the tip of its tail wags.
+      { sway: [138, 58, 30, 50], bend: 1, speed: 2 },
+    ],
+  },
+  scorpion: {
+    key: 'scorpion-scuttle',
+    art: 'scorpion',
+    display: [ENEMY_DISPLAY_WIDTH, ENEMY_DISPLAY_HEIGHT],
+    fps: 12,
+    parts: [
+      // Its tail sways...
+      { sway: [0, 0, 86, 76], bend: 2 },
+      // ...its legs scuttle, in alternating pairs...
+      { box: [0, 126, 14, 17], move: [1, 0], lift: 1, speed: 2 },
+      { box: [14, 126, 22, 37], move: [1, 0], lift: 1, speed: 2, phase: 0.25 },
+      { box: [36, 126, 20, 37], move: [1, 0], lift: 1, speed: 2 },
+      { box: [57, 126, 24, 37], move: [1, 0], lift: 1, speed: 2, phase: 0.25 },
+      // ...and its claws open and close, leaving copies so they stay joined
+      // to its arms.
+      { box: [120, 54, 48, 33], move: [0, -1], trail: [0, -1] },
+      { box: [118, 124, 50, 30], move: [0, 1], trail: [0, 1] },
+    ],
+  },
+}
+
+// Each kind of enemy's animation, by the name chooseEnemyTexture gives it.
+const ENEMY_ANIMS = {
+  guard: WALKERS.guard,
+  snake: CRAWLERS.snake,
+  scorpion: CRAWLERS.scorpion,
+}
+
+// How far each part of a walker moves, in pixels on screen, at one step.
+function walkPose(walker, step) {
+  const angle = (2 * Math.PI * step) / ANIM_STEPS
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  const { stride, lift, dip } = walker
+  return {
+    // Down while the feet are apart, up as they pass.
+    body: Math.abs(c) > 0.5 ? dip : 0,
+    back: [Math.round(-stride * c), -Math.round(lift * Math.max(0, s))],
+    front: [Math.round(stride * c), -Math.round(lift * Math.max(0, -s))],
+    hands: walker.hands.map(({ swing, raise = 0 }) => [
+      Math.round(swing * c),
+      swing * c > Math.abs(swing) / 2 ? -raise : 0,
+    ]),
+  }
+}
+
+function drawWalkStep(pen, walker, step) {
+  const pose = walkPose(walker, step)
+  const { width, height } = pen
+  const [feetLeft, feetSplit, feetRight] = walker.feet
+  const hem = walker.hemY
+  const below = height - hem
+  const dip = pen.toArt([0, pose.body])[1]
+
+  // Feet first, so clothes hide the top of a lifted foot.
+  pen.copy([feetLeft, hem, feetSplit - feetLeft, below], pen.toArt(pose.back))
+  pen.copy(
+    [feetSplit, hem, feetRight - feetSplit, below],
+    pen.toArt(pose.front),
+  )
+  // Then the rest of the body, including anything beside the feet.
+  pen.copy([0, 0, width, hem], [0, dip])
+  pen.copy([0, hem, feetLeft, below], [0, dip])
+  pen.copy([feetRight, hem, width - feetRight, below], [0, dip])
+  // And the hands, swung.
+  const hands = pose.hands.map(([x, y]) => pen.toArt([x, y]))
+  moveParts(pen, walker.hands, hands, dip)
+}
+
+function drawCrawlStep(pen, crawler, step) {
+  const angle = (2 * Math.PI * step) / ANIM_STEPS
+  const turn = ({ speed = 1, phase = 0 }) => speed * angle - 2 * Math.PI * phase
+  const { parts } = crawler
+
+  // The art, less anything hidden at this step.
+  const source = pen.scratch()
+  for (const part of parts) {
+    if (part.hide && part.steps.includes(step)) {
+      source.getContext('2d').clearRect(...part.hide)
+    }
+  }
+  pen.copy([0, 0, pen.width, pen.height], [0, 0], source)
+
+  for (const part of parts) {
+    if (!part.sway) {
+      continue
+    }
+    // Bend its rows, more the higher up they are.
+    const [x, y, w, h] = part.sway
+    const bend = part.bend * Math.cos(turn(part))
+    pen.clear(part.sway)
+    for (let row = 0; row < h; row++) {
+      const weight = ((h - 1 - row) / (h - 1)) ** 1.5
+      const dx = pen.toArt([Math.round(bend * weight), 0])[0]
+      pen.copy([x, y + row, w, 1], [dx, 0], source)
+    }
+  }
+
+  const boxes = parts.filter((part) => part.box)
+  const offsets = boxes.map((part) => {
+    const [moveX, moveY] = part.move
+    const c = Math.cos(turn(part))
+    const rising = Math.max(0, -Math.sin(turn(part)))
+    const lift = Math.round((part.lift ?? 0) * rising)
+    return pen.toArt([Math.round(moveX * c), Math.round(moveY * c) - lift])
+  })
+  moveParts(pen, boxes, offsets, 0, source)
+}
+
+// Lifts `parts` off the frame (see "Parts that move as a whole" above) and
+// puts them back moved by `offsets`, in art pixels, and down by `lower`.
+function moveParts(pen, parts, offsets, lower, source = pen.art) {
+  for (const part of parts) {
+    const [x, , w, h] = part.box
+    pen.within(part, [0, lower], (px, py) => {
+      pen.ctx.clearRect(px, py, w, h)
+      if (part.behindRow !== undefined) {
+        pen.ctx.drawImage(source, x, part.behindRow, w, 1, px, py, w, h)
+      }
+    })
+  }
+  parts.forEach((part, i) => {
+    const [dx, dy] = offsets[i]
+    const [x, y, w, h] = part.box
+    const put = (px, py) => pen.ctx.drawImage(source, x, y, w, h, px, py, w, h)
+    const [trailX, trailY] = part.trail ?? [0, 0]
+    if (dx * trailX + dy * trailY > 0) {
+      // The copy stays put only along the direction it trails.
+      pen.within(part, [trailX ? 0 : dx, lower + (trailY ? 0 : dy)], put)
+    }
+    pen.within(part, [dx, lower + dy], put)
+  })
+}
+
+// Makes texture spec.key from the art: frame 0 as drawn, then each step of
+// the loop drawn by drawStep(pen, step). Also makes the looping animation
+// spec.key from those steps.
+function buildFrames(scene, spec, drawStep) {
+  const { key } = spec
+  if (scene.textures.exists(key)) {
+    return
+  }
+  const art = scene.textures.get(spec.art).getSourceImage()
+  const { width, height } = art
+  // Art pixels per pixel on screen, across and down.
+  const unitX = width / spec.display[0]
+  const unitY = height / spec.display[1]
+  const margin = Math.round(ANIM_MARGIN * unitX)
+  const frameWidth = width + 2 * margin
+  const steps = [...Array(ANIM_STEPS).keys()]
+  const sheet = scene.textures.createCanvas(
+    key,
+    frameWidth * (ANIM_STEPS + 1),
+    height,
+  )
+  const ctx = sheet.getContext()
+  ctx.imageSmoothingEnabled = false
+  const scratch = document.createElement('canvas')
+  scratch.width = width
+  scratch.height = height
+
+  const drawFrame = (frame, draw) => {
+    const left = frame * frameWidth + margin
+    draw({
+      ctx,
+      art,
+      width,
+      height,
+      toArt: ([x, y]) => [Math.round(x * unitX), Math.round(y * unitY)],
+      // Copies the art's rectangle into this frame, moved by [dx, dy].
+      copy: ([x, y, w, h], [dx, dy], source = art) =>
+        ctx.drawImage(source, x, y, w, h, left + x + dx, y + dy, w, h),
+      clear: ([x, y, w, h]) => ctx.clearRect(left + x, y, w, h),
+      // Runs draw(x, y) with drawing limited to a part's shape, moved by
+      // [dx, dy].
+      within: ({ box: [x, y, w, h], round }, [dx, dy], drawPart) => {
+        ctx.save()
+        ctx.beginPath()
+        if (round) {
+          const [cx, cy] = [left + x + dx + w / 2, y + dy + h / 2]
+          ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, 2 * Math.PI)
+        } else {
+          ctx.rect(left + x + dx, y + dy, w, h)
+        }
+        ctx.clip()
+        drawPart(left + x + dx, y + dy)
+        ctx.restore()
+      },
+      // A fresh copy of the art to change without touching the original.
+      scratch: () => {
+        const scratchCtx = scratch.getContext('2d')
+        scratchCtx.clearRect(0, 0, width, height)
+        scratchCtx.drawImage(art, 0, 0)
+        return scratch
+      },
+    })
+    sheet.add(frame, 0, frame * frameWidth, 0, frameWidth, height)
+  }
+
+  drawFrame(FRAME_STILL, (pen) => pen.copy([0, 0, width, height], [0, 0]))
+  steps.forEach((step) => drawFrame(step + 1, (pen) => drawStep(pen, step)))
+  sheet.refresh()
+
+  scene.anims.create({
+    key,
+    frames: steps.map((step) => ({ key, frame: step + 1 })),
+    frameRate: spec.fps,
+    repeat: -1,
+  })
+}
+
+// Animation frames have room either side of the art for moving parts, so
+// they're shown that much wider than the character's own display size.
+function setAnimSize(sprite, spec) {
+  const artWidth = sprite.scene.textures.get(spec.art).getSourceImage().width
+  const [width, height] = spec.display
+  sprite.setDisplaySize((width * sprite.width) / artWidth, height)
+}
 
 // Scroll popup: the box auto-sizes around whatever text it's given (see
 // fitScrollPopupText/layoutScrollPopup) instead of using a fixed height,
@@ -322,6 +626,14 @@ class BootScene extends Phaser.Scene {
 
   create() {
     this.buildTextures()
+    for (const walker of Object.values(WALKERS)) {
+      buildFrames(this, walker, (pen, step) => drawWalkStep(pen, walker, step))
+    }
+    for (const crawler of Object.values(CRAWLERS)) {
+      buildFrames(this, crawler, (pen, step) =>
+        drawCrawlStep(pen, crawler, step),
+      )
+    }
     this.scene.start('StoryScene', { levelIndex: 0 })
   }
 
@@ -474,8 +786,17 @@ class StoryScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setInteractive({ useHandCursor: true })
 
+    const touchScreen = window.matchMedia('(pointer: coarse)').matches
+    const onShip = levelIndex === 5
+    const howToPlay = touchScreen
+      ? onShip
+        ? 'Slide a finger left or right to steer.'
+        : 'Slide a finger to walk. Tap or flick up to jump.'
+      : onShip
+        ? 'Use the arrow keys to steer.'
+        : 'Use the arrow keys to move and Space to jump.'
     const hint = this.add
-      .text(width / 2, 0, 'Use arrow keys, space, or touch buttons to play.', {
+      .text(width / 2, 0, howToPlay, {
         fontFamily: 'Verdana',
         fontSize: `${STORY_HINT_FONT}px`,
         color: '#9fb3c8',
@@ -633,7 +954,6 @@ class GameScene extends Phaser.Scene {
     this.levelFinished = false
     this.gamePaused = false
     this.scrollsCollected = 0
-    this.touchState = { left: false, right: false, jumpQueued: false }
 
     this.cameras.main.setBackgroundColor(this.level.theme.skyTop)
     this.physics.world.gravity.y = this.isShipLevel ? 0 : GRAVITY_Y
@@ -647,7 +967,7 @@ class GameScene extends Phaser.Scene {
     this.buildScrolls()
     this.buildGoal()
     this.buildHUD()
-    this.buildTouchControls()
+    this.setupTouch()
     this.setupInputs()
     this.applyCamera()
 
@@ -1084,11 +1404,12 @@ class GameScene extends Phaser.Scene {
   }
 
   buildPlayer() {
-    const playerTexture = this.isShipLevel ? 'ship' : 'nephi'
     const playerY = this.isShipLevel ? this.waterlineY - 44 : this.groundY - 60
-    this.player = this.physics.add.sprite(90, playerY, playerTexture)
+    this.player = this.isShipLevel
+      ? this.physics.add.sprite(90, playerY, 'ship')
+      : this.physics.add.sprite(90, playerY, WALKERS.nephi.key, FRAME_STILL)
     if (!this.isShipLevel) {
-      this.player.setDisplaySize(PLAYER_DISPLAY_WIDTH, PLAYER_DISPLAY_HEIGHT)
+      setAnimSize(this.player, WALKERS.nephi)
     }
     this.player.setCollideWorldBounds(true)
     if (this.isShipLevel) {
@@ -1136,8 +1457,9 @@ class GameScene extends Phaser.Scene {
       const y = this.isShipLevel
         ? this.waterlineY + 34 + ((worldX / 300) % 2) * 12
         : this.getLandEnemyY(worldX, platformAnchors, displayHeight)
-      const enemy = this.enemies.create(worldX, y, texture)
-      enemy.setDisplaySize(ENEMY_DISPLAY_WIDTH, displayHeight)
+      const anim = ENEMY_ANIMS[texture]
+      const enemy = this.enemies.create(worldX, y, anim.key, FRAME_STILL)
+      setAnimSize(enemy, anim)
       this.setDisplayBodyBox(enemy, ENEMY_BODY_WIDTH, bodyHeight)
       const speedVariation = this.isShipLevel
         ? ENEMY_SPEED_VARIATION_SHIP
@@ -1145,6 +1467,13 @@ class GameScene extends Phaser.Scene {
       const speedMultiplier =
         1 + Phaser.Math.FloatBetween(-speedVariation, speedVariation)
       enemy.setData('speed', ENEMY_SPEED * speedMultiplier)
+      // Enemies never stop moving. Each keeps its own pace, from a random
+      // point in the loop, so they don't all move in lockstep.
+      enemy.anims.play({
+        key: anim.key,
+        startFrame: Phaser.Math.Between(0, ANIM_STEPS - 1),
+        timeScale: speedMultiplier,
+      })
       if (this.isShipLevel) {
         enemy.body.setAllowGravity(false)
         enemy.setData('minY', this.waterlineY - 74)
@@ -1422,91 +1751,45 @@ class GameScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
   }
 
-  buildTouchControls() {
-    const pad = 14
-    const buttonSize = 70
-    const y = this.scale.height - buttonSize - pad
-    const leftX = pad + buttonSize / 2
-    const rightX = this.isShipLevel
-      ? this.scale.width - pad - buttonSize / 2
-      : pad + buttonSize * 2 + 12 + buttonSize / 2
-    const jumpX = this.scale.width - pad - buttonSize / 2
-
-    this.touchButtons = {}
-
-    const makeButton = (x, label, onDown, onUp) => {
-      const circle = this.add
-        .circle(x, y + buttonSize / 2, buttonSize / 2, 0x101820, 0.78)
-        .setStrokeStyle(3, 0xf2c14e, 1)
-        .setScrollFactor(0)
-        .setInteractive({ useHandCursor: true })
-
-      const text = this.add
-        .text(x, y + buttonSize / 2, label, {
-          fontFamily: 'Verdana',
-          fontSize: '24px',
-          color: '#f7edd9',
-          fontStyle: 'bold',
-        })
-        .setOrigin(0.5)
-        .setScrollFactor(0)
-
-      circle.on('pointerdown', onDown)
-      circle.on('pointerup', onUp)
-      circle.on('pointerout', onUp)
-      circle.on('pointerupoutside', onUp)
-
-      return { circle, text }
+  // Touch controls: slide a finger to walk, tap or flick up to jump (see
+  // touchControls.ts). They listen to the box the game sits in, not just the
+  // canvas, so on a phone held upright the space below the game works too
+  // and a thumb needn't cover the action.
+  setupTouch() {
+    this.touch = new SlideControls()
+    const box = this.game.canvas.parentElement
+    const touchOnly = (handle) => (event) => {
+      if (event.pointerType !== 'mouse') {
+        handle(event)
+      }
     }
-
-    this.touchButtons.left = makeButton(
-      leftX,
-      '<',
-      () => {
-        this.touchState.left = true
-      },
-      () => {
-        this.touchState.left = false
-      },
-    )
-
-    this.touchButtons.right = makeButton(
-      rightX,
-      '>',
-      () => {
-        this.touchState.right = true
-      },
-      () => {
-        this.touchState.right = false
-      },
-    )
-
-    if (!this.isShipLevel) {
-      this.touchButtons.jump = makeButton(
-        jumpX,
-        '^',
-        () => {
-          this.touchState.jumpQueued = true
-        },
-        () => {},
-      )
+    const listeners = {
+      // A finger's events keep coming here even if it slides out of the
+      // box, as touches stay with where they started until they lift.
+      pointerdown: touchOnly(({ pointerId, clientX, clientY, timeStamp }) => {
+        const paused = this.gamePaused || this.levelFinished
+        this.touch.down(pointerId, clientX, clientY, timeStamp, paused)
+      }),
+      pointermove: touchOnly(({ pointerId, clientX, clientY, timeStamp }) =>
+        this.touch.move(pointerId, clientX, clientY, timeStamp),
+      ),
+      pointerup: touchOnly(({ pointerId, timeStamp }) =>
+        this.touch.up(pointerId, timeStamp),
+      ),
+      pointercancel: touchOnly(({ pointerId }) => this.touch.cancel(pointerId)),
     }
-
-    this.touchHint = this.add
-      .text(
-        this.scale.width / 2,
-        this.scale.height - 20,
-        this.isShipLevel
-          ? 'Touch controls: left and right only'
-          : 'Touch buttons for mobile',
-        {
-          fontFamily: 'Verdana',
-          fontSize: '13px',
-          color: '#d7e2ea',
-        },
-      )
-      .setOrigin(0.5)
-      .setScrollFactor(0)
+    const removeListeners = () => {
+      for (const [type, listener] of Object.entries(listeners)) {
+        box.removeEventListener(type, listener)
+      }
+      this.events.off('shutdown', removeListeners)
+      this.events.off('destroy', removeListeners)
+    }
+    for (const [type, listener] of Object.entries(listeners)) {
+      box.addEventListener(type, listener)
+    }
+    this.events.on('shutdown', removeListeners)
+    this.events.on('destroy', removeListeners)
   }
 
   setupInputs() {
@@ -1561,20 +1844,24 @@ class GameScene extends Phaser.Scene {
   }
 
   update(time) {
-    if (!this.player || this.levelFinished || this.gamePaused) {
+    if (!this.player) {
+      return
+    }
+    if (this.levelFinished || this.gamePaused) {
+      this.animateNephi(false)
       return
     }
 
-    const leftPressed =
-      this.cursors.left.isDown || this.keyA.isDown || this.touchState.left
+    const walk = this.touch.direction
+    const leftPressed = this.cursors.left.isDown || this.keyA.isDown || walk < 0
     const rightPressed =
-      this.cursors.right.isDown || this.keyD.isDown || this.touchState.right
+      this.cursors.right.isDown || this.keyD.isDown || walk > 0
     const jumpPressed =
       !this.isShipLevel &&
       (Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
         Phaser.Input.Keyboard.JustDown(this.keySpace) ||
         Phaser.Input.Keyboard.JustDown(this.keyW) ||
-        this.touchState.jumpQueued)
+        this.touch.wantsJump(performance.now()))
 
     if (this.isShipLevel) {
       let shipMove = 0
@@ -1599,7 +1886,6 @@ class GameScene extends Phaser.Scene {
       this.player.y = this.waterlineY - 44 + bob
       this.player.angle = tilt
       this.player.body.updateFromGameObject()
-      this.touchState.jumpQueued = false
     } else {
       if (leftPressed && !rightPressed) {
         this.player.setVelocityX(-PLAYER_SPEED)
@@ -1615,17 +1901,31 @@ class GameScene extends Phaser.Scene {
         this.player.body.blocked.down || this.player.body.touching.down
       if (jumpPressed && onGround) {
         this.player.setVelocityY(-PLAYER_JUMP)
-        this.touchState.jumpQueued = false
+        this.touch.clearJump()
       }
 
-      if (!jumpPressed) {
-        this.touchState.jumpQueued = false
-      }
+      this.animateNephi(leftPressed !== rightPressed)
     }
 
     this.updateEnemies(time)
     this.updateInvincibility(time)
     this.applyCamera()
+  }
+
+  // Nephi walks while moving along the ground, holds a stride in the air, and
+  // otherwise stands still. (On the ship level the player is the boat.)
+  animateNephi(moving) {
+    if (this.isShipLevel) {
+      return
+    }
+    const onGround =
+      this.player.body.blocked.down || this.player.body.touching.down
+    if (moving && onGround) {
+      this.player.anims.play(WALKERS.nephi.key, true)
+      return
+    }
+    this.player.anims.stop()
+    this.player.setFrame(onGround ? FRAME_STILL : FRAME_MID_AIR)
   }
 
   updateEnemies(time) {
@@ -1725,9 +2025,12 @@ class GameScene extends Phaser.Scene {
     // the ship level's manual, non-physics position updates).
     this.gamePaused = true
     this.physics.world.pause()
+    // And stop the guards marching on the spot.
+    this.anims.pauseAll()
 
     this.showScrollPopup(popupText, () => {
       this.physics.world.resume()
+      this.anims.resumeAll()
       this.gamePaused = false
       // Invincibility starts fresh from the moment the game resumes, not
       // from when the scroll was picked up.
@@ -1738,6 +2041,7 @@ class GameScene extends Phaser.Scene {
       this.cursors.up.reset()
       this.keySpace.reset()
       this.keyW.reset()
+      this.touch.clearJump()
     })
   }
 
@@ -1905,7 +2209,7 @@ const config = {
   roundPixels: true,
   scale: {
     mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
+    autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
   },

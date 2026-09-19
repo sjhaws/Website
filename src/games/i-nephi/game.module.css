@@ -1,8 +1,40 @@
 /* Phaser scales its 960×540 canvas to fit this box, so it needs a real height:
-   16:9 at full width, but never taller than the screen allows. */
+   16:9 at full width, but never taller than the screen allows. The game sits
+   at the top of it. */
 .host {
+  position: relative;
   width: 100%;
   height: min(56.25vw, calc(100vh - 150px));
   min-height: 240px;
   margin-top: 16px;
+  /* A finger anywhere in the box steers the game (see touchControls.ts),
+     so touching it mustn't scroll, zoom or select anything. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* On a phone held upright the game is short, so the box reaches down the
+   screen and the space below the game is room to slide and tap without a
+   thumb covering the action. */
+@media (pointer: coarse) and (orientation: portrait) {
+  .host {
+    height: calc(100svh - 260px);
+    min-height: 320px;
+  }
+
+  .host::after {
+    content: 'Slide to walk · Tap to jump';
+    position: absolute;
+    right: 0;
+    bottom: 24px;
+    left: 0;
+    color: var(--color-muted);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    text-align: center;
+    text-shadow: none;
+    pointer-events: none;
+  }
 }
