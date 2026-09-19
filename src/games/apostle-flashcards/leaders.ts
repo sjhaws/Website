@@ -1,4 +1,7 @@
 // The First Presidency and Quorum of the Twelve Apostles, with five facts each.
+// Any fact can be picked as the clue, so each one should fit only its own
+// leader: a bare shared date (several were called the same day) needs a
+// detail that's unique to him.
 // Update this list (and the photo in ./photos/<slug>.jpg) when callings change,
 // and bump LEADERS_AS_OF so the page shows the right date.
 
@@ -107,7 +110,7 @@ export const LEADERS: Leader[] = [
       'Joined Huntsman Container Company in 1976 and became president and COO of Huntsman Chemical Corporation in 1987',
       'Served a full-time mission in the Eastern States Mission, then later presided over the New York New York North Mission',
       'Named to the First Quorum of the Seventy on April 1, 2000',
-      'Called to the Quorum of the Twelve Apostles on October 3, 2015',
+      'Called to the Quorum of the Twelve Apostles on October 3, 2015, after serving as president and COO of Huntsman Chemical Corporation',
     ],
   },
   {
@@ -119,7 +122,7 @@ export const LEADERS: Leader[] = [
       'Served a full-time mission in the Japan Fukuoka Mission and later presided over the Japan Nagoya Mission',
       'Cofounded ICON Health & Fitness, an exercise equipment company, serving as its president and COO',
       'Served as Presiding Bishop of the Church from 2012 to 2015',
-      'Called to the Quorum of the Twelve Apostles on October 3, 2015',
+      'Called to the Quorum of the Twelve Apostles on October 3, 2015, after serving as Presiding Bishop of the Church',
     ],
   },
   {
@@ -131,7 +134,7 @@ export const LEADERS: Leader[] = [
       'Earned B.A. and M.D. degrees from the University of Utah, with further medical training at Johns Hopkins Hospital',
       'Served a full-time mission in Sweden as a young man',
       'Worked as a cardiologist and was medical director of the Utah Transplantation Affiliated Hospitals Cardiac Transplant Program',
-      'Sustained to the Quorum of the Twelve Apostles on October 3, 2015',
+      'Sustained to the Quorum of the Twelve Apostles on October 3, 2015, after a career as a cardiologist',
     ],
   },
   {
@@ -155,7 +158,7 @@ export const LEADERS: Leader[] = [
       "Earned a bachelor's degree in accounting and economics from a Brazilian university in 1985, then an MBA",
       'Worked as an accountant and auditor for multinational corporations in Brazil before full-time Church service',
       'Served as president of the Portugal Porto Mission from 2000 to 2003',
-      'Sustained to the Quorum of the Twelve Apostles on March 31, 2018',
+      'Sustained to the Quorum of the Twelve Apostles on March 31, 2018, as a native of São Paulo, Brazil',
     ],
   },
   {

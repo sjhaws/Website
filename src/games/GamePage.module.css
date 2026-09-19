@@ -13,16 +13,6 @@
   margin: 20px 0 8px;
 }
 
-.back {
-  font-size: 0.7rem;
-  text-decoration: none;
-}
-
-.back:hover {
-  color: var(--color-white);
-  text-decoration: underline;
-}
-
 .title {
   margin: 0;
 }

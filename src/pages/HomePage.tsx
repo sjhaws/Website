@@ -22,7 +22,7 @@ export function HomePage() {
             Behind the Curtain
           </RetroLink>
         </li>
-                <li>
+        <li>
           <RetroLink to="" size="large">
             Intentionally Blank
           </RetroLink>

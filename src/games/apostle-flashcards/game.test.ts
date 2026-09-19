@@ -44,6 +44,16 @@ describe('leader data', () => {
       )
     }
   })
+
+  it('never gives two leaders the same fact, since any fact can be the clue', () => {
+    const owners = new Map<string, string>()
+    for (const leader of LEADERS) {
+      for (const fact of leader.facts) {
+        expect(owners.get(fact), `"${fact}"`).toBeUndefined()
+        owners.set(fact, leader.name)
+      }
+    }
+  })
 })
 
 describe('deck and roster', () => {
