@@ -1,12 +1,11 @@
 import { createBrowserRouter } from 'react-router'
 import { SiteLayout } from './layouts/SiteLayout.tsx'
 import { ErrorPage } from './pages/ErrorPage.tsx'
-import { FunPage } from './pages/FunPage.tsx'
 import { GamesPage } from './pages/GamesPage.tsx'
 import { HomePage } from './pages/HomePage.tsx'
 import { NotFoundPage } from './pages/NotFoundPage.tsx'
 
-// Each game and the About page load their code only when opened.
+// Each game, the Sandbox and the About page load their code only when opened.
 export const router = createBrowserRouter([
   {
     element: <SiteLayout />,
@@ -46,7 +45,7 @@ export const router = createBrowserRouter([
         path: 'games/i-nephi',
         lazy: () => import('./games/i-nephi/route.tsx'),
       },
-      { path: 'fun', element: <FunPage /> },
+      { path: 'fun', lazy: () => import('./pages/sandbox/route.tsx') },
       { path: 'about', lazy: () => import('./pages/about/route.tsx') },
       { path: '*', element: <NotFoundPage /> },
     ],

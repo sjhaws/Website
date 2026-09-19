@@ -1,0 +1,191 @@
+.page {
+  max-width: var(--page-width);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.title {
+  margin: 40px 0 16px;
+}
+
+.intro {
+  max-width: 640px;
+  margin: 0 auto 28px;
+  font-size: 0.75rem;
+  line-height: 2.2;
+}
+
+.intro img {
+  vertical-align: middle;
+}
+
+/* A wooden frame around the sand. The frame's background is the bottom of
+   the pit, which shows wherever the sand is dug all the way out. */
+.pit {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  border: 10px solid #9a6332;
+  border-radius: 4px;
+  background: #5a3b1c;
+  box-shadow:
+    inset 0 0 0 3px #5e3a1a,
+    0 0 0 3px #5e3a1a,
+    var(--shadow-retro-box);
+}
+
+.sand {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  /* The hotspot is the trowel's tip. */
+  cursor:
+    url('./trowel.svg') 2 29,
+    crosshair;
+  /* Dragging digs instead of scrolling the page on touch screens. */
+  touch-action: none;
+}
+
+.buried,
+.found {
+  position: absolute;
+  display: block;
+  padding: 0;
+}
+
+.buried svg,
+.found svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.buried {
+  z-index: 0;
+}
+
+/* Found treasure pops up out of the sand and glints until clicked. */
+.found {
+  z-index: 2;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  animation:
+    pop 0.45s ease-out,
+    glint 1.2s 0.45s ease-in-out infinite alternate;
+}
+
+/* A bigger target for fingers than the treasure itself. */
+.found::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
+.found:hover,
+.found:focus-visible {
+  transform: scale(1.15);
+}
+
+@keyframes pop {
+  0% {
+    transform: translateY(25%) scale(0.6);
+  }
+  60% {
+    transform: translateY(-20%) scale(1.25);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes glint {
+  from {
+    filter: drop-shadow(0 0 2px var(--color-glow));
+  }
+  to {
+    filter: drop-shadow(0 0 8px var(--color-glow));
+  }
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px 28px;
+  margin: 24px 0;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.dialog {
+  width: min(720px, calc(100vw - 32px));
+  padding: 0;
+  border: 3px solid var(--color-text);
+  border-radius: 14px;
+  background: #0b0b0b;
+  box-shadow: var(--shadow-retro-box);
+  color: var(--color-text);
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+}
+
+.dialogBody h2 {
+  margin: 0;
+  font-size: clamp(0.8rem, 3vw, 1.1rem);
+}
+
+.video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  background: #000;
+}
+
+.close {
+  padding: 10px 16px;
+  border: 2px solid var(--color-text);
+  border-radius: 10px;
+  background: var(--color-blue);
+  color: var(--color-text);
+  font-family: var(--font-retro);
+  font-size: 0.75rem;
+  text-shadow: var(--shadow-retro-text);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--color-red);
+  color: var(--color-white);
+}
+
+@media (max-width: 600px) {
+  .pit {
+    border-width: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .found {
+    animation: none;
+    filter: drop-shadow(0 0 5px var(--color-glow));
+  }
+}
