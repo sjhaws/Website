@@ -80,14 +80,30 @@ describe('a new sand pit', () => {
 })
 
 describe('prizes', () => {
-  it('includes a game, cf4g and a rickroll in every pit', () => {
+  it('sends each find somewhere different: one rickroll, one cf4g, six games', () => {
     for (let seed = 0; seed < 100; seed++) {
-      const types = choosePrizes(8, seeded(seed)).map((p) => p.type)
-      expect(types).toHaveLength(8)
-      expect(types).toContain('game')
-      expect(types).toContain('cf4g')
-      expect(types).toContain('rickroll')
+      const prizes = newSand(seeded(seed)).treasures.map((t) => t.prize)
+      const count = (type: string) => prizes.filter((p) => p.type === type)
+      expect(prizes).toHaveLength(8)
+      expect(count('rickroll')).toHaveLength(1)
+      expect(count('cf4g')).toHaveLength(1)
+      const games = prizes.flatMap((p) => (p.type === 'game' ? [p.slug] : []))
+      expect(new Set(games).size).toBe(6)
     }
+  })
+
+  it('puts the rickroll on a different treasure each time', () => {
+    const spots = new Set<number>()
+    for (let seed = 0; seed < 100; seed++) {
+      spots.add(
+        choosePrizes(8, seeded(seed)).findIndex((p) => p.type === 'rickroll'),
+      )
+    }
+    expect(spots.size).toBe(8)
+  })
+
+  it('refuses more treasures than there are places to send them', () => {
+    expect(() => choosePrizes(GAMES.length + 3)).toThrow()
   })
 
   it('only sends players to games that exist', () => {

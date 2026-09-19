@@ -69,10 +69,6 @@ type Random = () => number
 
 const GAME_SLUGS = GAMES.map((game) => game.slug)
 
-function pick<T>(items: readonly T[], random: Random): T {
-  return items[Math.floor(random() * items.length)]
-}
-
 function shuffle<T>(items: readonly T[], random: Random): T[] {
   const result = [...items]
   for (let i = result.length - 1; i > 0; i--) {
@@ -92,22 +88,23 @@ export function chooseKinds(random: Random = Math.random): TreasureKind[] {
 }
 
 /**
- * One prize per treasure. Every pit has at least one of each kind of prize;
- * the rest are chosen at random.
+ * One prize per treasure, each leading somewhere different: one rickroll, one
+ * trip to cf4g, and the rest to different games, chosen at random.
  */
 export function choosePrizes(
   count: number,
   random: Random = Math.random,
   slugs: readonly string[] = GAME_SLUGS,
 ): Prize[] {
-  const makers: (() => Prize)[] = [
-    () => ({ type: 'game', slug: pick(slugs, random) }),
-    () => ({ type: 'cf4g' }),
-    () => ({ type: 'rickroll' }),
+  const prizes: Prize[] = [
+    { type: 'rickroll' },
+    { type: 'cf4g' },
+    ...shuffle(slugs, random).map((slug): Prize => ({ type: 'game', slug })),
   ]
-  const prizes = makers.map((make) => make())
-  while (prizes.length < count) prizes.push(pick(makers, random)())
-  return shuffle(prizes, random).slice(0, count)
+  if (count > prizes.length) {
+    throw new Error(`Only ${prizes.length} places to send ${count} treasures`)
+  }
+  return shuffle(prizes.slice(0, count), random)
 }
 
 /**
