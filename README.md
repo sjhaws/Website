@@ -29,7 +29,6 @@ Then open http://localhost:5173.
 - `src/games/GameHost.tsx`: runs a canvas game (a module exporting `start(container)`, which returns `stop()`) while its page is open
 - `src/pages/`: Home, Games, Sandbox and About
 - `src/styles/tokens.css`: the site's colors, fonts and sizes
-- `public/legacy/`: the old static site. Games that haven't been rebuilt in React yet are linked from the Games menu and open from here.
 - `docs/games/`: how each game behaves, the decisions for its rebuild, and a checklist to test it against
 
 ## Deploying

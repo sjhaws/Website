@@ -1,8 +1,8 @@
 # Carmen Racing
 
-- **Legacy:** `public/legacy/Pages/Carmen Racing/` (`game.js` module, `index.html`, `style.css`); sprites in `public/legacy/assets/`
+- **Legacy** (in the git tag `legacy-static`): `Pages/Carmen Racing/` (`game.js`, `index.html`, `style.css`); sprites in `assets/`
 - **New route:** `/games/carmen-racing`
-- **Status:** rebuilt in React in `src/games/carmen-racing/` (2026-09-18). Every **Fix** and **Decided** item below is done; use the regression checklist to test it. The legacy copy is no longer linked from the site and can be deleted once you're happy with the React version.
+- **Status:** rebuilt in React in `src/games/carmen-racing/` (2026-09-18). Every **Fix** and **Decided** item below is done; use the regression checklist to test it. The legacy copy was deleted from the site on 2026-09-18.
 - **Type:** canvas game, moved into React as-is through `start(container)` / `stop()`
 
 An endless top-down racer on a three-lane road. Dodge cars, collect flags, and the road keeps speeding up.

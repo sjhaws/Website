@@ -3,7 +3,7 @@
   publish = "dist"
 
 # Serve the React app for every path that isn't a real file, so refreshing
-# /games/battleship works. Files that exist (like /legacy/...) are served as-is.
+# /games/battleship works. Files that exist (like the favicon and built assets) are served as-is.
 [[redirects]]
   from = "/*"
   to = "/index.html"

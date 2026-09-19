@@ -6,20 +6,13 @@ interface RetroLinkProps {
   to: string
   children: ReactNode
   size?: 'normal' | 'large'
-  /** Open with a full page load, for pages outside the React app. */
-  reloadDocument?: boolean
 }
 
-export function RetroLink({
-  to,
-  children,
-  size = 'normal',
-  reloadDocument,
-}: RetroLinkProps) {
+export function RetroLink({ to, children, size = 'normal' }: RetroLinkProps) {
   const className =
     size === 'large' ? `${styles.button} ${styles.large}` : styles.button
   return (
-    <Link to={to} className={className} reloadDocument={reloadDocument}>
+    <Link to={to} className={className}>
       {children}
     </Link>
   )

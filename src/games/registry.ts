@@ -1,14 +1,9 @@
 export interface GameInfo {
   slug: string
   title: string
-  /**
-   * The old static page, for games not rebuilt in React yet. These open with a
-   * full page load; games without one have a route at /games/<slug>.
-   */
-  legacyUrl?: string
 }
 
-// Order matches the Games menu.
+// Order matches the Games menu. Each game has a route at /games/<slug>.
 export const GAMES: GameInfo[] = [
   { slug: 'apostle-flashcards', title: 'Apostle Flashcards' },
   { slug: 'memory-game', title: 'Memory Game' },

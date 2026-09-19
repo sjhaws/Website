@@ -1,8 +1,8 @@
 # I, Nephi
 
-- **Legacy:** `public/legacy/Pages/I Nephi V2/` (`game.js` module, `index.html`, `README.md`); sprites in `public/legacy/assets/*.webp`
+- **Legacy** (in the git tag `legacy-static`): `Pages/I Nephi V2/` (`game.js`, `index.html`, `README.md`); sprites in `assets/*.webp`
 - **New route:** `/games/i-nephi`
-- **Status:** rebuilt in React in `src/games/i-nephi/` (2026-09-18). Every **Fix** and **Decided** item below is done; use the regression checklist to test it. The legacy copy is no longer linked from the site and can be deleted once you're happy with the React version.
+- **Status:** rebuilt in React in `src/games/i-nephi/` (2026-09-18). Every **Fix** and **Decided** item below is done; use the regression checklist to test it. The legacy copy was deleted from the site on 2026-09-18.
 - **Type:** Phaser 3 game (3.80.1, loaded from a CDN as a global), moved into React as-is through `start(container)` / `stop()`
 
 A six-level side-scrolling platformer following Nephi's journey from Jerusalem to the Promised Land. On the Games menu it's "I, Nephi"; the page title and README call it "Nephi Journey". The original V1 was retired.

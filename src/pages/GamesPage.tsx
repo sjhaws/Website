@@ -12,19 +12,9 @@ export function GamesPage() {
       <ul className={styles.grid}>
         {GAMES.map((game) => (
           <li key={game.slug}>
-            {game.legacyUrl ? (
-              <RetroLink
-                to={encodeURI(game.legacyUrl)}
-                size="large"
-                reloadDocument
-              >
-                {game.title}
-              </RetroLink>
-            ) : (
-              <RetroLink to={`/games/${game.slug}`} size="large">
-                {game.title}
-              </RetroLink>
-            )}
+            <RetroLink to={`/games/${game.slug}`} size="large">
+              {game.title}
+            </RetroLink>
           </li>
         ))}
       </ul>
