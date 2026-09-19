@@ -47,7 +47,7 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 - **Enemies:** snakes and scorpions, plus guards on level 3, and sharks and whales on level 6.
   - Landing on top of a land enemy removes it and bounces you up.
   - Any other touch restarts the level.
-  - **Level 6 (at sea):** 7 sharks and 4 whales cruise back and forth under the water, each at its own depth and pace, within 280 px of where it starts. Every 1.8 to 4.5 seconds (a little longer at the start), one within 380 px of the boat dashes along underneath to where the boat is, surges up through the surface, and dives back down. It aims where the boat was when it set off, so sailing away dodges it. Sharks are small and quick, whales big and slow (`SEA_CREATURES` in `game.js`). Touching one restarts the level.
+  - **Level 6 (at sea):** 7 sharks and 4 whales cruise back and forth under the water, each at its own depth and pace, within 280 px of where it starts. Every 0.9 to 2.4 seconds (a little longer at the start of the level), one within 520 px of the boat hunts it: it dashes along underneath, following the boat for up to 2.5 seconds, then surges up through the surface where it's got to and dives back down. It stops following once it surges, so turning or stopping at that moment dodges it; sharks surge faster than the boat sails, so outrunning them doesn't work. Whales are big and slower (`SEA_CREATURES` and the `SEA_…` settings in `game.js`). Touching one restarts the level.
   - The water's surface is drawn see-through in front of the sea creatures and the boat's hull, so they look underwater.
   - **Art:** the boat (an ancient ship with a striped sail and the family looking over the side), the shark and the whale were drawn for this site as pixel art at 3× to match the other sprites (`Ship.webp`, `Shark.webp`, `Whale.webp`), replacing the triangle boat that was drawn in code.
 - **Scrolls:** 3 per level, at ¼, ½ and ¾ of the way across. Picking one up pauses the game and shows a message with **Proceed**. After closing it you're invincible for 3 seconds. The counter reads `Scrolls: N/3`.
@@ -72,7 +72,7 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 - [ ] Reaching the goal moves on to the next level's story card
 - [ ] Snakes slither and flick their tongues, scorpions scuttle and snap their claws, and level 3's guards march, none in step with each other, and all freeze while a scroll is open
 - [ ] Level 3 has guards and Laban as the goal; level 6 is the ship, with left/right only
-- [ ] On level 6 the boat sits in the water; sharks and whales swim underwater with beating tails, now and then surge up at the boat, and restart the level if they hit it; sailing away when one comes dodges it
+- [ ] On level 6 the boat sits in the water; sharks and whales swim underwater with beating tails, now and then surge up at the boat, and restart the level if they hit it; turning or stopping as one surges dodges it; the boat bobs smoothly, including after picking up scrolls
 - [ ] The ending screen appears after level 6, and **Play Again** returns to level 1
 - [ ] After leaving the game the canvas is gone, keys do nothing, and the game loop stops. Exactly one `document` `visibilitychange` listener per visit is expected to remain.
 - [ ] Leaving and reopening the game doesn't make it run faster

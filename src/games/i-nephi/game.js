@@ -390,25 +390,29 @@ const BOAT_DISPLAY = [104, 80]
 const BOAT_RIDE = 20
 const BOAT_HULL = [12, 40, 80, 28]
 
-// Level 6's sharks and whales cruise back and forth under the water. Now and
-// then one near the boat dashes under where the boat is, surges up through
-// the surface and dives again. Speeds are in pixels a second; `depth` is how far below the
+// Level 6's sharks and whales cruise back and forth under the water. Every
+// so often one near the boat hunts it: it dashes along underneath, following
+// the boat, then surges up through the surface and dives again. It stops
+// following once it surges (or after SEA_CHASE_MS), so the boat can still
+// dodge by turning or stopping at the right moment. Speeds are in pixels a second; `depth` is how far below the
 // waterline each cruises, and `hitbox` covers its body, in pixels on screen
 // from the art's top left.
 const SEA_CREATURES = {
-  shark: { speed: 85, rise: 175, depth: [70, 120], hitbox: [12, 12, 56, 14] },
-  whale: { speed: 50, rise: 120, depth: [90, 140], hitbox: [18, 14, 98, 30] },
+  shark: { speed: 110, rise: 235, depth: [50, 100], hitbox: [12, 12, 56, 14] },
+  whale: { speed: 70, rise: 165, depth: [70, 120], hitbox: [18, 14, 98, 30] },
 }
 // How far each cruises either side of where it starts.
 const SEA_RANGE = 280
-// It only rises at a boat within this distance, across.
-const SEA_REACH = 380
-// Milliseconds between rises.
-const SEA_WAIT = [1800, 4500]
-// How far above the waterline the middle of a rising creature gets.
-const SEA_BREACH = 2
+// It only hunts a boat within this distance, across.
+const SEA_REACH = 520
+// Milliseconds between hunts.
+const SEA_WAIT = [900, 2400]
+// The longest it follows the boat before surging.
+const SEA_CHASE_MS = 2500
+// How far above the waterline the middle of a surging creature gets.
+const SEA_BREACH = 8
 // How close across it gets before surging up.
-const SEA_STRIKE = 60
+const SEA_STRIKE = 70
 const SEA_PACE_VARIATION = 0.2
 
 // Scroll popup: the box auto-sizes around whatever text it's given (see
@@ -1481,6 +1485,10 @@ class GameScene extends Phaser.Scene {
       this.player.body.setSize(w / scaleX, h / scaleY, false)
       this.player.body.setOffset(x / scaleX, y / scaleY)
       this.player.body.setAllowGravity(false)
+      // update() places the boat itself each frame. If physics also moved
+      // it (by how far its body moved since the last frame), the two would
+      // overcorrect each other and the boat would shake.
+      this.player.body.moves = false
       this.player.setBounce(0)
       this.player.setDragX(900)
     } else {
@@ -1587,9 +1595,11 @@ class GameScene extends Phaser.Scene {
       minX: x - SEA_RANGE,
       maxX: x + SEA_RANGE,
       mode: 'cruise',
-      // A little longer at first, to give the boat a moment.
+      // A little longer at first, to give the boat a moment. (The game
+      // loop's clock is the one update() gets; at the start of a level the
+      // scene's own clock can still be showing an old time.)
       nextRiseAt:
-        this.time.now + SEA_WAIT[0] + Phaser.Math.Between(...SEA_WAIT),
+        this.game.loop.time + SEA_WAIT[0] + Phaser.Math.Between(...SEA_WAIT),
     })
     this.faceSeaCreature(enemy, Math.random() < 0.5 ? -1 : 1)
     this.enemyConfigs.push(enemy)
@@ -1641,8 +1651,11 @@ class GameScene extends Phaser.Scene {
         if (time >= enemy.getData('nextRiseAt')) {
           const across = this.player.x - enemy.x
           if (Math.abs(across) <= SEA_REACH) {
-            // Aim at where the boat is now, so it can still get away.
-            enemy.setData({ mode: 'rise', targetX: this.player.x })
+            enemy.setData({
+              mode: 'rise',
+              targetX: this.player.x,
+              chaseUntil: time + SEA_CHASE_MS,
+            })
             this.faceSeaCreature(enemy, Math.sign(across) || direction)
           } else {
             enemy.setData('nextRiseAt', time + 400)
@@ -1656,7 +1669,13 @@ class GameScene extends Phaser.Scene {
         if (dy >= 0) {
           enemy.setData('mode', 'dive')
         } else if (Math.abs(dx) > SEA_STRIKE) {
-          // Dash along underneath first...
+          // Dash along underneath first, following the boat...
+          if (time < enemy.getData('chaseUntil')) {
+            enemy.setData('targetX', this.player.x)
+          }
+          if (Math.sign(dx) !== enemy.getData('direction')) {
+            this.faceSeaCreature(enemy, Math.sign(dx))
+          }
           vx = Math.sign(dx) * rise
           vy = Phaser.Math.Clamp(
             (enemy.getData('cruiseY') - enemy.y) * 3,
@@ -1664,7 +1683,7 @@ class GameScene extends Phaser.Scene {
             60,
           )
         } else {
-          // ...then surge up at the spot.
+          // ...then surge up at the spot it's reached.
           const distance = Math.hypot(dx, dy)
           vx = (dx / distance) * rise
           vy = (dy / distance) * rise
@@ -2056,8 +2075,6 @@ class GameScene extends Phaser.Scene {
         this.player.flipX = false
       }
 
-      this.player.setVelocityX(0)
-      this.player.setVelocityY(0)
       this.player.x = Phaser.Math.Clamp(
         this.player.x + shipMove * (this.game.loop.delta / 1000),
         BOAT_DISPLAY[0] / 2,
