@@ -106,6 +106,20 @@ const WALKERS = {
       { box: [117, 130, 21, 30], swing: -2, trail: [1, 0] },
     ],
   },
+  // A lion walks on its back legs and front legs in turn, and swishes its
+  // tail; a copy fills the gap at its rump as the tail swings back.
+  lion: {
+    key: 'lion-walk',
+    art: 'lion',
+    display: [68, 42],
+    fps: 12,
+    hemY: 96, // its legs are below its belly
+    feet: [30, 96, 162], // back legs, then front legs
+    stride: 3,
+    lift: 2,
+    dip: 1,
+    hands: [{ box: [3, 0, 33, 51], swing: 2, raise: 1, trail: [-1, 0] }],
+  },
 }
 
 // Crawlers: each part moves along its own curve, `speed` times a loop,
@@ -442,11 +456,27 @@ const CLIMB_SPEED = 150
 // reaching up with one hand and foot and then the other.
 const CLIMB_KEY = 'nephi-climb'
 const CLIMB_STILL = 0
-// Guards chase Nephi when they see him on the street (see updateGuard).
-const GUARD_SIGHT = 380
-const GUARD_LOSE_DISTANCE = 640
-const GUARD_CHASE_SPEED = 150
-const GUARD_PATROL_RANGE = 240
+// Guards and lions hunt Nephi: they chase him when they see him on the
+// ground (see updateHunter), each kind at its own speed.
+const HUNTER_SIGHT = 380
+const HUNTER_LOSE_DISTANCE = 640
+const HUNTER_CHASE_SPEED = { guard: 150, lion: 175 }
+const HUNTER_PATROL_RANGE = 240
+// Three lions prowl the ground on each of levels 2, 4 and 5 (by index).
+const LION_LEVELS = [1, 3, 4]
+const LION_SPOTS = [0.28, 0.56, 0.84] // of the way across the level
+const LION_BODY = [52, 26]
+
+// On levels 4 and 5 (by index) Nephi carries Laban's sword, held up in his
+// forward fist, and can swing it (see updateSword). Angles are in degrees
+// forward of upright; the blade is in pixels on screen from the grip.
+const SWORD_LEVELS = [3, 4]
+const SWORD_CARRY_ANGLE = 25
+const SWORD_SWING_ANGLE = 130
+const SWORD_SWING_MS = [110, 170] // down, then back up
+const SWORD_REST_MS = 80 // before it can swing again
+const SWORD_BLADE = 26
+const SWORD_GRIP_Y = 26.5 / 31 // the grip, as a share of the art's height
 
 // A repeatable stand-in for Math.random (mulberry32), so the street is laid
 // out the same every time.
@@ -730,6 +760,11 @@ class BootScene extends Phaser.Scene {
     )
     this.load.image('tent', new URL('./assets/Tent.webp', import.meta.url).href)
     this.load.image('ship', new URL('./assets/Ship.webp', import.meta.url).href)
+    this.load.image('lion', new URL('./assets/Lion.webp', import.meta.url).href)
+    this.load.image(
+      'sword',
+      new URL('./assets/Sword.webp', import.meta.url).href,
+    )
     this.load.spritesheet(
       CLIMB_KEY,
       new URL('./assets/NephiClimb.webp', import.meta.url).href,
@@ -921,17 +956,22 @@ class StoryScene extends Phaser.Scene {
     const touchScreen = window.matchMedia('(pointer: coarse)').matches
     const onShip = levelIndex === 5
     const withLadders = levelIndex === 2
+    const withSword = SWORD_LEVELS.includes(levelIndex)
     const howToPlay = touchScreen
       ? onShip
         ? 'Slide a finger left or right to steer.'
         : withLadders
           ? 'Slide a finger to walk, and up or down at a ladder to climb. Tap to jump.'
-          : 'Slide a finger to walk. Tap or flick up to jump.'
+          : withSword
+            ? 'Slide a finger to walk. Tap to jump, and flick down to swing your sword.'
+            : 'Slide a finger to walk. Tap or flick up to jump.'
       : onShip
         ? 'Use the arrow keys to steer.'
         : withLadders
           ? 'Use the arrow keys to move and climb ladders, and Space to jump.'
-          : 'Use the arrow keys to move and Space to jump.'
+          : withSword
+            ? 'Use the arrow keys to move, Space to jump, and X to swing your sword.'
+            : 'Use the arrow keys to move and Space to jump.'
     const hint = this.add
       .text(width / 2, 0, howToPlay, {
         fontFamily: 'Verdana',
@@ -1093,7 +1133,10 @@ class GameScene extends Phaser.Scene {
     this.climbing = null
     this.ladders = []
     this.roofs = null
-    this.plane = 'street'
+    this.plane = 'ground'
+    // Levels 4 and 5: Nephi's sword, and when he last swung it.
+    this.sword = null
+    this.swingStartedAt = -Infinity
     this.levelFinished = false
     this.gamePaused = false
     this.scrollsCollected = 0
@@ -1636,6 +1679,13 @@ class GameScene extends Phaser.Scene {
     const playerY = this.isShipLevel
       ? this.waterlineY - BOAT_RIDE
       : this.groundY - 60
+    if (SWORD_LEVELS.includes(this.levelIndex)) {
+      // Made first, so it's drawn behind him and his fist covers the grip.
+      this.sword = this.add
+        .image(0, 0, 'sword')
+        .setOrigin(0.5, SWORD_GRIP_Y)
+        .setScale(1 / 3)
+    }
     this.player = this.isShipLevel
       ? this.physics.add.sprite(90, playerY, 'ship')
       : this.physics.add.sprite(90, playerY, WALKERS.nephi.key, FRAME_STILL)
@@ -1723,7 +1773,7 @@ class GameScene extends Phaser.Scene {
         timeScale: speedMultiplier,
       })
       if (isGuard) {
-        enemy.setData({ guard: true, chasing: false })
+        enemy.setData({ hunter: 'guard', chasing: false })
       }
       if (supportPlatform) {
         const enemyPadding = 20
@@ -1742,6 +1792,10 @@ class GameScene extends Phaser.Scene {
       this.enemyConfigs.push(enemy)
     })
 
+    if (LION_LEVELS.includes(this.levelIndex)) {
+      LION_SPOTS.forEach((spot) => this.addLion(WORLD_WIDTH * spot))
+    }
+
     this.physics.add.overlap(
       this.player,
       this.enemies,
@@ -1749,6 +1803,35 @@ class GameScene extends Phaser.Scene {
       null,
       this,
     )
+  }
+
+  // A lion on the ground, patrolling and hunting like a guard.
+  addLion(x) {
+    const anim = WALKERS.lion
+    const y = this.groundY - anim.display[1] / 2
+    const lion = this.enemies.create(x, y, anim.key, FRAME_STILL)
+    setAnimSize(lion, anim)
+    this.setDisplayBodyBox(lion, ...LION_BODY)
+    const pace =
+      1 +
+      Phaser.Math.FloatBetween(-ENEMY_SPEED_VARIATION, ENEMY_SPEED_VARIATION)
+    lion.anims.play({
+      key: anim.key,
+      startFrame: Phaser.Math.Between(0, ANIM_STEPS - 1),
+      timeScale: pace,
+    })
+    const turnRange = this.getEnemyTurnDelayRange()
+    lion.setData({
+      hunter: 'lion',
+      chasing: false,
+      speed: ENEMY_SPEED * pace,
+      direction: Math.random() < 0.5 ? -1 : 1,
+      minX: x - HUNTER_PATROL_RANGE,
+      maxX: x + HUNTER_PATROL_RANGE,
+      nextTurnAt:
+        this.game.loop.time + Phaser.Math.Between(turnRange.min, turnRange.max),
+    })
+    this.enemyConfigs.push(lion)
   }
 
   // A shark or whale for level 6, cruising at its own depth and pace.
@@ -2180,6 +2263,8 @@ class GameScene extends Phaser.Scene {
     )
     this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
     this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S)
+    this.keyX = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X)
+    this.keyJ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.J)
   }
 
   chooseEnemyTexture(x) {
@@ -2311,6 +2396,18 @@ class GameScene extends Phaser.Scene {
         this.animateNephi(leftPressed !== rightPressed)
       }
       this.updatePlane(onGround)
+      if (this.sword) {
+        const swing =
+          Phaser.Input.Keyboard.JustDown(this.keyX) ||
+          Phaser.Input.Keyboard.JustDown(this.keyJ) ||
+          this.touch.wantsSwing(now)
+        if (swing && time - this.swingStartedAt >= this.swingLength()) {
+          this.swingStartedAt = time
+          this.touch.clearSwing()
+          this.drawSwoosh()
+        }
+        this.updateSword(time)
+      }
     }
 
     this.updateEnemies(time)
@@ -2377,14 +2474,132 @@ class GameScene extends Phaser.Scene {
     this.player.setTexture(CLIMB_KEY, CLIMB_STILL)
   }
 
-  // Which level Nephi is on, for the guards: 'street', 'roof' or 'ladder'.
-  // In the air he's still on the one he jumped from.
+  // How long a swing takes, including a moment's rest after.
+  swingLength() {
+    const [down, up] = SWORD_SWING_MS
+    return down + up + SWORD_REST_MS
+  }
+
+  // Where Nephi's forward fist is, relative to his middle, in the frame he's
+  // showing: it moves as he walks (see walkPose). In pixels on screen, for
+  // him facing right.
+  swordGrip() {
+    const nephi = WALKERS.nephi
+    const art = this.textures.get(nephi.art).getSourceImage()
+    const [x, y, w, h] = nephi.hands[0].box
+    const [width, height] = nephi.display
+    let gripX = ((x + w / 2) * width) / art.width - width / 2
+    let gripY = ((y + h / 2) * height) / art.height - height / 2
+    const frame = this.player.frame.name
+    if (this.player.texture.key === nephi.key && frame !== FRAME_STILL) {
+      const pose = walkPose(nephi, frame - 1)
+      gripX += pose.hands[0][0]
+      gripY += pose.hands[0][1] + pose.body
+    }
+    return [gripX, gripY]
+  }
+
+  // Keeps the sword in Nephi's fist, held up, or swinging forward and down
+  // and back after a swing starts. Early in a swing, any enemy the blade
+  // touches is killed.
+  updateSword(time) {
+    const facing = this.player.flipX ? -1 : 1
+    const [gripX, gripY] = this.swordGrip()
+    const x = this.player.x + gripX * facing
+    const y = this.player.y + gripY
+    const [down, up] = SWORD_SWING_MS
+    const t = time - this.swingStartedAt
+    let angle = SWORD_CARRY_ANGLE
+    if (t < down) {
+      const swung = Phaser.Math.Easing.Quadratic.Out(t / down)
+      angle += (SWORD_SWING_ANGLE - SWORD_CARRY_ANGLE) * swung
+    } else if (t < down + up) {
+      const back = (t - down) / up
+      angle = SWORD_SWING_ANGLE - (SWORD_SWING_ANGLE - SWORD_CARRY_ANGLE) * back
+    }
+    this.sword
+      .setPosition(x, y)
+      .setAngle(angle * facing)
+      .setFlipX(facing < 0)
+    if (t < down + up / 2) {
+      this.strikeWithSword(x, y, angle, facing)
+    }
+  }
+
+  // Kills any enemy touching the blade, held at `angle` from the grip at
+  // (x, y).
+  strikeWithSword(x, y, angle, facing) {
+    const radians = Phaser.Math.DegToRad(angle)
+    const points = [0.35, 0.65, 1].map((along) => [
+      x + facing * Math.sin(radians) * SWORD_BLADE * along,
+      y - Math.cos(radians) * SWORD_BLADE * along,
+    ])
+    this.enemies.children.iterate((enemy) => {
+      if (
+        enemy?.active &&
+        points.some(([px, py]) => enemy.body.hitTest(px, py))
+      ) {
+        this.killEnemy(enemy)
+      }
+    })
+  }
+
+  // A streak through the air where the sword swings.
+  drawSwoosh() {
+    const facing = this.player.flipX ? -1 : 1
+    const [gripX, gripY] = this.swordGrip()
+    const x = this.player.x + gripX * facing
+    const y = this.player.y + gripY
+    // Angles from pointing right, clockwise, as Phaser draws arcs.
+    const from = SWORD_CARRY_ANGLE - 90
+    const to = SWORD_SWING_ANGLE - 90
+    const toRadians = (degrees) =>
+      Phaser.Math.DegToRad(facing > 0 ? degrees : 180 - degrees)
+    const swoosh = this.add.graphics().setDepth(4)
+    swoosh.lineStyle(4, 0xffffff, 0.7)
+    swoosh.beginPath()
+    swoosh.arc(
+      x,
+      y,
+      SWORD_BLADE * 0.9,
+      toRadians(from),
+      toRadians(to),
+      facing < 0,
+    )
+    swoosh.strokePath()
+    this.tweens.add({
+      targets: swoosh,
+      alpha: 0,
+      duration: 200,
+      onComplete: () => swoosh.destroy(),
+    })
+  }
+
+  // A kill by sword: the enemy vanishes in a burst.
+  killEnemy(enemy) {
+    enemy.disableBody(true, true)
+    enemy.getData('alert')?.destroy()
+    const burst = this.add
+      .circle(enemy.x, enemy.y, 10, 0xfff3c4, 0.85)
+      .setDepth(5)
+    this.tweens.add({
+      targets: burst,
+      scale: 3,
+      alpha: 0,
+      duration: 260,
+      onComplete: () => burst.destroy(),
+    })
+  }
+
+  // Which level Nephi is on, for the guards and lions: 'ground', 'above' (a
+  // roof or platform) or 'ladder'. In the air he's still on the one he
+  // jumped from.
   updatePlane(onGround) {
     if (this.climbing) {
       this.plane = 'ladder'
     } else if (onGround) {
-      const onStreet = this.player.body.bottom >= this.groundY - 4
-      this.plane = onStreet ? 'street' : 'roof'
+      const onTheGround = this.player.body.bottom >= this.groundY - 4
+      this.plane = onTheGround ? 'ground' : 'above'
     }
   }
 
@@ -2412,8 +2627,8 @@ class GameScene extends Phaser.Scene {
       }
       if (this.isShipLevel) {
         this.swim(enemy, time)
-      } else if (enemy.getData('guard')) {
-        this.updateGuard(enemy, time)
+      } else if (enemy.getData('hunter')) {
+        this.updateHunter(enemy, time)
       } else {
         this.patrol(enemy, time)
       }
@@ -2460,17 +2675,19 @@ class GameScene extends Phaser.Scene {
     enemy.flipX = enemy.getData('direction') < 0
   }
 
-  // Guards patrol until they see Nephi: facing him, on the street, within
-  // GUARD_SIGHT. Then they chase him until he leaves the street (up a ladder
-  // or onto a roof) or gets well away, and patrol again from where they are.
-  updateGuard(enemy, time) {
+  // Guards and lions patrol until they see Nephi: facing him, on the ground,
+  // within HUNTER_SIGHT. Then they chase him until he leaves the ground (up a
+  // ladder, or onto a roof or platform) or gets well away, and patrol again
+  // from where they are.
+  updateHunter(enemy, time) {
     const dx = this.player.x - enemy.x
-    const onStreet = this.plane === 'street'
+    const onTheGround = this.plane === 'ground'
     if (enemy.getData('chasing')) {
-      if (onStreet && Math.abs(dx) <= GUARD_LOSE_DISTANCE) {
+      if (onTheGround && Math.abs(dx) <= HUNTER_LOSE_DISTANCE) {
         const direction = dx < 0 ? -1 : 1
+        const speed = HUNTER_CHASE_SPEED[enemy.getData('hunter')]
         enemy.setData('direction', direction)
-        enemy.body.setVelocityX(direction * GUARD_CHASE_SPEED)
+        enemy.body.setVelocityX(direction * speed)
         enemy.flipX = direction < 0
         this.followAlert(enemy)
         return
@@ -2478,7 +2695,7 @@ class GameScene extends Phaser.Scene {
       this.stopChase(enemy, time)
     } else {
       const facing = Math.sign(dx) === enemy.getData('direction')
-      if (onStreet && facing && Math.abs(dx) <= GUARD_SIGHT) {
+      if (onTheGround && facing && Math.abs(dx) <= HUNTER_SIGHT) {
         this.startChase(enemy)
         return
       }
@@ -2490,7 +2707,8 @@ class GameScene extends Phaser.Scene {
   startChase(enemy) {
     enemy.setData('chasing', true)
     // Faster steps to match.
-    enemy.anims.timeScale = GUARD_CHASE_SPEED / ENEMY_SPEED
+    const speed = HUNTER_CHASE_SPEED[enemy.getData('hunter')]
+    enemy.anims.timeScale = speed / ENEMY_SPEED
     this.showAlert(enemy, '!')
   }
 
@@ -2498,8 +2716,8 @@ class GameScene extends Phaser.Scene {
     const turnRange = this.getEnemyTurnDelayRange()
     enemy.setData({
       chasing: false,
-      minX: enemy.x - GUARD_PATROL_RANGE,
-      maxX: enemy.x + GUARD_PATROL_RANGE,
+      minX: enemy.x - HUNTER_PATROL_RANGE,
+      maxX: enemy.x + HUNTER_PATROL_RANGE,
       nextTurnAt: time + Phaser.Math.Between(turnRange.min, turnRange.max),
     })
     enemy.anims.timeScale = enemy.getData('speed') / ENEMY_SPEED

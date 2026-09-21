@@ -8,6 +8,7 @@
 // - A quick tap jumps, as does a quick flick upward, which lets the steering
 //   finger jump without lifting. So does any other finger touching down while
 //   one is steering, which is the fastest way with two thumbs.
+// - A quick flick downward swings a sword, on the levels with one.
 // - Sliding the steering finger more than CLIMB_DEAD_ZONE pixels up or down
 //   climbs a ladder, in the same way. That dead zone is bigger, so a finger
 //   drifting a little while walking past a ladder doesn't grab it.
@@ -23,7 +24,10 @@ export const TAP_MS = 250
 export const TAP_SLOP = 10
 export const FLICK_DISTANCE = 30
 export const FLICK_MS = 200
-/** A jump asked for this soon before landing still happens on landing. */
+/**
+ * A jump asked for this soon before landing still happens on landing, and a
+ * swing this soon before the last one ends still happens after it.
+ */
 export const JUMP_BUFFER_MS = 120
 
 interface Point {
@@ -53,6 +57,7 @@ export class SlideControls {
   private jumpAt: number | null = null
   /** Whether the last jump asked for was a flick. */
   private flicked = false
+  private swingAt: number | null = null
   private steering: Steering | null = null
   /** Other fingers that are down, by pointer id, and where they are. */
   private others = new Map<number, Point>()
@@ -111,10 +116,15 @@ export class SlideControls {
       { x, y, time },
     ]
     const lowest = Math.max(...steering.recent.map((p) => p.y))
+    const highest = Math.min(...steering.recent.map((p) => p.y))
     if (lowest - y >= FLICK_DISTANCE) {
       this.askToJump(time, true)
       steering.jumped = true
       // The flick is used up; it takes another to jump again.
+      steering.recent = [{ x, y, time }]
+    } else if (y - highest >= FLICK_DISTANCE) {
+      this.swingAt = time
+      steering.jumped = true
       steering.recent = [{ x, y, time }]
     }
   }
@@ -150,6 +160,15 @@ export class SlideControls {
   /** The jump happened, so forget the request. */
   clearJump() {
     this.jumpAt = null
+  }
+
+  /** Whether a sword swing was asked for within the last JUMP_BUFFER_MS. */
+  wantsSwing(now: number): boolean {
+    return this.swingAt !== null && now - this.swingAt <= JUMP_BUFFER_MS
+  }
+
+  clearSwing() {
+    this.swingAt = null
   }
 
   private askToJump(time: number, flick: boolean) {

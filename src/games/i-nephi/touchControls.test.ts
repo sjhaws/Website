@@ -189,3 +189,26 @@ describe('climbing', () => {
     expect(tap.wantsJump(1080, { flicks: false })).toBe(true)
   })
 })
+
+describe('swinging a sword', () => {
+  it('swings on a quick flick down, not a slow slide down', () => {
+    const flick = new SlideControls()
+    flick.down(FINGER, 100, 300, 1000)
+    flick.move(FINGER, 140, 300, 1100) // walking
+    flick.move(FINGER, 142, 300 + FLICK_DISTANCE, 1200)
+    expect(flick.wantsSwing(1200)).toBe(true)
+    expect(flick.wantsJump(1200)).toBe(false)
+    expect(flick.direction).toBe(1) // still walking
+    // Lifting after a flick isn't a tap.
+    flick.clearSwing()
+    flick.up(FINGER, 1210)
+    expect(flick.wantsJump(1210)).toBe(false)
+
+    const slide = new SlideControls()
+    slide.down(FINGER, 100, 300, 1000)
+    for (let i = 1; i <= 10; i++) {
+      slide.move(FINGER, 100, 300 + i * 5, 1000 + i * 100)
+    }
+    expect(slide.wantsSwing(2000)).toBe(false)
+  })
+})
