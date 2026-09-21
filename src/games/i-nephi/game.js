@@ -511,15 +511,26 @@ const LION_KNOCK_HOP = 18
 const LION_KNOCK_MS = 350
 const LION_DAZE_MS = 500
 
-// Level 5 (by index) has palm trees, each with a monkey in it who throws
-// coconuts at Nephi (see updateMonkeys). A coconut that hits him restarts
-// the level, but a swing of his sword knocks it away (see batCoconut).
+// Level 5 (by index) is a grove of palm trees (see groveLayout), one in ten
+// with a monkey in it who throws coconuts at Nephi (see updateMonkeys). A
+// coconut that hits him restarts the level, but a swing of his sword knocks
+// it away (see batCoconut).
 const MONKEY_LEVEL = 4
-const PALM_SPOTS = [0.12, 0.3, 0.46, 0.63, 0.79] // of the way across the level
+const PALM_COUNT = 100
+const MONKEY_PALMS = 10
+// Palms are from 3x their art (156 pixels tall on screen) up to half the
+// window's height.
+const PALM_HEIGHTS = [156, GAME_HEIGHT / 2]
 // Palm.webp is five palm trees, each 37x52 pixels of art with its crown in
-// the middle, shown at 3x (111x156 on screen) and drawn at 9x. A monkey sits
-// where the fronds meet the trunk, this far above the ground on screen.
-const PALM = { sheet: 'palm', frames: 5, display: [111, 156], perch: 102 }
+// the middle, drawn at 9x; the last two have coconuts. A monkey sits where
+// the fronds meet the trunk, 34 pixels of art up.
+const PALM = {
+  sheet: 'palm',
+  art: [37, 52],
+  frames: 5,
+  withCoconuts: [3, 4],
+  perch: 34 / 52, // of the way up
+}
 // Monkey.webp is a monkey's poses, facing right, each 73x50 pixels on screen
 // (drawn at 3x) with his feet in the middle of the bottom row.
 const MONKEY = { sheet: 'monkey', display: [73, 50] }
@@ -655,6 +666,73 @@ function seededRandom(seed) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
+}
+
+// Level 5's palm grove, the same every time: PALM_COUNT palms of every kind,
+// either way round and of every height (see PALM_HEIGHTS), evenly spread
+// with a little jitter. MONKEY_PALMS of them, evenly spread, each in place
+// of the nearest other palm, have coconuts and a monkey in, and room between
+// the platforms, so none hides a monkey. Taller palms come first, to be drawn
+// behind, and those with monkeys last, in front of the rest.
+function groveLayout(platforms) {
+  const random = seededRandom(5)
+  const between = (min, max) => min + (max - min) * random()
+  const palm = (x, frame, monkey) => ({
+    x,
+    frame,
+    monkey,
+    height: Math.round(between(...PALM_HEIGHTS)),
+    flip: random() < 0.5,
+  })
+  const spacing = WORLD_WIDTH / PALM_COUNT
+  const spots = Array.from(
+    { length: PALM_COUNT },
+    (_, index) => (index + 0.5 + between(-0.3, 0.3)) * spacing,
+  )
+  const withMonkeys = Array.from({ length: MONKEY_PALMS }, (_, index) => {
+    const frame = PALM.withCoconuts[index % PALM.withCoconuts.length]
+    const tree = palm(0, frame, true)
+    const spot = (WORLD_WIDTH * (index + 1)) / (MONKEY_PALMS + 1)
+    const room = palmWidth(tree.height) / 2 + 8
+    tree.x = clearOfPlatforms(spot, room, platforms)
+    const nearest = spots.reduce(
+      (best, x, at) =>
+        Math.abs(x - tree.x) < Math.abs(spots[best] - tree.x) ? at : best,
+      0,
+    )
+    spots.splice(nearest, 1)
+    return tree
+  })
+  const others = spots.map((x) =>
+    palm(x, Math.floor(random() * PALM.frames), false),
+  )
+  others.sort((a, b) => b.height - a.height)
+  return [...others, ...withMonkeys]
+}
+
+// How wide a palm this tall is, on screen.
+function palmWidth(height) {
+  return (height * PALM.art[0]) / PALM.art[1]
+}
+
+// The nearest place to `x` with `room` either side clear of the platforms.
+function clearOfPlatforms(x, room, platforms) {
+  const clear = (at) =>
+    platforms.every((platform) => {
+      const tiles = Math.max(1, Math.ceil(platform.width / 64))
+      const left = platform.x - 32
+      const right = left + tiles * 64
+      return at + room <= left || at - room >= right
+    })
+  for (let shift = 0; shift <= 600; shift += 20) {
+    if (clear(x + shift)) {
+      return x + shift
+    }
+    if (clear(x - shift)) {
+      return x - shift
+    }
+  }
+  return x
 }
 
 // Level 3's buildings, left to right: alternately tall, with a ladder near
@@ -940,7 +1018,7 @@ class BootScene extends Phaser.Scene {
     this.load.spritesheet(
       PALM.sheet,
       new URL('./assets/Palm.webp', import.meta.url).href,
-      { frameWidth: PALM.display[0] * 3, frameHeight: PALM.display[1] * 3 },
+      { frameWidth: PALM.art[0] * 9, frameHeight: PALM.art[1] * 9 },
     )
     this.load.spritesheet(
       MONKEY.sheet,
@@ -1742,20 +1820,22 @@ class GameScene extends Phaser.Scene {
     levelOverlay.fillRect(0, groundY - 80, WORLD_WIDTH, 80)
   }
 
-  // Level 5's palm trees, each with a monkey in its crown, drawn behind
-  // everyone, and clear of the platforms so none hides a monkey.
+  // Level 5's palm grove (see groveLayout), drawn behind everyone, with a
+  // monkey in the crown of one palm in ten.
   buildPalms(layout) {
-    const platforms = this.getExpandedPlatforms(layout.platforms)
-    const now = this.game.loop.time
-    PALM_SPOTS.forEach((spot, index) => {
-      const x = this.clearOfPlatforms(WORLD_WIDTH * spot, platforms)
+    const palms = groveLayout(this.getExpandedPlatforms(layout.platforms))
+    for (const { x, height, frame, flip } of palms) {
       this.add
-        .image(x, this.groundY, PALM.sheet, index % PALM.frames)
+        .image(x, this.groundY, PALM.sheet, frame)
         .setOrigin(0.5, 1)
-        .setDisplaySize(...PALM.display)
-        .setFlipX(index % 2 === 1)
+        .setDisplaySize(palmWidth(height), height)
+        .setFlipX(flip)
+    }
+    const now = this.game.loop.time
+    for (const { x, height } of palms.filter((palm) => palm.monkey)) {
+      const perch = this.groundY - Math.round(height * PALM.perch)
       const sprite = this.add
-        .sprite(x, this.groundY - PALM.perch, MONKEY.sheet, MONKEY_FRAMES.sit)
+        .sprite(x, perch, MONKEY.sheet, MONKEY_FRAMES.sit)
         .setOrigin(0.5, 1)
         .setDisplaySize(...MONKEY.display)
       this.monkeys.push({
@@ -1766,29 +1846,7 @@ class GameScene extends Phaser.Scene {
         stepEndsAt: 0,
         nextThrowAt: now + Phaser.Math.Between(...MONKEY_REST_MS),
       })
-    })
-  }
-
-  // The nearest place to `x` for a palm, with room for its crown between the
-  // platforms.
-  clearOfPlatforms(x, platforms) {
-    const room = PALM.display[0] / 2 + 8
-    const clear = (at) =>
-      platforms.every((platform) => {
-        const tiles = Math.max(1, Math.ceil(platform.width / 64))
-        const left = platform.x - 32
-        const right = left + tiles * 64
-        return at + room <= left || at - room >= right
-      })
-    for (let shift = 0; shift <= 600; shift += 20) {
-      if (clear(x + shift)) {
-        return x + shift
-      }
-      if (clear(x - shift)) {
-        return x - shift
-      }
     }
-    return x
   }
 
   // Level 3's buildings and ladders (see STREET), drawn behind everyone. Their
