@@ -108,20 +108,6 @@ const WALKERS = {
       { box: [117, 130, 21, 30], swing: -2, trail: [1, 0] },
     ],
   },
-  // A lion walks on its back legs and front legs in turn, and swishes its
-  // tail; a copy fills the gap at its rump as the tail swings back.
-  lion: {
-    key: 'lion-walk',
-    art: 'lion',
-    display: [68, 42],
-    fps: 12,
-    hemY: 96, // its legs are below its belly
-    feet: [30, 96, 162], // back legs, then front legs
-    stride: 3,
-    lift: 2,
-    dip: 1,
-    hands: [{ box: [3, 0, 33, 51], swing: 2, raise: 1, trail: [-1, 0] }],
-  },
 }
 
 // Crawlers: each part moves along its own curve, `speed` times a loop,
@@ -486,7 +472,37 @@ const HUNTER_PATROL_RANGE = 240
 // Three lions prowl the ground on each of levels 2, 4 and 5 (by index).
 const LION_LEVELS = [1, 3, 4]
 const LION_SPOTS = [0.28, 0.56, 0.84] // of the way across the level
-const LION_BODY = [52, 26]
+// Lion.webp is a sheet of lion poses, all facing right, with his body in the
+// middle of the frame and his feet on the bottom row. Each frame is 76x64
+// pixels on screen, drawn at 3x.
+const LION = {
+  sheet: 'lion',
+  display: [76, 64],
+  walk: 'lion-walk',
+  run: 'lion-run',
+}
+const LION_FRAMES = {
+  stand: 0,
+  walk: [1, 2, 3, 4],
+  roar: 5,
+  // Bounding: a crouching stride, then a leap.
+  run: [6, 7],
+  sit: 8,
+  lyingDown: 9,
+}
+const LION_WALK_FPS = 8
+const LION_RUN_FPS = 7
+// His body box, in pixels on screen, from this far below the top of the
+// frame: his head and body, not his legs or tail.
+const LION_BODY = [46, 30]
+const LION_BODY_TOP = 22
+// Having spotted Nephi, he roars before he bounds after him.
+const LION_ROAR_MS = 450
+// Having lost him, he stands and looks around for him.
+const LION_LOOK_MS = 700
+// Now and then, while patrolling, he sits down for a rest.
+const LION_REST_EVERY_MS = [5000, 10000]
+const LION_REST_MS = [1500, 3000]
 
 // On levels 4 and 5 (by index) Nephi carries Laban's sword, held up in his
 // forward fist, and can swing it (see updateSword). Angles are in degrees
@@ -843,7 +859,11 @@ class BootScene extends Phaser.Scene {
     )
     this.load.image('tent', new URL('./assets/Tent.webp', import.meta.url).href)
     this.load.image('ship', new URL('./assets/Ship.webp', import.meta.url).href)
-    this.load.image('lion', new URL('./assets/Lion.webp', import.meta.url).href)
+    this.load.spritesheet(
+      LION.sheet,
+      new URL('./assets/Lion.webp', import.meta.url).href,
+      { frameWidth: LION.display[0] * 3, frameHeight: LION.display[1] * 3 },
+    )
     this.load.image(
       'sword',
       new URL('./assets/Sword.webp', import.meta.url).href,
@@ -889,6 +909,19 @@ class BootScene extends Phaser.Scene {
         (pen, step) => drawPose(pen, walker, walkPose(walker, step)),
         poses.map((pose) => (pen) => drawPose(pen, walker, pose)),
       )
+    }
+    for (const [key, frames, frameRate] of [
+      [LION.walk, LION_FRAMES.walk, LION_WALK_FPS],
+      [LION.run, LION_FRAMES.run, LION_RUN_FPS],
+    ]) {
+      if (!this.anims.exists(key)) {
+        this.anims.create({
+          key,
+          frames: frames.map((frame) => ({ key: LION.sheet, frame })),
+          frameRate,
+          repeat: -1,
+        })
+      }
     }
     if (!this.anims.exists(CLIMB_KEY)) {
       this.anims.create({
@@ -1918,29 +1951,37 @@ class GameScene extends Phaser.Scene {
 
   // A lion on the ground, patrolling and hunting like a guard.
   addLion(x) {
-    const anim = WALKERS.lion
-    const y = this.groundY - anim.display[1] / 2
-    const lion = this.enemies.create(x, y, anim.key, FRAME_STILL)
-    setAnimSize(lion, anim)
-    this.setDisplayBodyBox(lion, ...LION_BODY)
+    const y = this.groundY - LION.display[1] / 2
+    const lion = this.enemies.create(x, y, LION.sheet, LION_FRAMES.stand)
+    lion.setDisplaySize(...LION.display)
+    const [width, height] = LION_BODY
+    const { scaleX, scaleY } = lion
+    lion.body.setSize(width / scaleX, height / scaleY, false)
+    lion.body.setOffset(
+      (LION.display[0] - width) / 2 / scaleX,
+      LION_BODY_TOP / scaleY,
+    )
     const pace =
       1 +
       Phaser.Math.FloatBetween(-ENEMY_SPEED_VARIATION, ENEMY_SPEED_VARIATION)
     lion.anims.play({
-      key: anim.key,
-      startFrame: Phaser.Math.Between(0, ANIM_STEPS - 1),
+      key: LION.walk,
+      startFrame: Phaser.Math.Between(0, LION_FRAMES.walk.length - 1),
       timeScale: pace,
     })
     const turnRange = this.getEnemyTurnDelayRange()
+    const now = this.game.loop.time
     lion.setData({
       hunter: 'lion',
       chasing: false,
+      pace,
       speed: ENEMY_SPEED * pace,
       direction: Math.random() < 0.5 ? -1 : 1,
       minX: x - HUNTER_PATROL_RANGE,
       maxX: x + HUNTER_PATROL_RANGE,
-      nextTurnAt:
-        this.game.loop.time + Phaser.Math.Between(turnRange.min, turnRange.max),
+      nextTurnAt: now + Phaser.Math.Between(turnRange.min, turnRange.max),
+      restUntil: 0,
+      restAt: now + Phaser.Math.Between(...LION_REST_EVERY_MS),
     })
     this.enemyConfigs.push(lion)
   }
@@ -2717,8 +2758,12 @@ class GameScene extends Phaser.Scene {
     })
   }
 
-  // A kill by sword: the enemy vanishes in a burst.
+  // A kill by sword: the enemy vanishes in a burst. A lion lies down.
   killEnemy(enemy) {
+    if (enemy.getData('hunter') === 'lion') {
+      this.layLionDown(enemy)
+      return
+    }
     enemy.disableBody(true, true)
     enemy.getData('alert')?.destroy()
     const burst = this.add
@@ -2730,6 +2775,22 @@ class GameScene extends Phaser.Scene {
       alpha: 0,
       duration: 260,
       onComplete: () => burst.destroy(),
+    })
+  }
+
+  // A beaten lion (by sword, or stomped on) lies down and fades away.
+  layLionDown(lion) {
+    lion.getData('alert')?.destroy()
+    // Out of the game, but still to be seen.
+    lion.disableBody(true, false)
+    lion.anims.stop()
+    lion.setFrame(LION_FRAMES.lyingDown)
+    this.tweens.add({
+      targets: lion,
+      alpha: 0,
+      delay: 400,
+      duration: 500,
+      onComplete: () => lion.setVisible(false),
     })
   }
 
@@ -2824,33 +2885,53 @@ class GameScene extends Phaser.Scene {
   updateHunter(enemy, time) {
     const dx = this.player.x - enemy.x
     const onTheGround = this.plane === 'ground'
+    const lion = enemy.getData('hunter') === 'lion'
     if (enemy.getData('chasing')) {
       if (onTheGround && Math.abs(dx) <= HUNTER_LOSE_DISTANCE) {
         const direction = dx < 0 ? -1 : 1
-        const speed = HUNTER_CHASE_SPEED[enemy.getData('hunter')]
         enemy.setData('direction', direction)
-        enemy.body.setVelocityX(direction * speed)
         enemy.flipX = direction < 0
         this.followAlert(enemy)
+        if (lion && time < enemy.getData('roarUntil')) {
+          enemy.body.setVelocityX(0)
+          return
+        }
+        if (lion) {
+          enemy.anims.play(LION.run, true)
+        }
+        const speed = HUNTER_CHASE_SPEED[enemy.getData('hunter')]
+        enemy.body.setVelocityX(direction * speed)
         return
       }
       this.stopChase(enemy, time)
     } else {
       const facing = Math.sign(dx) === enemy.getData('direction')
       if (onTheGround && facing && Math.abs(dx) <= HUNTER_SIGHT) {
-        this.startChase(enemy)
+        this.startChase(enemy, time)
         return
       }
+    }
+    if (lion && this.lionResting(enemy, time)) {
+      this.followAlert(enemy)
+      return
     }
     this.patrol(enemy, time)
     this.followAlert(enemy)
   }
 
-  startChase(enemy) {
+  startChase(enemy, time) {
     enemy.setData('chasing', true)
-    // Faster steps to match.
-    const speed = HUNTER_CHASE_SPEED[enemy.getData('hunter')]
-    enemy.anims.timeScale = speed / ENEMY_SPEED
+    if (enemy.getData('hunter') === 'lion') {
+      // A roar first (see updateHunter).
+      enemy.setData({ roarUntil: time + LION_ROAR_MS, restUntil: 0 })
+      enemy.anims.stop()
+      enemy.setFrame(LION_FRAMES.roar)
+      enemy.body.setVelocityX(0)
+    } else {
+      // Faster steps to match.
+      const speed = HUNTER_CHASE_SPEED[enemy.getData('hunter')]
+      enemy.anims.timeScale = speed / ENEMY_SPEED
+    }
     this.showAlert(enemy, '!')
   }
 
@@ -2862,8 +2943,38 @@ class GameScene extends Phaser.Scene {
       maxX: enemy.x + HUNTER_PATROL_RANGE,
       nextTurnAt: time + Phaser.Math.Between(turnRange.min, turnRange.max),
     })
-    enemy.anims.timeScale = enemy.getData('speed') / ENEMY_SPEED
+    if (enemy.getData('hunter') === 'lion') {
+      this.restLion(enemy, time + LION_LOOK_MS, LION_FRAMES.stand)
+    } else {
+      enemy.anims.timeScale = enemy.getData('speed') / ENEMY_SPEED
+    }
     this.showAlert(enemy, '?')
+  }
+
+  // A lion stops, holding a pose until `until`: standing to look around for
+  // Nephi, or sitting down for a rest. He can still spot him meanwhile.
+  restLion(lion, until, frame) {
+    lion.setData({
+      restUntil: until,
+      restAt: until + Phaser.Math.Between(...LION_REST_EVERY_MS),
+    })
+    lion.anims.stop()
+    lion.setFrame(frame)
+    lion.body.setVelocityX(0)
+  }
+
+  // Whether a lion's resting (see restLion), sitting down when it's time
+  // for a rest. Otherwise he walks.
+  lionResting(lion, time) {
+    if (time >= lion.getData('restUntil') && time >= lion.getData('restAt')) {
+      const rest = Phaser.Math.Between(...LION_REST_MS)
+      this.restLion(lion, time + rest, LION_FRAMES.sit)
+    }
+    if (time < lion.getData('restUntil')) {
+      return true
+    }
+    lion.anims.play({ key: LION.walk, timeScale: lion.getData('pace') }, true)
+    return false
   }
 
   // A mark over a guard's head that fades away: "!" when he spots Nephi, "?"
@@ -3060,7 +3171,11 @@ class GameScene extends Phaser.Scene {
     const playerBottom = playerBody.y + playerBody.height
 
     if (!this.isShipLevel && isFalling && playerBottom <= landingThreshold) {
-      enemy.disableBody(true, true)
+      if (enemy.getData('hunter') === 'lion') {
+        this.layLionDown(enemy)
+      } else {
+        enemy.disableBody(true, true)
+      }
       if (playerBody) {
         playerBody.velocity.y = -PLAYER_JUMP * 0.55
       }
