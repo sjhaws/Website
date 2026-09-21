@@ -75,6 +75,8 @@ const WALKERS = {
     art: 'nephi',
     display: [PLAYER_DISPLAY_WIDTH, PLAYER_DISPLAY_HEIGHT],
     fps: 20,
+    // Room to lean and thrust into a sword swing (see SWORD_POSES).
+    margin: 6,
     hemY: 164, // his feet are below this
     feet: [26, 58, 110], // left edge, between the feet, right edge
     stride: 3,
@@ -191,13 +193,27 @@ const ENEMY_ANIMS = {
   scorpion: CRAWLERS.scorpion,
 }
 
-// How far each part of a walker moves, in pixels on screen, at one step.
+// A walker standing still: nothing moved.
+function stillPose(walker) {
+  const still = [0, 0]
+  return {
+    lean: 0,
+    body: 0,
+    back: still,
+    front: still,
+    hands: walker.hands.map(() => still),
+  }
+}
+
+// How far each part of a walker moves, in pixels on screen, at one step:
+// the body `lean`s forward and dips down (`body`), the feet and hands move.
 function walkPose(walker, step) {
   const angle = (2 * Math.PI * step) / ANIM_STEPS
   const c = Math.cos(angle)
   const s = Math.sin(angle)
   const { stride, lift, dip } = walker
   return {
+    lean: 0,
     // Down while the feet are apart, up as they pass.
     body: Math.abs(c) > 0.5 ? dip : 0,
     back: [Math.round(-stride * c), -Math.round(lift * Math.max(0, s))],
@@ -209,13 +225,13 @@ function walkPose(walker, step) {
   }
 }
 
-function drawWalkStep(pen, walker, step) {
-  const pose = walkPose(walker, step)
+function drawPose(pen, walker, pose) {
   const { width, height } = pen
   const [feetLeft, feetSplit, feetRight] = walker.feet
   const hem = walker.hemY
   const below = height - hem
-  const dip = pen.toArt([0, pose.body])[1]
+  // The body leans and dips; the hands move with it, and then some.
+  const body = pen.toArt([pose.lean, pose.body])
 
   // Feet first, so clothes hide the top of a lifted foot.
   pen.copy([feetLeft, hem, feetSplit - feetLeft, below], pen.toArt(pose.back))
@@ -224,12 +240,12 @@ function drawWalkStep(pen, walker, step) {
     pen.toArt(pose.front),
   )
   // Then the rest of the body, including anything beside the feet.
-  pen.copy([0, 0, width, hem], [0, dip])
-  pen.copy([0, hem, feetLeft, below], [0, dip])
-  pen.copy([feetRight, hem, width - feetRight, below], [0, dip])
+  pen.copy([0, 0, width, hem], body)
+  pen.copy([0, hem, feetLeft, below], body)
+  pen.copy([feetRight, hem, width - feetRight, below], body)
   // And the hands, swung.
   const hands = pose.hands.map(([x, y]) => pen.toArt([x, y]))
-  moveParts(pen, walker.hands, hands, dip)
+  moveParts(pen, walker.hands, hands, body)
 }
 
 function drawCrawlStep(pen, crawler, step) {
@@ -284,15 +300,17 @@ function drawCrawlStep(pen, crawler, step) {
     const lift = Math.round((part.lift ?? 0) * rising)
     return pen.toArt([Math.round(moveX * c), Math.round(moveY * c) - lift])
   })
-  moveParts(pen, boxes, offsets, 0, source)
+  moveParts(pen, boxes, offsets, [0, 0], source)
 }
 
-// Lifts `parts` off the frame (see "Parts that move as a whole" above) and
-// puts them back moved by `offsets`, in art pixels, and down by `lower`.
-function moveParts(pen, parts, offsets, lower, source = pen.art) {
+// Lifts `parts` off the frame (see "Parts that move as a whole" above), from
+// where the body moved them to (`base`), and puts them back moved by
+// `offsets` more. All in art pixels.
+function moveParts(pen, parts, offsets, base, source = pen.art) {
+  const [baseX, baseY] = base
   for (const part of parts) {
     const [x, , w, h] = part.box
-    pen.within(part, [0, lower], (px, py) => {
+    pen.within(part, base, (px, py) => {
       pen.ctx.clearRect(px, py, w, h)
       if (part.behindRow !== undefined) {
         pen.ctx.drawImage(source, x, part.behindRow, w, 1, px, py, w, h)
@@ -306,16 +324,18 @@ function moveParts(pen, parts, offsets, lower, source = pen.art) {
     const [trailX, trailY] = part.trail ?? [0, 0]
     if (dx * trailX + dy * trailY > 0) {
       // The copy stays put only along the direction it trails.
-      pen.within(part, [trailX ? 0 : dx, lower + (trailY ? 0 : dy)], put)
+      const trail = [baseX + (trailX ? 0 : dx), baseY + (trailY ? 0 : dy)]
+      pen.within(part, trail, put)
     }
-    pen.within(part, [dx, lower + dy], put)
+    pen.within(part, [baseX + dx, baseY + dy], put)
   })
 }
 
 // Makes texture spec.key from the art: frame 0 as drawn, then each step of
-// the loop drawn by drawStep(pen, step). Also makes the looping animation
-// spec.key from those steps.
-function buildFrames(scene, spec, drawStep) {
+// the loop drawn by drawStep(pen, step), then any `extras`, each drawn by
+// its own function. Also makes the looping animation spec.key from the
+// steps.
+function buildFrames(scene, spec, drawStep, extras = []) {
   const { key } = spec
   if (scene.textures.exists(key)) {
     return
@@ -325,12 +345,12 @@ function buildFrames(scene, spec, drawStep) {
   // Art pixels per pixel on screen, across and down.
   const unitX = width / spec.display[0]
   const unitY = height / spec.display[1]
-  const margin = Math.round(ANIM_MARGIN * unitX)
+  const margin = Math.round((spec.margin ?? ANIM_MARGIN) * unitX)
   const frameWidth = width + 2 * margin
   const steps = [...Array(ANIM_STEPS).keys()]
   const sheet = scene.textures.createCanvas(
     key,
-    frameWidth * (ANIM_STEPS + 1),
+    frameWidth * (1 + ANIM_STEPS + extras.length),
     height,
   )
   const ctx = sheet.getContext()
@@ -379,6 +399,7 @@ function buildFrames(scene, spec, drawStep) {
 
   drawFrame(FRAME_STILL, (pen) => pen.copy([0, 0, width, height], [0, 0]))
   steps.forEach((step) => drawFrame(step + 1, (pen) => drawStep(pen, step)))
+  extras.forEach((draw, i) => drawFrame(1 + ANIM_STEPS + i, draw))
   sheet.refresh()
 
   scene.anims.create({
@@ -472,8 +493,70 @@ const LION_BODY = [52, 26]
 // forward of upright; the blade is in pixels on screen from the grip.
 const SWORD_LEVELS = [3, 4]
 const SWORD_CARRY_ANGLE = 25
-const SWORD_SWING_ANGLE = 130
-const SWORD_SWING_MS = [110, 170] // down, then back up
+// Nephi's poses through a swing, in pixels on screen (see walkPose): his
+// hands are his sword fist, then his other hand, swinging the other way for
+// balance.
+const SWORD_POSES = {
+  // Leaning back, the sword pulled up and back.
+  windUp: {
+    lean: -1,
+    body: 0,
+    back: [-1, 0],
+    front: [1, 0],
+    hands: [
+      [-3, -4],
+      [1, 0],
+    ],
+  },
+  // Lunging in, stepping forward, the fist thrust out.
+  strike: {
+    lean: 2,
+    body: 1,
+    back: [-3, 0],
+    front: [3, 0],
+    hands: [
+      [4, 1],
+      [-2, 0],
+    ],
+  },
+  // Carried on through, the fist low.
+  follow: {
+    lean: 2,
+    body: 1,
+    back: [-3, 0],
+    front: [3, 0],
+    hands: [
+      [3, 4],
+      [-2, 1],
+    ],
+  },
+  // Straightening up.
+  recover: {
+    lean: 1,
+    body: 0,
+    back: [-1, 0],
+    front: [1, 0],
+    hands: [
+      [1, 1],
+      [-1, 0],
+    ],
+  },
+}
+const SWORD_POSE_NAMES = Object.keys(SWORD_POSES)
+const SWORD_POSE_LIST = Object.values(SWORD_POSES)
+// A swing, as keyframes: from `at` milliseconds in, Nephi holds `pose`
+// (null: his usual frame) while the sword turns from this keyframe's angle
+// to the next's (degrees forward of upright). The blade strikes from the
+// strike to the recovery.
+const SWORD_SWING = [
+  { at: 0, pose: 'windUp', angle: SWORD_CARRY_ANGLE },
+  { at: 60, pose: 'strike', angle: -15 },
+  { at: 120, pose: 'follow', angle: 100 },
+  { at: 190, pose: 'recover', angle: 155 },
+  { at: 260, pose: null, angle: 70 },
+  { at: 320, pose: null, angle: SWORD_CARRY_ANGLE },
+]
+const SWORD_STRIKE_MS = [60, 190]
 const SWORD_REST_MS = 80 // before it can swing again
 const SWORD_BLADE = 26
 const SWORD_GRIP_Y = 26.5 / 31 // the grip, as a share of the art's height
@@ -768,7 +851,8 @@ class BootScene extends Phaser.Scene {
     this.load.spritesheet(
       CLIMB_KEY,
       new URL('./assets/NephiClimb.webp', import.meta.url).href,
-      { frameWidth: 132, frameHeight: 187 },
+      // The same size as his walk frames, so his hitbox stays put.
+      { frameWidth: 156, frameHeight: 187 },
     )
     this.load.image(
       'shark',
@@ -798,7 +882,13 @@ class BootScene extends Phaser.Scene {
   create() {
     this.buildTextures()
     for (const walker of Object.values(WALKERS)) {
-      buildFrames(this, walker, (pen, step) => drawWalkStep(pen, walker, step))
+      const poses = walker === WALKERS.nephi ? SWORD_POSE_LIST : []
+      buildFrames(
+        this,
+        walker,
+        (pen, step) => drawPose(pen, walker, walkPose(walker, step)),
+        poses.map((pose) => (pen) => drawPose(pen, walker, pose)),
+      )
     }
     if (!this.anims.exists(CLIMB_KEY)) {
       this.anims.create({
@@ -2424,8 +2514,8 @@ class GameScene extends Phaser.Scene {
           this.touch.wantsSwing(now)
         if (swing && time - this.swingStartedAt >= this.swingLength()) {
           this.swingStartedAt = time
+          this.swooshDrawn = false
           this.touch.clearSwing()
-          this.drawSwoosh()
         }
         this.updateSword(time)
       }
@@ -2497,13 +2587,43 @@ class GameScene extends Phaser.Scene {
 
   // How long a swing takes, including a moment's rest after.
   swingLength() {
-    const [down, up] = SWORD_SWING_MS
-    return down + up + SWORD_REST_MS
+    return SWORD_SWING.at(-1).at + SWORD_REST_MS
+  }
+
+  // Where a swing is at, `t` milliseconds in: Nephi's pose (null: his usual
+  // frame) and the sword's angle, eased between keyframes. Null once it's over.
+  swingAt(t) {
+    const next = SWORD_SWING.findIndex((key) => key.at > t)
+    if (t < 0 || next < 1) {
+      return null
+    }
+    const from = SWORD_SWING[next - 1]
+    const to = SWORD_SWING[next]
+    const eased = Phaser.Math.Easing.Sine.InOut(
+      (t - from.at) / (to.at - from.at),
+    )
+    return {
+      pose: from.pose,
+      angle: from.angle + (to.angle - from.angle) * eased,
+    }
+  }
+
+  // Nephi's pose in a frame of his walk sheet: standing, a step of his walk,
+  // or a swing pose after those.
+  nephiPose(frame) {
+    const nephi = WALKERS.nephi
+    if (frame === FRAME_STILL) {
+      return stillPose(nephi)
+    }
+    if (frame <= ANIM_STEPS) {
+      return walkPose(nephi, frame - 1)
+    }
+    return SWORD_POSE_LIST[frame - 1 - ANIM_STEPS]
   }
 
   // Where Nephi's forward fist is, relative to his middle, in the frame he's
-  // showing: it moves as he walks (see walkPose). In pixels on screen, for
-  // him facing right.
+  // showing: it moves as he walks and swings. In pixels on screen, for him
+  // facing right.
   swordGrip() {
     const nephi = WALKERS.nephi
     const art = this.textures.get(nephi.art).getSourceImage()
@@ -2511,38 +2631,42 @@ class GameScene extends Phaser.Scene {
     const [width, height] = nephi.display
     let gripX = ((x + w / 2) * width) / art.width - width / 2
     let gripY = ((y + h / 2) * height) / art.height - height / 2
-    const frame = this.player.frame.name
-    if (this.player.texture.key === nephi.key && frame !== FRAME_STILL) {
-      const pose = walkPose(nephi, frame - 1)
-      gripX += pose.hands[0][0]
-      gripY += pose.hands[0][1] + pose.body
+    if (this.player.texture.key === nephi.key) {
+      const pose = this.nephiPose(this.player.frame.name)
+      gripX += pose.lean + pose.hands[0][0]
+      gripY += pose.body + pose.hands[0][1]
     }
     return [gripX, gripY]
   }
 
-  // Keeps the sword in Nephi's fist, held up, or swinging forward and down
-  // and back after a swing starts. Early in a swing, any enemy the blade
-  // touches is killed.
+  // Keeps the sword in Nephi's fist: held up, or following a swing through
+  // its poses (see SWORD_SWING), when any enemy the blade touches is killed.
   updateSword(time) {
+    const t = time - this.swingStartedAt
+    const swing = this.swingAt(t)
+    if (swing?.pose) {
+      this.player.anims.stop()
+      const frame = 1 + ANIM_STEPS + SWORD_POSE_NAMES.indexOf(swing.pose)
+      this.player.setTexture(WALKERS.nephi.key, frame)
+    }
     const facing = this.player.flipX ? -1 : 1
     const [gripX, gripY] = this.swordGrip()
     const x = this.player.x + gripX * facing
     const y = this.player.y + gripY
-    const [down, up] = SWORD_SWING_MS
-    const t = time - this.swingStartedAt
-    let angle = SWORD_CARRY_ANGLE
-    if (t < down) {
-      const swung = Phaser.Math.Easing.Quadratic.Out(t / down)
-      angle += (SWORD_SWING_ANGLE - SWORD_CARRY_ANGLE) * swung
-    } else if (t < down + up) {
-      const back = (t - down) / up
-      angle = SWORD_SWING_ANGLE - (SWORD_SWING_ANGLE - SWORD_CARRY_ANGLE) * back
-    }
+    const angle = swing?.angle ?? SWORD_CARRY_ANGLE
     this.sword
       .setPosition(x, y)
       .setAngle(angle * facing)
       .setFlipX(facing < 0)
-    if (t < down + up / 2) {
+      // Carried, it's behind him, under his fingers; swinging, in front, so
+      // the blade shows as it passes his head and body.
+      .setDepth(swing ? 1 : 0)
+    const [strikeFrom, strikeTo] = SWORD_STRIKE_MS
+    if (t >= strikeFrom && t < strikeTo) {
+      if (!this.swooshDrawn) {
+        this.swooshDrawn = true
+        this.drawSwoosh(x, y, facing)
+      }
       this.strikeWithSword(x, y, angle, facing)
     }
   }
@@ -2565,15 +2689,12 @@ class GameScene extends Phaser.Scene {
     })
   }
 
-  // A streak through the air where the sword swings.
-  drawSwoosh() {
-    const facing = this.player.flipX ? -1 : 1
-    const [gripX, gripY] = this.swordGrip()
-    const x = this.player.x + gripX * facing
-    const y = this.player.y + gripY
+  // A streak through the air where the sword strikes, around the grip at
+  // (x, y).
+  drawSwoosh(x, y, facing) {
     // Angles from pointing right, clockwise, as Phaser draws arcs.
-    const from = SWORD_CARRY_ANGLE - 90
-    const to = SWORD_SWING_ANGLE - 90
+    const from = SWORD_SWING[1].angle + 20 - 90
+    const to = SWORD_SWING[3].angle - 90
     const toRadians = (degrees) =>
       Phaser.Math.DegToRad(facing > 0 ? degrees : 180 - degrees)
     const swoosh = this.add.graphics().setDepth(4)
