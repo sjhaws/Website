@@ -503,6 +503,13 @@ const LION_LOOK_MS = 700
 // Now and then, while patrolling, he sits down for a rest.
 const LION_REST_EVERY_MS = [5000, 10000]
 const LION_REST_MS = [1500, 3000]
+// A lion takes two blows, by sword or stomp (see hitLion). The first knocks
+// him this far away, in pixels, with a hop, and he stands dazed for a moment
+// before he's back on the prowl; the second beats him.
+const LION_KNOCK_DISTANCE = 90
+const LION_KNOCK_HOP = 18
+const LION_KNOCK_MS = 350
+const LION_DAZE_MS = 500
 
 // On levels 4 and 5 (by index) Nephi carries Laban's sword, held up in his
 // forward fist, and can swing it (see updateSword). Angles are in degrees
@@ -2761,7 +2768,7 @@ class GameScene extends Phaser.Scene {
   // A kill by sword: the enemy vanishes in a burst. A lion lies down.
   killEnemy(enemy) {
     if (enemy.getData('hunter') === 'lion') {
-      this.layLionDown(enemy)
+      this.hitLion(enemy, this.player.flipX ? -1 : 1)
       return
     }
     enemy.disableBody(true, true)
@@ -2774,6 +2781,75 @@ class GameScene extends Phaser.Scene {
       scale: 3,
       alpha: 0,
       duration: 260,
+      onComplete: () => burst.destroy(),
+    })
+  }
+
+  // A blow to a lion, by sword or stomp, from Nephi's side: `away` is the
+  // way it knocks him (1 right, -1 left). The first knocks him flying and
+  // dazes him; the second beats him.
+  hitLion(lion, away) {
+    const time = this.game.loop.time
+    if (time < lion.getData('knockedUntil')) {
+      // Still flying from the last blow (one swing touches him for a while).
+      return
+    }
+    if (lion.getData('wounded')) {
+      this.layLionDown(lion)
+      return
+    }
+    lion.getData('alert')?.destroy()
+    const halfWidth = LION.display[0] / 2
+    const x = Phaser.Math.Clamp(
+      lion.x + away * LION_KNOCK_DISTANCE,
+      halfWidth,
+      WORLD_WIDTH - halfWidth,
+    )
+    // Dazed, facing Nephi, and hunting afresh from where he lands.
+    lion.setData({
+      wounded: true,
+      chasing: false,
+      restUntil: 0,
+      knockedUntil: time + LION_KNOCK_MS,
+      dazedUntil: time + LION_KNOCK_MS + LION_DAZE_MS,
+      direction: -away,
+      minX: x - HUNTER_PATROL_RANGE,
+      maxX: x + HUNTER_PATROL_RANGE,
+    })
+    lion.flipX = away > 0
+    lion.anims.stop()
+    // Yelping as he flies.
+    lion.setFrame(LION_FRAMES.roar)
+    lion.setTintFill(0xffffff)
+    this.time.delayedCall(90, () => lion.clearTint())
+    // Moved by the tweens below, not by physics, until he lands.
+    lion.body.setVelocityX(0)
+    lion.body.moves = false
+    this.tweens.add({
+      targets: lion,
+      x,
+      duration: LION_KNOCK_MS,
+      ease: 'Quad.Out',
+      onComplete: () => {
+        lion.body.moves = true
+        if (lion.active) {
+          lion.setFrame(LION_FRAMES.stand)
+        }
+      },
+    })
+    this.tweens.add({
+      targets: lion,
+      y: lion.y - LION_KNOCK_HOP,
+      duration: LION_KNOCK_MS / 2,
+      ease: 'Sine.Out',
+      yoyo: true,
+    })
+    const burst = this.add.circle(lion.x, lion.y, 8, 0xfff3c4, 0.85).setDepth(5)
+    this.tweens.add({
+      targets: burst,
+      scale: 2.5,
+      alpha: 0,
+      duration: 220,
       onComplete: () => burst.destroy(),
     })
   }
@@ -2886,6 +2962,9 @@ class GameScene extends Phaser.Scene {
     const dx = this.player.x - enemy.x
     const onTheGround = this.plane === 'ground'
     const lion = enemy.getData('hunter') === 'lion'
+    if (lion && time < enemy.getData('dazedUntil')) {
+      return
+    }
     if (enemy.getData('chasing')) {
       if (onTheGround && Math.abs(dx) <= HUNTER_LOSE_DISTANCE) {
         const direction = dx < 0 ? -1 : 1
@@ -3163,6 +3242,10 @@ class GameScene extends Phaser.Scene {
     if (this.time.now < this.invincibleUntil || this.levelFinished) {
       return
     }
+    // A lion knocked flying can't hurt him, or be hit again yet.
+    if (enemy.getData('knockedUntil') > this.game.loop.time) {
+      return
+    }
 
     const playerBody = player.body
     const enemyBody = enemy.body
@@ -3172,7 +3255,7 @@ class GameScene extends Phaser.Scene {
 
     if (!this.isShipLevel && isFalling && playerBottom <= landingThreshold) {
       if (enemy.getData('hunter') === 'lion') {
-        this.layLionDown(enemy)
+        this.hitLion(enemy, Math.sign(enemy.x - player.x) || 1)
       } else {
         enemy.disableBody(true, true)
       }
