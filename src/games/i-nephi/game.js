@@ -18,6 +18,37 @@ const PLAYER_JUMP = 840
 // game resumes from a scroll popup (see collectScroll), rather than being
 // tied to how long the popup happened to stay open.
 const INVINCIBILITY_MS = 3000
+// Nephi has three hearts, shown under the level's name. Each hit, by an
+// enemy or a coconut, costs one (see hurtNephi); losing the last starts the
+// journey again from level 1. Every level starts with all three.
+const HEARTS = 3
+// A hit knocks him back (across and up, in px/s) and he can't walk for a
+// moment. Then he blinks for a while, and can't be hurt again until he stops.
+const HURT_KNOCKBACK = [300, 380]
+const HURT_STAGGER_MS = 300
+const HURT_MS = 1500
+const HURT_BLINK_MS = 90
+// How long "Out of hearts!" shows before the journey starts again.
+const OUT_OF_HEARTS_MS = 1800
+// A heart in pixel art: X outline, R red, D shade, W shine. Each pixel is
+// HEART_PIXEL pixels on screen.
+const HEART_ART = [
+  '.XX...XX.',
+  'XRRX.XRRX',
+  'XRWRXRRRX',
+  'XRRRRRRDX',
+  'XRRRRRRDX',
+  '.XRRRRDX.',
+  '..XRRDX..',
+  '...XDX...',
+  '....X....',
+]
+const HEART_PIXEL = 3
+// Colors for a heart he has, and one he's lost.
+const HEART_COLORS = {
+  heart: { X: 0x2a0b0e, R: 0xe23b44, D: 0xa3222c, W: 0xffd6d6 },
+  'heart-lost': { X: 0x2a0b0e, R: 0x55484a, D: 0x453a3c, W: 0x66585a },
+}
 const ENEMY_SPACING = 300
 const ENEMY_RANGE = 20
 const LAND_ENEMY_RANGE = ENEMY_RANGE * 6
@@ -1129,6 +1160,32 @@ class BootScene extends Phaser.Scene {
       g.fillRect(0, 0, 64, 5)
     })
 
+    for (const [key, colors] of Object.entries(HEART_COLORS)) {
+      if (this.textures.exists(key)) {
+        continue
+      }
+      const g = this.add.graphics()
+      HEART_ART.forEach((row, y) => {
+        ;[...row].forEach((pixel, x) => {
+          if (colors[pixel] !== undefined) {
+            g.fillStyle(colors[pixel], 1)
+            g.fillRect(
+              x * HEART_PIXEL,
+              y * HEART_PIXEL,
+              HEART_PIXEL,
+              HEART_PIXEL,
+            )
+          }
+        })
+      })
+      g.generateTexture(
+        key,
+        HEART_ART[0].length * HEART_PIXEL,
+        HEART_ART.length * HEART_PIXEL,
+      )
+      g.destroy()
+    }
+
     makeTexture('goal', (g) => {
       g.fillStyle(0x2b1d14, 1)
       g.fillRect(28, 6, 8, 52)
@@ -1429,6 +1486,11 @@ class GameScene extends Phaser.Scene {
     this.coconuts = null
     this.swingStartedAt = -Infinity
     this.levelFinished = false
+    this.hearts = HEARTS
+    // Since his last hit: until when he's knocked back, and until when he
+    // can't be hurt again (see hurtNephi).
+    this.staggerUntil = 0
+    this.hurtUntil = 0
     this.gamePaused = false
     this.scrollsCollected = 0
 
@@ -2498,8 +2560,33 @@ class GameScene extends Phaser.Scene {
       })
       .setScrollFactor(0)
 
+    // Nephi's hearts (see HEARTS), on a panel like the labels'.
+    const heartSize = HEART_ART.length * HEART_PIXEL
+    const heartGap = 6
+    const padding = 6
+    this.add
+      .rectangle(
+        18,
+        58,
+        HEARTS * (heartSize + heartGap) - heartGap + padding * 2,
+        heartSize + padding * 2,
+        0x000000,
+        0.4,
+      )
+      .setOrigin(0)
+      .setScrollFactor(0)
+    this.heartIcons = Array.from({ length: HEARTS }, (_, index) =>
+      this.add
+        .image(
+          18 + padding + index * (heartSize + heartGap) + heartSize / 2,
+          58 + padding + heartSize / 2,
+          'heart',
+        )
+        .setScrollFactor(0),
+    )
+
     this.statusText = this.add
-      .text(18, 56, '', {
+      .text(18, 104, '', {
         fontFamily: 'Verdana',
         fontSize: '16px',
         color: '#f2c14e',
@@ -2507,9 +2594,10 @@ class GameScene extends Phaser.Scene {
         padding: { left: 10, right: 10, top: 6, bottom: 6 },
       })
       .setScrollFactor(0)
+      .setVisible(false)
 
     this.invincibleText = this.add
-      .text(18, 94, '', {
+      .text(18, 142, '', {
         fontFamily: 'Verdana',
         fontSize: '16px',
         color: '#5ad1a5',
@@ -2517,6 +2605,7 @@ class GameScene extends Phaser.Scene {
         padding: { left: 10, right: 10, top: 6, bottom: 6 },
       })
       .setScrollFactor(0)
+      .setVisible(false)
 
     this.scrollCountText = this.add
       .text(
@@ -2755,7 +2844,9 @@ class GameScene extends Phaser.Scene {
           spaceTapped || this.touch.wantsJump(now, { flicks: false })
         this.climb(upHeld, downHeld, letGo)
       } else {
-        if (leftPressed && !rightPressed) {
+        if (time < this.staggerUntil) {
+          // Knocked back by a hit (see hurtNephi): no walking yet.
+        } else if (leftPressed && !rightPressed) {
           this.player.setVelocityX(-PLAYER_SPEED)
           this.player.flipX = true
         } else if (rightPressed && !leftPressed) {
@@ -3398,14 +3489,19 @@ class GameScene extends Phaser.Scene {
   }
 
   hitByCoconut(coconut) {
-    if (this.levelFinished || this.time.now < this.invincibleUntil) {
+    if (
+      this.levelFinished ||
+      this.time.now < this.invincibleUntil ||
+      this.game.loop.time < this.hurtUntil
+    ) {
       return
     }
     // Not if he's swinging his sword at it.
     if (this.batCoconut(coconut)) {
       return
     }
-    this.restartLevel()
+    coconut.setData('live', false)
+    this.hurtNephi(coconut.x)
   }
 
   // Knocks a flying coconut away, if Nephi's swinging his sword and it's in
@@ -3449,12 +3545,99 @@ class GameScene extends Phaser.Scene {
   updateInvincibility(time) {
     if (time < this.invincibleUntil) {
       const secondsLeft = Math.ceil((this.invincibleUntil - time) / 1000)
-      this.invincibleText.setText(`Invincible: ${secondsLeft}s`)
+      this.invincibleText
+        .setText(`Invincible: ${secondsLeft}s`)
+        .setVisible(true)
       this.player.setTint(0x8ff7d2)
     } else {
-      this.invincibleText.setText('')
+      this.invincibleText.setVisible(false)
       this.player.clearTint()
     }
+    // Blinking after a hit, while he can't be hurt again.
+    const faded =
+      time < this.hurtUntil && Math.floor(time / HURT_BLINK_MS) % 2 === 0
+    this.player.setAlpha(faded ? 0.3 : 1)
+    this.sword?.setAlpha(faded ? 0.3 : 1)
+  }
+
+  // A hit from an enemy or a coconut at `fromX`: it costs Nephi a heart,
+  // knocks him away from it (the boat just blinks) and leaves him unhurtable
+  // for a while. Losing the last heart starts the journey again.
+  hurtNephi(fromX) {
+    this.hearts -= 1
+    const lost = this.heartIcons[this.hearts]
+    lost.setTexture('heart-lost')
+    this.tweens.add({
+      targets: lost,
+      scale: { from: 1.6, to: 1 },
+      duration: 300,
+      ease: 'Back.Out',
+    })
+    if (this.hearts <= 0) {
+      this.outOfHearts()
+      return
+    }
+    const now = this.game.loop.time
+    this.hurtUntil = now + HURT_MS
+    if (!this.isShipLevel) {
+      if (this.climbing) {
+        this.letGoOfLadder()
+      }
+      const away =
+        Math.sign(this.player.x - fromX) || (this.player.flipX ? 1 : -1)
+      this.staggerUntil = now + HURT_STAGGER_MS
+      this.player.setVelocity(away * HURT_KNOCKBACK[0], -HURT_KNOCKBACK[1])
+    }
+  }
+
+  // Everything stops, and after a moment the journey starts again from
+  // level 1, with all his hearts.
+  outOfHearts() {
+    this.levelFinished = true
+    this.physics.world.pause()
+    this.player.setTint(0xff6b6b).setAlpha(1)
+    this.sword?.setAlpha(1)
+    // Big, in the middle of the screen, over everything, which dims.
+    const { width, height } = this.scale
+    this.add
+      .rectangle(0, 0, width, height, 0x000000, 0.5)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(60)
+    const message = this.add
+      .container(width / 2, height / 2, [
+        this.add
+          .text(0, -18, 'Out of hearts!', {
+            fontFamily: 'Verdana',
+            fontSize: '56px',
+            fontStyle: 'bold',
+            color: '#ff6b6b',
+            stroke: '#1a0a0a',
+            strokeThickness: 8,
+          })
+          .setOrigin(0.5, 1),
+        this.add
+          .text(0, 0, 'Back to the start of the journey...', {
+            fontFamily: 'Verdana',
+            fontSize: '26px',
+            color: '#f7edd9',
+            stroke: '#1a0a0a',
+            strokeThickness: 5,
+          })
+          .setOrigin(0.5, 0),
+      ])
+      .setScrollFactor(0)
+      .setDepth(61)
+    this.tweens.add({
+      targets: message,
+      scale: { from: 0.6, to: 1 },
+      alpha: { from: 0, to: 1 },
+      duration: 350,
+      ease: 'Back.Out',
+    })
+    this.time.delayedCall(OUT_OF_HEARTS_MS, () => {
+      this.scene.start('StoryScene', { levelIndex: 0 })
+    })
   }
 
   collectScroll(player, scroll) {
@@ -3623,7 +3806,11 @@ class GameScene extends Phaser.Scene {
       return
     }
 
-    this.restartLevel()
+    // Still blinking from the last hit.
+    if (this.game.loop.time < this.hurtUntil) {
+      return
+    }
+    this.hurtNephi(enemy.x)
   }
 
   handleGoalReached() {
@@ -3636,7 +3823,7 @@ class GameScene extends Phaser.Scene {
     }
 
     this.levelFinished = true
-    this.statusText.setText('Level complete!')
+    this.statusText.setText('Level complete!').setVisible(true)
     this.player.setVelocity(0, 0)
 
     this.time.delayedCall(700, () => {
@@ -3647,10 +3834,6 @@ class GameScene extends Phaser.Scene {
         this.scene.start('StoryScene', { levelIndex: nextLevel })
       }
     })
-  }
-
-  restartLevel() {
-    this.scene.restart({ levelIndex: this.levelIndex })
   }
 
   // Keeps Nephi in the middle of the view. Phaser draws the view and each
