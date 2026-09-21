@@ -26,6 +26,8 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
   - **Touch screens** (no buttons are drawn; `touchControls.ts`, with tests): slide a finger anywhere in the game's box to walk, and tap or flick up to jump. A second finger touching down also jumps, so it works with one thumb or two. On the ship level, sliding steers and nothing jumps. A tap on a scroll message's button never makes Nephi jump afterwards.
   - On a phone held upright, the game sits at the top of a taller box, and the space below it is part of the touch area, with a "Slide to walk · Tap to jump" hint, so a thumb needn't cover the game.
   - The story card says how to play on the device in use: touch or keyboard.
+- **Screen size:** the game is as big as the window allows at 16:9, below the header and title, even wider than the rest of the site's pages. On a phone held upright it runs edge to edge.
+- **Full screen:** a **Full screen** button beside the title puts the game in the browser's full-screen mode (`useFullscreen.ts`), and on phones that allow it, turns the game sideways. iPhones only allow full screen for videos, and some browsers refuse or never answer, so there the game covers the whole window instead. A ✕ in the corner, Escape, or the phone's back gesture leaves full screen.
 - **Animation:** every character's art is a single picture, so the game builds an 8-frame loop from each when it loads, by cutting out parts of the picture and moving them (`WALKERS`, `CRAWLERS` and `buildFrames` in `game.js`). Every move is a whole number of screen pixels, so the art doesn't shimmer.
   - **Nephi and the guards walk:** their feet slide back and forth below their clothes, each lifting as it swings forward; their hands swing the opposite way (for a guard, his shield one way and his spear the other); and their bodies dip on each stride. Nephi walks while moving along the ground (20 frames a second), holds a stride in the air, and stands still otherwise. The boat on the ship level doesn't animate.
   - **Snakes slither:** the raised neck and head sway, the tail tip wags, and the tongue flicks in and out (10 frames a second).
@@ -66,6 +68,7 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 - [ ] Level 1's story card appears; **Start**, Enter and Space all begin the level
 - [ ] Arrow keys, `A`/`D` and `W`/Space move and jump, and no buttons are drawn on screen
 - [ ] On a phone: sliding walks either way, and a tap, a flick up or a second finger jumps; the page doesn't scroll or zoom while playing
+- [ ] The game fills the window without the page scrolling; **Full screen** fills the screen (sideways on Android phones), and ✕ or Escape leaves it
 - [ ] Nephi's feet step and his hands swing while he walks either way; he stands still when stopped or reading a scroll, and holds a stride in the air
 - [ ] Landing on a snake or scorpion removes it; walking into one restarts the level
 - [ ] A scroll shows its message, and after **Proceed** you're briefly invincible

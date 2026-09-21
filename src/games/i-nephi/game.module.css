@@ -1,12 +1,25 @@
-/* Phaser scales its 960×540 canvas to fit this box, so it needs a real height:
-   16:9 at full width, but never taller than the screen allows. The game sits
-   at the top of it. */
+/* The game is as big as the window allows at 16:9, below the header and
+   title, even if that's wider than the rest of the page. */
+.stage {
+  --width: min(100vw - 2 * var(--gutter), (100svh - var(--above)) * 16 / 9);
+  /* The header, title and gaps above the game, and a little room below. */
+  --above: 148px;
+  position: relative;
+  width: var(--width);
+  /* Only 12px of the page's 48px bottom padding stays below the game. */
+  margin: 8px calc((100% - var(--width)) / 2) -36px;
+}
+
+/* Phaser scales its 960×540 canvas to fit this box, with the game at the
+   top of it. */
 .host {
   position: relative;
   width: 100%;
-  height: min(56.25vw, calc(100vh - 150px));
-  min-height: 240px;
-  margin-top: 16px;
+  aspect-ratio: 16 / 9;
+  /* Keep to that shape whatever's inside, even for the moment a game that's
+     closing still has its canvas. */
+  min-height: 0;
+  overflow: hidden;
   /* A finger anywhere in the box steers the game (see touchControls.ts),
      so touching it mustn't scroll, zoom or select anything. */
   touch-action: none;
@@ -15,13 +28,65 @@
   -webkit-touch-callout: none;
 }
 
+/* Full screen: the box fills the screen and the game fits inside it. */
+.full {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: #000;
+}
+
+.full .host {
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+/* Where the browser can't go full screen, cover the whole window instead. */
+.faked {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+}
+
+.exit {
+  position: absolute;
+  z-index: 1;
+  top: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--color-text);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.exit:hover {
+  background: var(--color-red);
+  color: var(--color-white);
+}
+
 /* On a phone held upright the game is short, so the box reaches down the
    screen and the space below the game is room to slide and tap without a
    thumb covering the action. */
 @media (pointer: coarse) and (orientation: portrait) {
+  /* Edge to edge: every pixel of width counts on a phone. */
+  .stage {
+    --width: 100vw;
+  }
+
   .host {
-    height: calc(100svh - 260px);
+    height: calc(100svh - 232px);
     min-height: 320px;
+    aspect-ratio: auto;
+  }
+
+  .full .host {
+    height: 100%;
   }
 
   .host::after {
