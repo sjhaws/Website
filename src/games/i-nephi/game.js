@@ -511,6 +511,68 @@ const LION_KNOCK_HOP = 18
 const LION_KNOCK_MS = 350
 const LION_DAZE_MS = 500
 
+// Level 5 (by index) has palm trees, each with a monkey in it who throws
+// coconuts at Nephi (see updateMonkeys). A coconut that hits him restarts
+// the level, but a swing of his sword knocks it away (see batCoconut).
+const MONKEY_LEVEL = 4
+const PALM_SPOTS = [0.12, 0.3, 0.46, 0.63, 0.79] // of the way across the level
+// Palm.webp is five palm trees, each 37x52 pixels of art with its crown in
+// the middle, shown at 3x (111x156 on screen) and drawn at 9x. A monkey sits
+// where the fronds meet the trunk, this far above the ground on screen.
+const PALM = { sheet: 'palm', frames: 5, display: [111, 156], perch: 102 }
+// Monkey.webp is a monkey's poses, facing right, each 73x50 pixels on screen
+// (drawn at 3x) with his feet in the middle of the bottom row.
+const MONKEY = { sheet: 'monkey', display: [73, 50] }
+const MONKEY_FRAMES = {
+  sit: 0,
+  reach: 1,
+  hold: 2,
+  aim: 3,
+  release: 4,
+  windUp: 5,
+  propel: 6,
+  followThrough: 7,
+  recover: 8,
+  lookOut: 9,
+}
+// His two throws, overhead and a sidearm lob, pose by pose, each held for
+// `ms`, ending with him shading his eyes to see where it went. The coconut
+// leaves his hand at `hand`, in pixels on screen from his feet, for him
+// facing right.
+const MONKEY_THROWS = [
+  [
+    { pose: 'reach', ms: 280 },
+    { pose: 'hold', ms: 300 },
+    { pose: 'aim', ms: 420 },
+    { pose: 'release', ms: 240, hand: [27, -26.5] },
+    { pose: 'recover', ms: 350 },
+    { pose: 'lookOut', ms: 600 },
+  ],
+  [
+    { pose: 'reach', ms: 280 },
+    { pose: 'hold', ms: 260 },
+    { pose: 'windUp', ms: 380 },
+    { pose: 'propel', ms: 160, hand: [33.5, -24.5] },
+    { pose: 'followThrough', ms: 260 },
+    { pose: 'recover', ms: 300 },
+    { pose: 'lookOut', ms: 600 },
+  ],
+]
+// He throws when Nephi's this near across, resting between throws.
+const MONKEY_RANGE = 520
+const MONKEY_REST_MS = [900, 2000]
+// Coconut.webp is 11x11 pixels on screen, drawn at 3x.
+const COCONUT_SIZE = 11
+// A coconut flies for longer the farther it goes, aimed at where Nephi will
+// be by then if he keeps going.
+const COCONUT_FLIGHT_MS = [650, 1150]
+const COCONUT_SPIN = 540 // degrees a second
+// A swing knocks away a coconut this near the middle of the blade's sweep
+// (half a blade over his fist), in front of him or overhead, from the
+// wind-up until the blade comes back up.
+const SWORD_BAT_REACH = 42
+const SWORD_BAT_MS = 260
+
 // On levels 4 and 5 (by index) Nephi carries Laban's sword, held up in his
 // forward fist, and can swing it (see updateSword). Angles are in degrees
 // forward of upright; the blade is in pixels on screen from the grip.
@@ -876,6 +938,20 @@ class BootScene extends Phaser.Scene {
       new URL('./assets/Sword.webp', import.meta.url).href,
     )
     this.load.spritesheet(
+      PALM.sheet,
+      new URL('./assets/Palm.webp', import.meta.url).href,
+      { frameWidth: PALM.display[0] * 3, frameHeight: PALM.display[1] * 3 },
+    )
+    this.load.spritesheet(
+      MONKEY.sheet,
+      new URL('./assets/Monkey.webp', import.meta.url).href,
+      { frameWidth: MONKEY.display[0] * 3, frameHeight: MONKEY.display[1] * 3 },
+    )
+    this.load.image(
+      'coconut',
+      new URL('./assets/Coconut.webp', import.meta.url).href,
+    )
+    this.load.spritesheet(
       CLIMB_KEY,
       new URL('./assets/NephiClimb.webp', import.meta.url).href,
       // The same size as his walk frames, so his hitbox stays put.
@@ -1102,8 +1178,12 @@ class StoryScene extends Phaser.Scene {
           : withSword
             ? 'Use the arrow keys to move, Space to jump, and X to swing your sword.'
             : 'Use the arrow keys to move and Space to jump.'
+    const warning =
+      levelIndex === MONKEY_LEVEL
+        ? '\nMonkeys throw coconuts: dodge them, or knock them away with your sword.'
+        : ''
     const hint = this.add
-      .text(width / 2, 0, howToPlay, {
+      .text(width / 2, 0, howToPlay + warning, {
         fontFamily: 'Verdana',
         fontSize: `${STORY_HINT_FONT}px`,
         color: '#9fb3c8',
@@ -1266,6 +1346,9 @@ class GameScene extends Phaser.Scene {
     this.plane = 'ground'
     // Levels 4 and 5: Nephi's sword, and when he last swung it.
     this.sword = null
+    // Level 5: the monkeys in the palm trees, and their coconuts.
+    this.monkeys = []
+    this.coconuts = null
     this.swingStartedAt = -Infinity
     this.levelFinished = false
     this.gamePaused = false
@@ -1280,6 +1363,7 @@ class GameScene extends Phaser.Scene {
     this.buildWorld()
     this.buildPlayer()
     this.buildEnemies()
+    this.buildCoconuts()
     this.buildScrolls()
     this.buildGoal()
     this.buildHUD()
@@ -1623,6 +1707,9 @@ class GameScene extends Phaser.Scene {
       this.buildWaterWorld()
       return
     }
+    if (this.levelIndex === MONKEY_LEVEL) {
+      this.buildPalms(layout)
+    }
 
     const groundTiles = this.physics.add.staticGroup()
     for (let x = 0; x < WORLD_WIDTH; x += 64) {
@@ -1653,6 +1740,55 @@ class GameScene extends Phaser.Scene {
     const levelOverlay = this.add.graphics().setAlpha(0.16)
     levelOverlay.fillStyle(groundTop, 1)
     levelOverlay.fillRect(0, groundY - 80, WORLD_WIDTH, 80)
+  }
+
+  // Level 5's palm trees, each with a monkey in its crown, drawn behind
+  // everyone, and clear of the platforms so none hides a monkey.
+  buildPalms(layout) {
+    const platforms = this.getExpandedPlatforms(layout.platforms)
+    const now = this.game.loop.time
+    PALM_SPOTS.forEach((spot, index) => {
+      const x = this.clearOfPlatforms(WORLD_WIDTH * spot, platforms)
+      this.add
+        .image(x, this.groundY, PALM.sheet, index % PALM.frames)
+        .setOrigin(0.5, 1)
+        .setDisplaySize(...PALM.display)
+        .setFlipX(index % 2 === 1)
+      const sprite = this.add
+        .sprite(x, this.groundY - PALM.perch, MONKEY.sheet, MONKEY_FRAMES.sit)
+        .setOrigin(0.5, 1)
+        .setDisplaySize(...MONKEY.display)
+      this.monkeys.push({
+        sprite,
+        // The throw he's partway through, if any: its poses and which he's at.
+        throw: null,
+        step: 0,
+        stepEndsAt: 0,
+        nextThrowAt: now + Phaser.Math.Between(...MONKEY_REST_MS),
+      })
+    })
+  }
+
+  // The nearest place to `x` for a palm, with room for its crown between the
+  // platforms.
+  clearOfPlatforms(x, platforms) {
+    const room = PALM.display[0] / 2 + 8
+    const clear = (at) =>
+      platforms.every((platform) => {
+        const tiles = Math.max(1, Math.ceil(platform.width / 64))
+        const left = platform.x - 32
+        const right = left + tiles * 64
+        return at + room <= left || at - room >= right
+      })
+    for (let shift = 0; shift <= 600; shift += 20) {
+      if (clear(x + shift)) {
+        return x + shift
+      }
+      if (clear(x - shift)) {
+        return x - shift
+      }
+    }
+    return x
   }
 
   // Level 3's buildings and ladders (see STREET), drawn behind everyone. Their
@@ -1959,6 +2095,26 @@ class GameScene extends Phaser.Scene {
       this.handleEnemyHit,
       null,
       this,
+    )
+  }
+
+  // Level 5's coconuts: they land on the ground and platforms, and hit Nephi
+  // only while flying at him.
+  buildCoconuts() {
+    if (!this.monkeys.length) {
+      return
+    }
+    this.coconuts = this.physics.add.group()
+    for (const surface of [this.groundTiles, this.ledges]) {
+      this.physics.add.collider(this.coconuts, surface, (coconut) =>
+        this.landCoconut(coconut),
+      )
+    }
+    this.physics.add.overlap(
+      this.player,
+      this.coconuts,
+      (player, coconut) => this.hitByCoconut(coconut),
+      (player, coconut) => coconut.getData('live'),
     )
   }
 
@@ -2575,6 +2731,7 @@ class GameScene extends Phaser.Scene {
     }
 
     this.updateEnemies(time)
+    this.updateMonkeys(time)
     this.updateInvincibility(time)
   }
 
@@ -2589,6 +2746,7 @@ class GameScene extends Phaser.Scene {
     if (this.sword) {
       this.updateSword(time)
     }
+    this.coconuts?.getChildren().forEach((coconut) => this.batCoconut(coconut))
     this.enemies.children.iterate((enemy) => {
       if (enemy?.active) {
         this.followAlert(enemy)
@@ -2797,16 +2955,7 @@ class GameScene extends Phaser.Scene {
     }
     enemy.disableBody(true, true)
     enemy.getData('alert')?.destroy()
-    const burst = this.add
-      .circle(enemy.x, enemy.y, 10, 0xfff3c4, 0.85)
-      .setDepth(5)
-    this.tweens.add({
-      targets: burst,
-      scale: 3,
-      alpha: 0,
-      duration: 260,
-      onComplete: () => burst.destroy(),
-    })
+    this.burst(enemy.x, enemy.y, 10, 3, 260)
   }
 
   // A blow to a lion, by sword or stomp, from Nephi's side: `away` is the
@@ -2868,14 +3017,7 @@ class GameScene extends Phaser.Scene {
       ease: 'Sine.Out',
       yoyo: true,
     })
-    const burst = this.add.circle(lion.x, lion.y, 8, 0xfff3c4, 0.85).setDepth(5)
-    this.tweens.add({
-      targets: burst,
-      scale: 2.5,
-      alpha: 0,
-      duration: 220,
-      onComplete: () => burst.destroy(),
-    })
+    this.burst(lion.x, lion.y, 8, 2.5, 220)
   }
 
   // A beaten lion (by sword, or stomped on) lies down and fades away.
@@ -3107,6 +3249,143 @@ class GameScene extends Phaser.Scene {
     if (alert?.active) {
       alert.setPosition(enemy.x, enemy.y - 52)
     }
+  }
+
+  // Each monkey faces Nephi when he's near and throws coconuts at him (see
+  // MONKEY_THROWS), resting between throws.
+  updateMonkeys(time) {
+    for (const monkey of this.monkeys) {
+      const { sprite } = monkey
+      if (!monkey.throw) {
+        const dx = this.player.x - sprite.x
+        const near = Math.abs(dx) <= MONKEY_RANGE
+        if (near) {
+          sprite.flipX = dx < 0
+        }
+        if (!near || time < monkey.nextThrowAt) {
+          sprite.setFrame(MONKEY_FRAMES.sit)
+          continue
+        }
+        monkey.throw = Phaser.Utils.Array.GetRandom(MONKEY_THROWS)
+        monkey.step = -1
+        monkey.stepEndsAt = time
+      }
+      if (time < monkey.stepEndsAt) {
+        continue
+      }
+      monkey.step += 1
+      const step = monkey.throw[monkey.step]
+      if (!step) {
+        monkey.throw = null
+        monkey.nextThrowAt = time + Phaser.Math.Between(...MONKEY_REST_MS)
+        sprite.setFrame(MONKEY_FRAMES.sit)
+        continue
+      }
+      sprite.setFrame(MONKEY_FRAMES[step.pose])
+      monkey.stepEndsAt = time + step.ms
+      if (step.hand) {
+        this.throwCoconut(sprite, step.hand)
+      }
+    }
+    // Any knocked clean out of the level.
+    this.coconuts?.getChildren().forEach((coconut) => {
+      if (coconut.y > WORLD_HEIGHT + COCONUT_SIZE) {
+        coconut.destroy()
+      }
+    })
+  }
+
+  // A coconut from a monkey's hand, at `hand` from his feet (see
+  // MONKEY_THROWS), lobbed to land on Nephi where he'll be by then if he
+  // keeps going: stopping, turning or jumping dodges it.
+  throwCoconut(monkey, [handX, handY]) {
+    const facing = monkey.flipX ? -1 : 1
+    const x = monkey.x + handX * facing
+    const y = monkey.y + handY
+    const coconut = this.coconuts.create(x, y, 'coconut')
+    coconut.setDisplaySize(COCONUT_SIZE, COCONUT_SIZE).setDepth(2)
+    // In the texture's pixels, drawn at 3x.
+    const radius = (COCONUT_SIZE * 3) / 2 - 1.5
+    coconut.body.setCircle(radius, 1.5, 1.5)
+    coconut.setBounce(0.35)
+    const across = Math.min(Math.abs(this.player.x - x) / MONKEY_RANGE, 1)
+    const flight = Phaser.Math.Linear(...COCONUT_FLIGHT_MS, across) / 1000
+    const lead = this.player.body.velocity.x * flight
+    const dx = this.player.x + lead - x
+    const dy = this.player.y - y
+    const gravity = this.physics.world.gravity.y
+    coconut.body.setVelocity(
+      dx / flight,
+      (dy - (gravity * flight * flight) / 2) / flight,
+    )
+    coconut.setAngularVelocity(COCONUT_SPIN * facing)
+    coconut.setData({ live: true, landed: false })
+  }
+
+  // A coconut that lands is harmless: it rolls to a stop and fades away.
+  landCoconut(coconut) {
+    if (coconut.getData('landed')) {
+      return
+    }
+    coconut.setData({ landed: true, live: false })
+    coconut.body.setDragX(260)
+    coconut.setAngularDrag(500)
+    this.tweens.add({
+      targets: coconut,
+      alpha: 0,
+      delay: 900,
+      duration: 400,
+      onComplete: () => coconut.destroy(),
+    })
+  }
+
+  hitByCoconut(coconut) {
+    if (this.levelFinished || this.time.now < this.invincibleUntil) {
+      return
+    }
+    // Not if he's swinging his sword at it.
+    if (this.batCoconut(coconut)) {
+      return
+    }
+    this.restartLevel()
+  }
+
+  // Knocks a flying coconut away, if Nephi's swinging his sword and it's in
+  // reach (see SWORD_BAT_REACH). Whether it did.
+  batCoconut(coconut) {
+    if (!this.sword || !coconut.getData('live')) {
+      return false
+    }
+    const t = this.game.loop.time - this.swingStartedAt
+    if (t < 0 || t > SWORD_BAT_MS) {
+      return false
+    }
+    const facing = this.player.flipX ? -1 : 1
+    const [gripX, gripY] = this.swordGrip()
+    const x = this.player.x + gripX * facing
+    const y = this.player.y + gripY - SWORD_BLADE / 2
+    const ahead = (coconut.x - this.player.x) * facing
+    const distance = Phaser.Math.Distance.Between(x, y, coconut.x, coconut.y)
+    if (ahead < -COCONUT_SIZE || distance > SWORD_BAT_REACH) {
+      return false
+    }
+    coconut.setData('live', false)
+    coconut.body.setVelocity(facing * 420, -360)
+    coconut.setAngularVelocity(COCONUT_SPIN * 2 * facing)
+    this.burst(coconut.x, coconut.y, 6, 2.5, 200)
+    return true
+  }
+
+  // A flash of light at (x, y) that grows and fades: a blow landing.
+  burst(x, y, radius, scale, duration) {
+    const burst = this.add.circle(x, y, radius, 0xfff3c4, 0.85).setDepth(5)
+    this.tweens.add({
+      targets: burst,
+      scale,
+      alpha: 0,
+      duration,
+      onComplete: () => burst.destroy(),
+    })
   }
 
   updateInvincibility(time) {
