@@ -1286,6 +1286,12 @@ class GameScene extends Phaser.Scene {
     this.setupTouch()
     this.setupInputs()
     this.applyCamera()
+    // Phaser moves sprites by their physics after update(), so anything
+    // placed to follow them is placed after that.
+    this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.afterPhysics, this)
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.afterPhysics, this)
+    })
 
     if (this.physics.world.debugGraphic) {
       this.physics.world.debugGraphic.setDepth(1000)
@@ -2565,12 +2571,29 @@ class GameScene extends Phaser.Scene {
           this.swooshDrawn = false
           this.touch.clearSwing()
         }
-        this.updateSword(time)
       }
     }
 
     this.updateEnemies(time)
     this.updateInvincibility(time)
+  }
+
+  // After physics has moved everything for this frame: the view, and what
+  // follows Nephi or an enemy. Placed during update(), they'd be a frame
+  // behind, by however far physics then moved (it steps 60 times a second,
+  // whatever the screen's rate), and Nephi would jitter as the view scrolled.
+  afterPhysics(time) {
+    if (!this.player || this.levelFinished || this.gamePaused) {
+      return
+    }
+    if (this.sword) {
+      this.updateSword(time)
+    }
+    this.enemies.children.iterate((enemy) => {
+      if (enemy?.active) {
+        this.followAlert(enemy)
+      }
+    })
     this.applyCamera()
   }
 
@@ -2699,7 +2722,8 @@ class GameScene extends Phaser.Scene {
     }
     const facing = this.player.flipX ? -1 : 1
     const [gripX, gripY] = this.swordGrip()
-    const x = this.player.x + gripX * facing
+    // Across, from where he's drawn: at a whole pixel (see applyCamera).
+    const x = Math.round(this.player.x) + gripX * facing
     const y = this.player.y + gripY
     const angle = swing?.angle ?? SWORD_CARRY_ANGLE
     this.sword
@@ -2970,7 +2994,6 @@ class GameScene extends Phaser.Scene {
         const direction = dx < 0 ? -1 : 1
         enemy.setData('direction', direction)
         enemy.flipX = direction < 0
-        this.followAlert(enemy)
         if (lion && time < enemy.getData('roarUntil')) {
           enemy.body.setVelocityX(0)
           return
@@ -2991,11 +3014,9 @@ class GameScene extends Phaser.Scene {
       }
     }
     if (lion && this.lionResting(enemy, time)) {
-      this.followAlert(enemy)
       return
     }
     this.patrol(enemy, time)
-    this.followAlert(enemy)
   }
 
   startChase(enemy, time) {
@@ -3295,10 +3316,13 @@ class GameScene extends Phaser.Scene {
     this.scene.restart({ levelIndex: this.levelIndex })
   }
 
+  // Keeps Nephi in the middle of the view. Phaser draws the view and each
+  // sprite at whole pixels, rounding them separately, so the view is kept to
+  // his rounded position, or he'd shift a pixel to and fro against it.
   applyCamera() {
     const camera = this.cameras.main
     camera.scrollX = Phaser.Math.Clamp(
-      this.player.x - camera.width / 2,
+      Math.round(this.player.x) - camera.width / 2,
       0,
       WORLD_WIDTH - camera.width,
     )

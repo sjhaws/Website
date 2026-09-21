@@ -38,7 +38,7 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
   - Enemies always move, each at a pace matching its speed and from a random point in its loop, so they're never in lockstep.
   - **Sharks and whales swim:** their tails beat up and down (sharks at 10 frames a second, whales at 6).
   - While a scroll is open, Nephi stands still and every enemy freezes.
-- **Levels:** each is 10,000 px wide, and the goal sits at the far right.
+- **Levels:** each is 10,000 px wide, and the goal sits at the far right. The view keeps Nephi in the middle, except near either end. It's placed after physics has moved him each frame (`afterPhysics` in `game.js`), along with his sword and the guards' and lions' "!" and "?", and at his rounded position, so he stays on the same pixel as the view scrolls. Placed before, he jittered a few pixels to and fro, most on 90 and 120 Hz screens, since physics moves him 60 times a second whatever the screen's rate.
 
   | # | Title | Goal label | Goal |
   |---|---|---|---|
@@ -77,6 +77,7 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 - [ ] On a phone: sliding walks either way, and a tap, a flick up or a second finger jumps; the page doesn't scroll or zoom while playing
 - [ ] The game fills the window without the page scrolling; **Full screen** fills the screen (sideways on Android phones), stays filled and centered when the phone turns either way, and ✕ or Escape leaves it
 - [ ] Nephi's feet step and his hands swing while he walks either way; he stands still when stopped or reading a scroll, and holds a stride in the air
+- [ ] Walking in the middle of a level, Nephi (and his sword) stays steady while the landscape scrolls, with no jitter, including on a phone
 - [ ] Landing on a snake or scorpion removes it; walking into one restarts the level
 - [ ] A scroll shows its message, and after **Proceed** you're briefly invincible
 - [ ] Reaching the goal moves on to the next level's story card
