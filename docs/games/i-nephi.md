@@ -85,12 +85,13 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 - [ ] A scroll shows its message, and after **Proceed** you're briefly invincible
 - [ ] Reaching the goal moves on to the next level's story card
 - [ ] Snakes slither and flick their tongues, scorpions scuttle and snap their claws, and level 3's guards march, none in step with each other, and all freeze while a scroll is open
-- [ ] Level 3 has guards and Laban as the goal; level 6 is the ship, with left/right only
+- [ ] Level 3 has guards and Laban as the goal, lying across the ground's top edge; level 6 is the ship, with left/right only
 - [ ] Levels 4 and 5: Nephi carries the sword as he walks and jumps; `X`, `J` or a flick down swings it, and it kills any enemy it touches
 - [ ] Levels 2, 4 and 5 each have three lions on the ground that roar and chase Nephi on sight ("!") and give up ("?") when he gets onto a platform; now and then one sits down; the first sword hit or stomp knocks a lion back, and the second makes it lie down and fade
 - [ ] Level 5 is a grove of 100 palm trees of mixed kinds and heights, one in ten with a monkey that faces Nephi and throws coconuts when he's near; a coconut costs a heart if it hits him, stopping or turning dodges it, and a well-timed sword swing knocks it away; its story card says so
 - [ ] Level 3: buildings line the street; every other one has a ladder that Nephi climbs (shown from behind) up to its roof and back down; short roofs can be jumped onto, and roof to roof; a guard facing Nephi on the street chases him ("!") and gives up ("?") once he climbs
 - [ ] On level 6 the boat sits in the water; sharks and whales swim underwater with beating tails, now and then surge up at the boat, and cost a heart if they hit it; turning or stopping as one surges dodges it; the boat bobs smoothly, including after picking up scrolls
+- [ ] The tent at the end of levels 1 and 4 stands on the ground, its front edge level with Nephi's feet
 - [ ] The ending screen appears after level 6, and **Play Again** returns to level 1
 - [ ] After leaving the game the canvas is gone, keys do nothing, and the game loop stops. Exactly one `document` `visibilitychange` listener per visit is expected to remain.
 - [ ] Leaving and reopening the game doesn't make it run faster

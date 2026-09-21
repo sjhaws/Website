@@ -2462,22 +2462,30 @@ class GameScene extends Phaser.Scene {
     )
     if (goalTextureKey === 'tent') {
       this.goal.setDisplaySize(90, 60)
+      // Standing on the ground: its front edge is at the bottom of its
+      // picture, sunk into the ground's lighter top edge as far as Nephi's
+      // feet are, with its pegs, a little higher up, on the ground line.
+      const sunk = 5
+      goalY = this.groundY + sunk - this.goal.displayHeight / 2
+      this.goal.setY(goalY)
     } else if (goalTextureKey === 'city') {
       this.goal.setDisplaySize(150, 105)
     } else if (goalTextureKey === 'laban') {
-      // Fix the width to match 2.25x the guard sprite's height (3x, then
-      // scaled down another 25%), and derive the display height from
+      // Fix the width to match about 1.7x the guard sprite's height (3x,
+      // then scaled down 25% twice), and derive the display height from
       // Laban.webp's own native aspect ratio instead of a second hardcoded
       // number - otherwise the art gets squished/stretched to whatever
       // arbitrary box we picked.
-      const targetWidth = GUARD_DISPLAY_HEIGHT * 3 * 0.75
+      const targetWidth = GUARD_DISPLAY_HEIGHT * 3 * 0.75 * 0.75
       const aspectRatio = this.goal.height / this.goal.width
       const targetHeight = targetWidth * aspectRatio
       this.goal.setDisplaySize(targetWidth, targetHeight)
-      // Put Laban's own vertical midpoint on the same plane Nephi stands
-      // on, rather than aligning his feet to it like the other, smaller
-      // goal icons do.
-      goalY = this.groundY
+      // He lies across the ground's top edge, in front of where Nephi
+      // walks: the underside of his body, 152 of his picture's 189 rows
+      // down (his sword and goblet are lower, in front of him), 19 pixels
+      // below the line Nephi stands on.
+      const underside = 152 / 189
+      goalY = this.groundY + 19 - targetHeight * (underside - 0.5)
       this.goal.setY(goalY)
       // The fixed -70 label offset was tuned for the old, much smaller
       // icons; scale it off Laban's actual height so the label still
@@ -2532,17 +2540,17 @@ class GameScene extends Phaser.Scene {
   getGoalLabel() {
     switch (this.levelIndex) {
       case 0:
-        return 'Reach the tent'
+        return 'You reached the tent'
       case 1:
-        return 'Reach Jerusalem'
+        return 'You reached Jerusalem'
       case 2:
-        return 'Find the book'
+        return 'You found Laban'
       case 3:
-        return 'Return to the family'
+        return 'You returned to the family'
       case 4:
-        return 'Reach the coast'
+        return 'You reached the coast'
       case 5:
-        return 'Reach the promised land'
+        return 'You reached the promised land'
       default:
         return 'Goal'
     }
