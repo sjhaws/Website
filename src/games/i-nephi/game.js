@@ -1523,10 +1523,9 @@ class GameScene extends Phaser.Scene {
   // roofs hold Nephi up when he lands on them from above.
   buildStreet() {
     this.roofs = this.physics.add.staticGroup()
-    const art = this.add.graphics()
     streetLayout().forEach((building, index) => {
       const top = this.groundY - building.height
-      this.drawBuilding(art, building, top, index)
+      this.placeBuilding(building, top, index)
       const roof = this.add
         .rectangle(
           building.x + building.width / 2,
@@ -1542,10 +1541,31 @@ class GameScene extends Phaser.Scene {
         right: false,
       })
       if (building.ladderX !== undefined) {
-        this.drawLadder(art, building.ladderX, top)
         this.ladders.push({ x: building.ladderX, top, bottom: this.groundY })
       }
     })
+  }
+
+  // Draws a building and its ladder once, into a picture of their own, and
+  // shows that. Drawn as shapes, the street was thousands of them redrawn
+  // every frame, which made phones stutter.
+  placeBuilding(building, top, index) {
+    const { x, width, ladderX } = building
+    // Room for the parapet either side and a ladder's rails above the roof.
+    const left = x - 4
+    const above = top - 18
+    const key = `street-building-${index}`
+    if (!this.textures.exists(key)) {
+      const art = this.make.graphics({}, false)
+      art.translateCanvas(-left, -above)
+      this.drawBuilding(art, building, top, index)
+      if (ladderX !== undefined) {
+        this.drawLadder(art, ladderX, top)
+      }
+      art.generateTexture(key, width + 8, this.groundY - above)
+      art.destroy()
+    }
+    this.add.image(left, above, key).setOrigin(0, 0)
   }
 
   drawBuilding(g, { x, width, height, ladderX }, top, index) {
@@ -1556,7 +1576,7 @@ class GameScene extends Phaser.Scene {
     g.fillStyle(stone.shade, 1).fillRect(x, top, 8, height)
     g.lineStyle(1, stone.dark, 0.3)
     for (let y = top + 18; y < bottom; y += 18) {
-      g.lineBetween(x, y, x + width, y)
+      g.lineBetween(x, y + 0.5, x + width, y + 0.5)
     }
     // Rows of arched windows, clear of the ladder.
     const clearOfLadder = (from, to) =>
@@ -1585,7 +1605,8 @@ class GameScene extends Phaser.Scene {
     }
     // A parapet along the roof, and an outline.
     g.fillStyle(stone.light, 1).fillRect(x - 4, top - 6, width + 8, 10)
-    g.lineStyle(3, stone.dark, 1).strokeRect(x, top - 6, width, height + 6)
+    g.lineStyle(3, stone.dark, 1)
+    g.strokeRect(x + 0.5, top - 5.5, width - 1, height + 5)
   }
 
   drawLadder(g, x, top) {
