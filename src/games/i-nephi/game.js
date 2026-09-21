@@ -2409,7 +2409,18 @@ const config = {
 
 export function start(container) {
   const game = new Phaser.Game({ ...config, parent: container })
+  // Phaser only checks its box's size now and then, and can miss a change:
+  // turning a phone sideways in full screen left the game sized for upright.
+  // So measure the box and resize the game whenever the box changes size.
+  const resize = new ResizeObserver(() => {
+    if (game.isBooted) {
+      game.scale.getParentBounds()
+      game.scale.refresh()
+    }
+  })
+  resize.observe(container)
   return function stop() {
+    resize.disconnect()
     game.destroy(true)
   }
 }

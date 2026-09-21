@@ -28,6 +28,12 @@
   -webkit-touch-callout: none;
 }
 
+/* Phaser centers the canvas itself; as an inline element the page's
+   centered text would push it along a second time. */
+.host canvas {
+  display: block;
+}
+
 /* Full screen: the box fills the screen and the game fits inside it. */
 .full {
   width: 100%;
