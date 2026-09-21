@@ -415,6 +415,73 @@ const SEA_BREACH = 8
 const SEA_STRIKE = 70
 const SEA_PACE_VARIATION = 0.2
 
+// Level 3's street: a row of buildings Nephi walks past, alternately tall and
+// short, with alleys between (see streetLayout). Tall roofs are out of
+// jumping reach, so tall buildings have a ladder; short ones can be jumped
+// onto, and so can the roofs either side of them. Heights are of the roofs
+// above the street.
+const STREET = {
+  start: 420,
+  end: 9300,
+  width: [170, 260],
+  gap: [70, 140],
+  tall: [290, 320],
+  short: [150, 195],
+}
+const ROOF_THICKNESS = 12
+const BUILDING_STONES = [
+  { wall: 0xb89e76, shade: 0x9a805c, light: 0xd4bf98, dark: 0x4a3826 },
+  { wall: 0xa98f68, shade: 0x8c7352, light: 0xc8b08a, dark: 0x433222 },
+  { wall: 0xc2aa84, shade: 0xa38c66, light: 0xdcc8a4, dark: 0x54402c },
+]
+const AWNINGS = [0xa6423a, 0x3f6f8f, 0x6b8f3f]
+// How close across Nephi must be to a ladder to climb it.
+const LADDER_REACH = 16
+const CLIMB_SPEED = 150
+// Nephi's climbing sprite sheet (from behind): frame 0 holding on, 1 and 2
+// reaching up with one hand and foot and then the other.
+const CLIMB_KEY = 'nephi-climb'
+const CLIMB_STILL = 0
+// Guards chase Nephi when they see him on the street (see updateGuard).
+const GUARD_SIGHT = 380
+const GUARD_LOSE_DISTANCE = 640
+const GUARD_CHASE_SPEED = 150
+const GUARD_PATROL_RANGE = 240
+
+// A repeatable stand-in for Math.random (mulberry32), so the street is laid
+// out the same every time.
+function seededRandom(seed) {
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+// Level 3's buildings, left to right: alternately tall, with a ladder near
+// one end or the other, and short.
+function streetLayout() {
+  const random = seededRandom(1)
+  const between = ([min, max]) => Math.round(min + random() * (max - min))
+  const buildings = []
+  let x = STREET.start
+  for (let i = 0; ; i++) {
+    const width = between(STREET.width)
+    if (x + width > STREET.end) {
+      return buildings
+    }
+    const tall = i % 2 === 0
+    buildings.push({
+      x,
+      width,
+      height: between(tall ? STREET.tall : STREET.short),
+      ladderX: tall ? (i % 4 === 0 ? x + 30 : x + width - 30) : undefined,
+    })
+    x += width + between(STREET.gap)
+  }
+}
+
 // Scroll popup: the box auto-sizes around whatever text it's given (see
 // fitScrollPopupText/layoutScrollPopup) instead of using a fixed height,
 // since scroll messages range from a single short line up to several
@@ -479,18 +546,8 @@ const LEVEL_LAYOUTS = [
     ],
   },
   {
-    platforms: [
-      { x: 300, y: 360, width: 128 },
-      { x: 620, y: 304, width: 160 },
-      { x: 980, y: 248, width: 160 },
-      { x: 1360, y: 292, width: 128 },
-      { x: 1760, y: 232, width: 192 },
-      { x: 2200, y: 286, width: 160 },
-      { x: 2700, y: 240, width: 160 },
-      { x: 3180, y: 304, width: 192 },
-      { x: 3720, y: 260, width: 160 },
-      { x: 4300, y: 328, width: 160 },
-    ],
+    // Buildings instead: see STREET.
+    platforms: [],
     enemies: [
       420, 720, 1100, 1440, 1820, 2140, 2500, 2860, 3240, 3620, 4020, 4440,
     ],
@@ -547,7 +604,7 @@ const LEVEL_SCROLL_MESSAGES = [
     '1 Nephi 3:24-26\n\n24 And it came to pass that we went in unto Laban, and desired him that he would give unto us the records which were engraven upon the plates of brass, for which we would give unto him our gold, and our silver, and all our precious things.\n\n25 And it came to pass that when Laban saw our property, and that it was exceedingly great, he did lust after it, insomuch that he thrust us out, and sent his servants to slay us, that he might obtain our property.\n\n26 And it came to pass that we did flee before the servants of Laban, and we were obliged to leave behind our property, and it fell into the hands of Laban.',
   ],
   [
-    "1 Nephi 4:5-6\n\n5 And it was by night; and I caused that they should hide themselves without the walls. And after they had hid themselves, I, Nephi, crept into the city and went forth towards the house of Laban. 6 And I was led by the Spirit, not knowing beforehand the things which I should do.",
+    '1 Nephi 4:5-6\n\n5 And it was by night; and I caused that they should hide themselves without the walls. And after they had hid themselves, I, Nephi, crept into the city and went forth towards the house of Laban. 6 And I was led by the Spirit, not knowing beforehand the things which I should do.',
     '1 Nephi 4:7-9\n\n7 Nevertheless I went forth, and as I came near unto the house of Laban I beheld a man, and he had fallen to the earth before me, for he was drunken with wine. 8 And when I came to him I found that it was Laban./n/n9 And I beheld his sword, and I drew it forth from the sheath thereof; and the hilt thereof was of pure gold, and the workmanship thereof was exceedingly fine, and I saw that the blade thereof was of the most precious steel.',
     '1 Nephi 4:10-11\n\n10 And it came to pass that I was constrained by the Spirit that I should kill Laban; but I said in my heart: Never at any time have I shed the blood of man. And I shrunk and would that I might not slay him.\n\n11 And the Spirit said unto me again: Behold the Lord hath delivered him into thy hands. Yea, and I also knew that he had sought to take away mine own life; yea, and he would not hearken unto the commandments of the Lord; and he also had taken away our property.',
   ],
@@ -673,6 +730,11 @@ class BootScene extends Phaser.Scene {
     )
     this.load.image('tent', new URL('./assets/Tent.webp', import.meta.url).href)
     this.load.image('ship', new URL('./assets/Ship.webp', import.meta.url).href)
+    this.load.spritesheet(
+      CLIMB_KEY,
+      new URL('./assets/NephiClimb.webp', import.meta.url).href,
+      { frameWidth: 132, frameHeight: 187 },
+    )
     this.load.image(
       'shark',
       new URL('./assets/Shark.webp', import.meta.url).href,
@@ -702,6 +764,14 @@ class BootScene extends Phaser.Scene {
     this.buildTextures()
     for (const walker of Object.values(WALKERS)) {
       buildFrames(this, walker, (pen, step) => drawWalkStep(pen, walker, step))
+    }
+    if (!this.anims.exists(CLIMB_KEY)) {
+      this.anims.create({
+        key: CLIMB_KEY,
+        frames: [1, 0, 2, 0].map((frame) => ({ key: CLIMB_KEY, frame })),
+        frameRate: 8,
+        repeat: -1,
+      })
     }
     for (const crawler of Object.values(CRAWLERS)) {
       buildFrames(this, crawler, (pen, step) =>
@@ -850,13 +920,18 @@ class StoryScene extends Phaser.Scene {
 
     const touchScreen = window.matchMedia('(pointer: coarse)').matches
     const onShip = levelIndex === 5
+    const withLadders = levelIndex === 2
     const howToPlay = touchScreen
       ? onShip
         ? 'Slide a finger left or right to steer.'
-        : 'Slide a finger to walk. Tap or flick up to jump.'
+        : withLadders
+          ? 'Slide a finger to walk, and up or down at a ladder to climb. Tap to jump.'
+          : 'Slide a finger to walk. Tap or flick up to jump.'
       : onShip
         ? 'Use the arrow keys to steer.'
-        : 'Use the arrow keys to move and Space to jump.'
+        : withLadders
+          ? 'Use the arrow keys to move and climb ladders, and Space to jump.'
+          : 'Use the arrow keys to move and Space to jump.'
     const hint = this.add
       .text(width / 2, 0, howToPlay, {
         fontFamily: 'Verdana',
@@ -1013,6 +1088,12 @@ class GameScene extends Phaser.Scene {
     this.isShipLevel = this.levelIndex === 5
     this.waterlineY = 346
     this.invincibleUntil = 0
+    // Level 3: the ladder Nephi is on, the ladders and roofs, and whether
+    // he's on the street, a roof or a ladder (for the guards).
+    this.climbing = null
+    this.ladders = []
+    this.roofs = null
+    this.plane = 'street'
     this.levelFinished = false
     this.gamePaused = false
     this.scrollsCollected = 0
@@ -1386,10 +1467,94 @@ class GameScene extends Phaser.Scene {
       }
     })
     this.ledges = ledges
+    if (this.levelIndex === 2) {
+      this.buildStreet()
+    }
 
     const levelOverlay = this.add.graphics().setAlpha(0.16)
     levelOverlay.fillStyle(groundTop, 1)
     levelOverlay.fillRect(0, groundY - 80, WORLD_WIDTH, 80)
+  }
+
+  // Level 3's buildings and ladders (see STREET), drawn behind everyone. Their
+  // roofs hold Nephi up when he lands on them from above.
+  buildStreet() {
+    this.roofs = this.physics.add.staticGroup()
+    const art = this.add.graphics()
+    streetLayout().forEach((building, index) => {
+      const top = this.groundY - building.height
+      this.drawBuilding(art, building, top, index)
+      const roof = this.add
+        .rectangle(
+          building.x + building.width / 2,
+          top + ROOF_THICKNESS / 2,
+          building.width,
+          ROOF_THICKNESS,
+        )
+        .setVisible(false)
+      this.roofs.add(roof)
+      Object.assign(roof.body.checkCollision, {
+        down: false,
+        left: false,
+        right: false,
+      })
+      if (building.ladderX !== undefined) {
+        this.drawLadder(art, building.ladderX, top)
+        this.ladders.push({ x: building.ladderX, top, bottom: this.groundY })
+      }
+    })
+  }
+
+  drawBuilding(g, { x, width, height, ladderX }, top, index) {
+    const stone = BUILDING_STONES[index % BUILDING_STONES.length]
+    const bottom = this.groundY
+    // Walls, with one side in shadow and courses of stone.
+    g.fillStyle(stone.wall, 1).fillRect(x, top, width, height)
+    g.fillStyle(stone.shade, 1).fillRect(x, top, 8, height)
+    g.lineStyle(1, stone.dark, 0.3)
+    for (let y = top + 18; y < bottom; y += 18) {
+      g.lineBetween(x, y, x + width, y)
+    }
+    // Rows of arched windows, clear of the ladder.
+    const clearOfLadder = (from, to) =>
+      ladderX === undefined || to < ladderX - 18 || from > ladderX + 18
+    for (let y = top + 30; y + 26 < bottom - 64; y += 58) {
+      for (let wx = x + 24; wx + 18 < x + width - 14; wx += 46) {
+        if (!clearOfLadder(wx, wx + 18)) {
+          continue
+        }
+        g.fillStyle(0x241d1a, 1).fillRect(wx, y + 8, 18, 18)
+        g.fillCircle(wx + 9, y + 8, 9)
+        g.fillStyle(stone.light, 1).fillRect(wx - 3, y + 26, 24, 4)
+      }
+    }
+    // A door onto the street, away from the ladder, and an awning on some.
+    const doorX =
+      ladderX !== undefined && ladderX < x + width / 2 ? x + width - 58 : x + 30
+    g.fillStyle(0x5a3a22, 1).fillRect(doorX, bottom - 40, 28, 40)
+    g.fillCircle(doorX + 14, bottom - 40, 14)
+    if (index % 3 === 1) {
+      const awning = AWNINGS[index % AWNINGS.length]
+      for (let i = 0; i < 5; i += 1) {
+        g.fillStyle(i % 2 ? 0xf2e6c8 : awning, 1)
+        g.fillRect(doorX - 10 + i * 10, bottom - 70, 10, 12)
+      }
+    }
+    // A parapet along the roof, and an outline.
+    g.fillStyle(stone.light, 1).fillRect(x - 4, top - 6, width + 8, 10)
+    g.lineStyle(3, stone.dark, 1).strokeRect(x, top - 6, width, height + 6)
+  }
+
+  drawLadder(g, x, top) {
+    const bottom = this.groundY
+    const railTop = top - 18
+    g.fillStyle(0x3d2614, 1)
+    g.fillRect(x - 13, railTop, 6, bottom - railTop)
+    g.fillRect(x + 7, railTop, 6, bottom - railTop)
+    g.fillStyle(0x8a5a32, 1)
+    for (let y = bottom - 10; y > railTop + 4; y -= 14) {
+      g.fillRect(x - 11, y, 22, 4)
+    }
   }
 
   getExpandedPlatforms(platforms) {
@@ -1498,6 +1663,15 @@ class GameScene extends Phaser.Scene {
 
       this.physics.add.collider(this.player, this.groundTiles)
       this.physics.add.collider(this.player, this.ledges)
+      if (this.roofs) {
+        // Not while he's climbing through one on a ladder.
+        this.physics.add.collider(
+          this.player,
+          this.roofs,
+          null,
+          () => !this.climbing,
+        )
+      }
     }
   }
 
@@ -1548,6 +1722,9 @@ class GameScene extends Phaser.Scene {
         startFrame: Phaser.Math.Between(0, ANIM_STEPS - 1),
         timeScale: speedMultiplier,
       })
+      if (isGuard) {
+        enemy.setData({ guard: true, chasing: false })
+      }
       if (supportPlatform) {
         const enemyPadding = 20
         enemy.setData('minX', supportPlatform.left + enemyPadding)
@@ -2002,6 +2179,7 @@ class GameScene extends Phaser.Scene {
       Phaser.Input.Keyboard.KeyCodes.SPACE,
     )
     this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
+    this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S)
   }
 
   chooseEnemyTexture(x) {
@@ -2050,7 +2228,11 @@ class GameScene extends Phaser.Scene {
       return
     }
     if (this.levelFinished || this.gamePaused) {
-      this.animateNephi(false)
+      if (this.climbing) {
+        this.animateClimb(false)
+      } else {
+        this.animateNephi(false)
+      }
       return
     }
 
@@ -2058,12 +2240,15 @@ class GameScene extends Phaser.Scene {
     const leftPressed = this.cursors.left.isDown || this.keyA.isDown || walk < 0
     const rightPressed =
       this.cursors.right.isDown || this.keyD.isDown || walk > 0
-    const jumpPressed =
-      !this.isShipLevel &&
-      (Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
-        Phaser.Input.Keyboard.JustDown(this.keySpace) ||
-        Phaser.Input.Keyboard.JustDown(this.keyW) ||
-        this.touch.wantsJump(performance.now()))
+    const upHeld =
+      this.cursors.up.isDown || this.keyW.isDown || this.touch.vertical < 0
+    const downHeld =
+      this.cursors.down.isDown || this.keyS.isDown || this.touch.vertical > 0
+    const upTapped =
+      Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
+      Phaser.Input.Keyboard.JustDown(this.keyW)
+    const spaceTapped = Phaser.Input.Keyboard.JustDown(this.keySpace)
+    const now = performance.now()
 
     if (this.isShipLevel) {
       let shipMove = 0
@@ -2087,29 +2272,120 @@ class GameScene extends Phaser.Scene {
       this.player.angle = tilt
       this.player.body.updateFromGameObject()
     } else {
-      if (leftPressed && !rightPressed) {
-        this.player.setVelocityX(-PLAYER_SPEED)
-        this.player.flipX = true
-      } else if (rightPressed && !leftPressed) {
-        this.player.setVelocityX(PLAYER_SPEED)
-        this.player.flipX = false
-      } else {
-        this.player.setVelocityX(0)
-      }
-
       const onGround =
         this.player.body.blocked.down || this.player.body.touching.down
-      if (jumpPressed && onGround) {
-        this.player.setVelocityY(-PLAYER_JUMP)
-        this.touch.clearJump()
+      // Up at a ladder climbs it; down on a roof at the top climbs down.
+      const ladder = this.ladderAt()
+      if (ladder && !this.climbing) {
+        const feet = this.player.body.bottom
+        if (upHeld && feet > ladder.top + 2) {
+          this.grabLadder(ladder)
+        } else if (downHeld && onGround && feet <= ladder.top + 4) {
+          this.grabLadder(ladder)
+        }
       }
 
-      this.animateNephi(leftPressed !== rightPressed)
+      if (this.climbing) {
+        // A tap lets go; a flick up is just climbing.
+        const letGo =
+          spaceTapped || this.touch.wantsJump(now, { flicks: false })
+        this.climb(upHeld, downHeld, letGo)
+      } else {
+        if (leftPressed && !rightPressed) {
+          this.player.setVelocityX(-PLAYER_SPEED)
+          this.player.flipX = true
+        } else if (rightPressed && !leftPressed) {
+          this.player.setVelocityX(PLAYER_SPEED)
+          this.player.flipX = false
+        } else {
+          this.player.setVelocityX(0)
+        }
+
+        const jumpPressed =
+          spaceTapped || (upTapped && !ladder) || this.touch.wantsJump(now)
+        if (jumpPressed && onGround) {
+          this.player.setVelocityY(-PLAYER_JUMP)
+          this.touch.clearJump()
+        }
+
+        this.animateNephi(leftPressed !== rightPressed)
+      }
+      this.updatePlane(onGround)
     }
 
     this.updateEnemies(time)
     this.updateInvincibility(time)
     this.applyCamera()
+  }
+
+  // The ladder Nephi can climb, if any: close enough across, and between its
+  // foot and its top (as when standing on the roof beside it).
+  ladderAt() {
+    const { x, body } = this.player
+    return this.ladders.find(
+      (ladder) =>
+        Math.abs(x - ladder.x) <= LADDER_REACH &&
+        body.bottom >= ladder.top - 2 &&
+        body.top <= ladder.bottom,
+    )
+  }
+
+  grabLadder(ladder) {
+    this.climbing = ladder
+    this.player.body.setAllowGravity(false)
+    this.player.body.reset(ladder.x, this.player.y)
+    this.player.flipX = false
+    this.touch.clearJump()
+  }
+
+  letGoOfLadder() {
+    this.climbing = null
+    this.player.body.setAllowGravity(true)
+  }
+
+  // A step on a ladder: Nephi climbs while up or down is held and holds on
+  // otherwise, stepping off onto the roof at the top or the street at the
+  // bottom. Jumping lets go.
+  climb(up, down, jump) {
+    const ladder = this.climbing
+    const { body } = this.player
+    if (jump) {
+      this.letGoOfLadder()
+      this.player.setVelocityY(-PLAYER_JUMP * 0.6)
+      this.touch.clearJump()
+      return
+    }
+    const vy = up && !down ? -CLIMB_SPEED : down && !up ? CLIMB_SPEED : 0
+    this.player.setVelocity(0, vy)
+    if (vy < 0 && body.bottom <= ladder.top) {
+      // Feet level with the roof: step onto it.
+      this.letGoOfLadder()
+      this.player.setVelocityY(0)
+    } else if (vy > 0 && body.bottom >= ladder.bottom) {
+      this.letGoOfLadder()
+    } else {
+      this.animateClimb(vy !== 0)
+    }
+  }
+
+  animateClimb(moving) {
+    if (moving) {
+      this.player.anims.play(CLIMB_KEY, true)
+      return
+    }
+    this.player.anims.stop()
+    this.player.setTexture(CLIMB_KEY, CLIMB_STILL)
+  }
+
+  // Which level Nephi is on, for the guards: 'street', 'roof' or 'ladder'.
+  // In the air he's still on the one he jumped from.
+  updatePlane(onGround) {
+    if (this.climbing) {
+      this.plane = 'ladder'
+    } else if (onGround) {
+      const onStreet = this.player.body.bottom >= this.groundY - 4
+      this.plane = onStreet ? 'street' : 'roof'
+    }
   }
 
   // Nephi walks while moving along the ground, holds a stride in the air, and
@@ -2125,56 +2401,141 @@ class GameScene extends Phaser.Scene {
       return
     }
     this.player.anims.stop()
-    this.player.setFrame(onGround ? FRAME_STILL : FRAME_MID_AIR)
+    const frame = onGround ? FRAME_STILL : FRAME_MID_AIR
+    this.player.setTexture(WALKERS.nephi.key, frame)
   }
 
   updateEnemies(time) {
     this.enemies.children.iterate((enemy) => {
-      if (!enemy) {
+      if (!enemy?.active) {
         return
       }
-      const speed = enemy.getData('speed')
-
       if (this.isShipLevel) {
         this.swim(enemy, time)
+      } else if (enemy.getData('guard')) {
+        this.updateGuard(enemy, time)
       } else {
-        const direction = enemy.getData('direction')
-        const minX = enemy.getData('minX')
-        const maxX = enemy.getData('maxX')
-        const nextTurnAt = enemy.getData('nextTurnAt') ?? 0
-        const turnRange = this.getEnemyTurnDelayRange()
-
-        enemy.body.setVelocityX(direction * speed)
-        const jitterChance = this.getEnemyPatrolJitterChance()
-        const patrolJitter = time >= nextTurnAt && Math.random() < jitterChance
-        if (patrolJitter) {
-          enemy.setData('direction', direction * -1)
-          enemy.setData(
-            'nextTurnAt',
-            time + Phaser.Math.Between(turnRange.min, turnRange.max),
-          )
-        }
-        if (enemy.x <= minX) {
-          enemy.x = minX
-          enemy.setData('direction', 1)
-          enemy.setData(
-            'nextTurnAt',
-            time + Phaser.Math.Between(turnRange.min, turnRange.max),
-          )
-        } else if (enemy.x >= maxX) {
-          enemy.x = maxX
-          enemy.setData('direction', -1)
-          enemy.setData(
-            'nextTurnAt',
-            time + Phaser.Math.Between(turnRange.min, turnRange.max),
-          )
-        }
-
-        // Art faces right by default (same convention as the player sprite),
-        // so mirror it whenever the enemy is currently heading left.
-        enemy.flipX = enemy.getData('direction') < 0
+        this.patrol(enemy, time)
       }
     })
+  }
+
+  // Back and forth within its range, turning now and then at random.
+  patrol(enemy, time) {
+    const speed = enemy.getData('speed')
+    const direction = enemy.getData('direction')
+    const minX = enemy.getData('minX')
+    const maxX = enemy.getData('maxX')
+    const nextTurnAt = enemy.getData('nextTurnAt') ?? 0
+    const turnRange = this.getEnemyTurnDelayRange()
+
+    enemy.body.setVelocityX(direction * speed)
+    const jitterChance = this.getEnemyPatrolJitterChance()
+    const patrolJitter = time >= nextTurnAt && Math.random() < jitterChance
+    if (patrolJitter) {
+      enemy.setData('direction', direction * -1)
+      enemy.setData(
+        'nextTurnAt',
+        time + Phaser.Math.Between(turnRange.min, turnRange.max),
+      )
+    }
+    if (enemy.x <= minX) {
+      enemy.x = minX
+      enemy.setData('direction', 1)
+      enemy.setData(
+        'nextTurnAt',
+        time + Phaser.Math.Between(turnRange.min, turnRange.max),
+      )
+    } else if (enemy.x >= maxX) {
+      enemy.x = maxX
+      enemy.setData('direction', -1)
+      enemy.setData(
+        'nextTurnAt',
+        time + Phaser.Math.Between(turnRange.min, turnRange.max),
+      )
+    }
+
+    // Art faces right by default (same convention as the player sprite),
+    // so mirror it whenever the enemy is currently heading left.
+    enemy.flipX = enemy.getData('direction') < 0
+  }
+
+  // Guards patrol until they see Nephi: facing him, on the street, within
+  // GUARD_SIGHT. Then they chase him until he leaves the street (up a ladder
+  // or onto a roof) or gets well away, and patrol again from where they are.
+  updateGuard(enemy, time) {
+    const dx = this.player.x - enemy.x
+    const onStreet = this.plane === 'street'
+    if (enemy.getData('chasing')) {
+      if (onStreet && Math.abs(dx) <= GUARD_LOSE_DISTANCE) {
+        const direction = dx < 0 ? -1 : 1
+        enemy.setData('direction', direction)
+        enemy.body.setVelocityX(direction * GUARD_CHASE_SPEED)
+        enemy.flipX = direction < 0
+        this.followAlert(enemy)
+        return
+      }
+      this.stopChase(enemy, time)
+    } else {
+      const facing = Math.sign(dx) === enemy.getData('direction')
+      if (onStreet && facing && Math.abs(dx) <= GUARD_SIGHT) {
+        this.startChase(enemy)
+        return
+      }
+    }
+    this.patrol(enemy, time)
+    this.followAlert(enemy)
+  }
+
+  startChase(enemy) {
+    enemy.setData('chasing', true)
+    // Faster steps to match.
+    enemy.anims.timeScale = GUARD_CHASE_SPEED / ENEMY_SPEED
+    this.showAlert(enemy, '!')
+  }
+
+  stopChase(enemy, time) {
+    const turnRange = this.getEnemyTurnDelayRange()
+    enemy.setData({
+      chasing: false,
+      minX: enemy.x - GUARD_PATROL_RANGE,
+      maxX: enemy.x + GUARD_PATROL_RANGE,
+      nextTurnAt: time + Phaser.Math.Between(turnRange.min, turnRange.max),
+    })
+    enemy.anims.timeScale = enemy.getData('speed') / ENEMY_SPEED
+    this.showAlert(enemy, '?')
+  }
+
+  // A mark over a guard's head that fades away: "!" when he spots Nephi, "?"
+  // when he loses him.
+  showAlert(enemy, mark) {
+    enemy.getData('alert')?.destroy()
+    const alert = this.add
+      .text(enemy.x, enemy.y - 52, mark, {
+        fontFamily: 'Verdana',
+        fontSize: '26px',
+        fontStyle: 'bold',
+        color: mark === '!' ? '#ff5a3c' : '#f2d7a0',
+        stroke: '#1a1a1a',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(6)
+    enemy.setData('alert', alert)
+    this.tweens.add({
+      targets: alert,
+      alpha: 0,
+      delay: 500,
+      duration: 400,
+      onComplete: () => alert.destroy(),
+    })
+  }
+
+  followAlert(enemy) {
+    const alert = enemy.getData('alert')
+    if (alert?.active) {
+      alert.setPosition(enemy.x, enemy.y - 52)
+    }
   }
 
   updateInvincibility(time) {

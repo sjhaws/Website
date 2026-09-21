@@ -23,6 +23,7 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 - **Controls:**
   - Move with ← / → or `A` / `D`.
   - Jump with ↑, `W` or Space.
+  - On level 3, ↑ / `W` at a ladder climbs it and ↓ / `S` on a roof beside one climbs down; Space jumps off. On touch screens, sliding a finger up or down at a ladder climbs, and a tap jumps off (a flick up on a ladder just climbs).
   - **Touch screens** (no buttons are drawn; `touchControls.ts`, with tests): slide a finger anywhere in the game's box to walk, and tap or flick up to jump. A second finger touching down also jumps, so it works with one thumb or two. On the ship level, sliding steers and nothing jumps. A tap on a scroll message's button never makes Nephi jump afterwards.
   - On a phone held upright, the game sits at the top of a taller box, and the space below it is part of the touch area, with a "Slide to walk · Tap to jump" hint, so a thumb needn't cover the game.
   - The story card says how to play on the device in use: touch or keyboard.
@@ -49,6 +50,8 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 
 - **Enemies:** snakes and scorpions, plus guards on level 3, and sharks and whales on level 6.
   - Landing on top of a land enemy removes it and bounces you up.
+  - **Level 3 (the streets):** instead of platforms, a row of stone buildings lines the street (`STREET` and `streetLayout` in `game.js`, the same every time). They alternate tall and short: tall roofs are out of jumping reach, so every tall building (every other one) has a ladder; short roofs can be jumped onto from the street, and from them the next roof. Roofs only hold Nephi up from above, so he walks in front of the buildings and jumps up through a roof's edge onto it. Climbing shows Nephi from behind (`NephiClimb.webp`, drawn for this site in his style: holding on, then reaching up with one hand and foot and then the other).
+  - **Guards** stay on the street. A guard who sees Nephi (facing him, on the street, within 380 px) shows a red "!" and chases him at 150 px/s, slower than Nephi. When Nephi climbs a ladder or reaches a roof, or gets 640 px away, the guard shows a "?" and patrols again from where he is.
   - Any other touch restarts the level.
   - **Level 6 (at sea):** 7 sharks and 4 whales cruise back and forth under the water, each at its own depth and pace, within 280 px of where it starts. Every 0.9 to 2.4 seconds (a little longer at the start of the level), one within 520 px of the boat hunts it: it dashes along underneath, following the boat for up to 2.5 seconds, then surges up through the surface where it's got to and dives back down. It stops following once it surges, so turning or stopping at that moment dodges it; sharks surge faster than the boat sails, so outrunning them doesn't work. Whales are big and slower (`SEA_CREATURES` and the `SEA_…` settings in `game.js`). Touching one restarts the level.
   - The water's surface is drawn see-through in front of the sea creatures and the boat's hull, so they look underwater.
@@ -76,6 +79,7 @@ A six-level side-scrolling platformer following Nephi's journey from Jerusalem t
 - [ ] Reaching the goal moves on to the next level's story card
 - [ ] Snakes slither and flick their tongues, scorpions scuttle and snap their claws, and level 3's guards march, none in step with each other, and all freeze while a scroll is open
 - [ ] Level 3 has guards and Laban as the goal; level 6 is the ship, with left/right only
+- [ ] Level 3: buildings line the street; every other one has a ladder that Nephi climbs (shown from behind) up to its roof and back down; short roofs can be jumped onto, and roof to roof; a guard facing Nephi on the street chases him ("!") and gives up ("?") once he climbs
 - [ ] On level 6 the boat sits in the water; sharks and whales swim underwater with beating tails, now and then surge up at the boat, and restart the level if they hit it; turning or stopping as one surges dodges it; the boat bobs smoothly, including after picking up scrolls
 - [ ] The ending screen appears after level 6, and **Play Again** returns to level 1
 - [ ] After leaving the game the canvas is gone, keys do nothing, and the game loop stops. Exactly one `document` `visibilitychange` listener per visit is expected to remain.

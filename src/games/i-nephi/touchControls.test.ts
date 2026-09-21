@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CLIMB_DEAD_ZONE,
   DEAD_ZONE,
   FLICK_DISTANCE,
   JUMP_BUFFER_MS,
@@ -150,5 +151,41 @@ describe('two fingers', () => {
     // It was already down, so lifting it quickly isn't a tap.
     touch.up(THUMB, 1260)
     expect(touch.wantsJump(1260)).toBe(false)
+  })
+})
+
+describe('climbing', () => {
+  it('climbs up or down once the finger slides past the climbing dead zone', () => {
+    const touch = new SlideControls()
+    touch.down(FINGER, 100, 300, 0)
+    touch.move(FINGER, 100, 300 - CLIMB_DEAD_ZONE, 400)
+    expect(touch.vertical).toBe(0)
+    touch.move(FINGER, 100, 300 - CLIMB_DEAD_ZONE - 1, 800)
+    expect(touch.vertical).toBe(-1)
+    touch.move(FINGER, 100, 360, 1200)
+    expect(touch.vertical).toBe(1)
+    touch.up(FINGER, 1300)
+    expect(touch.vertical).toBe(0)
+  })
+
+  it('does not climb for a finger drifting a little while walking', () => {
+    const touch = new SlideControls()
+    touch.down(FINGER, 100, 300, 0)
+    touch.move(FINGER, 160, 290, 400)
+    expect(touch.direction).toBe(1)
+    expect(touch.vertical).toBe(0)
+  })
+
+  it('can leave out flicks, so a flick up on a ladder climbs instead', () => {
+    const flick = new SlideControls()
+    flick.down(FINGER, 100, 300, 1000)
+    flick.move(FINGER, 100, 260, 1100)
+    expect(flick.wantsJump(1100)).toBe(true)
+    expect(flick.wantsJump(1100, { flicks: false })).toBe(false)
+
+    const tap = new SlideControls()
+    tap.down(FINGER, 100, 300, 1000)
+    tap.up(FINGER, 1080)
+    expect(tap.wantsJump(1080, { flicks: false })).toBe(true)
   })
 })

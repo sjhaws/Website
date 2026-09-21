@@ -8,11 +8,15 @@
 // - A quick tap jumps, as does a quick flick upward, which lets the steering
 //   finger jump without lifting. So does any other finger touching down while
 //   one is steering, which is the fastest way with two thumbs.
+// - Sliding the steering finger more than CLIMB_DEAD_ZONE pixels up or down
+//   climbs a ladder, in the same way. That dead zone is bigger, so a finger
+//   drifting a little while walking past a ladder doesn't grab it.
 //
 // Distances are in CSS pixels and times in milliseconds, both as given by
 // pointer events.
 
 export const DEAD_ZONE = 10
+export const CLIMB_DEAD_ZONE = 18
 export const LEASH = 24
 export const TAP_MS = 250
 /** A tap moves less than this. */
@@ -32,6 +36,8 @@ interface Steering {
   id: number
   /** Where "not walking" is: where the finger landed, or following it. */
   anchorX: number
+  /** The same for "not climbing". */
+  anchorY: number
   start: Point
   /** Recent positions, for spotting a flick. */
   recent: Point[]
@@ -42,7 +48,11 @@ interface Steering {
 export class SlideControls {
   /** -1 to walk left, 1 to walk right, 0 to stand. */
   direction: -1 | 0 | 1 = 0
+  /** -1 to climb up, 1 to climb down, 0 to hold still. */
+  vertical: -1 | 0 | 1 = 0
   private jumpAt: number | null = null
+  /** Whether the last jump asked for was a flick. */
+  private flicked = false
   private steering: Steering | null = null
   /** Other fingers that are down, by pointer id, and where they are. */
   private others = new Map<number, Point>()
@@ -57,7 +67,7 @@ export class SlideControls {
     }
     if (this.steering) {
       this.others.set(id, { x, y, time })
-      this.jumpAt = time
+      this.askToJump(time, false)
       // That was the jump, so the steering finger lifting isn't a tap.
       this.steering.jumped = true
     } else {
@@ -84,6 +94,12 @@ export class SlideControls {
     )
     const dx = x - steering.anchorX
     this.direction = dx > DEAD_ZONE ? 1 : dx < -DEAD_ZONE ? -1 : 0
+    steering.anchorY = Math.min(
+      Math.max(steering.anchorY, y - LEASH),
+      y + LEASH,
+    )
+    const dy = y - steering.anchorY
+    this.vertical = dy > CLIMB_DEAD_ZONE ? 1 : dy < -CLIMB_DEAD_ZONE ? -1 : 0
 
     // Where the finger has been in the last FLICK_MS. A finger resting
     // still sends no events, so its last position before then counts too.
@@ -96,7 +112,7 @@ export class SlideControls {
     ]
     const lowest = Math.max(...steering.recent.map((p) => p.y))
     if (lowest - y >= FLICK_DISTANCE) {
-      this.jumpAt = time
+      this.askToJump(time, true)
       steering.jumped = true
       // The flick is used up; it takes another to jump again.
       steering.recent = [{ x, y, time }]
@@ -109,7 +125,7 @@ export class SlideControls {
     if (steering?.id === id) {
       const quick = time - steering.start.time <= TAP_MS
       if (quick && !steering.moved && !steering.jumped) {
-        this.jumpAt = time
+        this.askToJump(time, false)
       }
     }
     this.lift(id)
@@ -120,9 +136,15 @@ export class SlideControls {
     this.lift(id)
   }
 
-  /** Whether a jump was asked for within the last JUMP_BUFFER_MS. */
-  wantsJump(now: number): boolean {
-    return this.jumpAt !== null && now - this.jumpAt <= JUMP_BUFFER_MS
+  /**
+   * Whether a jump was asked for within the last JUMP_BUFFER_MS. Leave out
+   * flicks with `flicks: false`, say when a flick up means climbing.
+   */
+  wantsJump(now: number, { flicks = true } = {}): boolean {
+    if (this.jumpAt === null || now - this.jumpAt > JUMP_BUFFER_MS) {
+      return false
+    }
+    return flicks || !this.flicked
   }
 
   /** The jump happened, so forget the request. */
@@ -130,10 +152,16 @@ export class SlideControls {
     this.jumpAt = null
   }
 
+  private askToJump(time: number, flick: boolean) {
+    this.jumpAt = time
+    this.flicked = flick
+  }
+
   private steer(id: number, point: Point): Steering {
     this.steering = {
       id,
       anchorX: point.x,
+      anchorY: point.y,
       start: point,
       recent: [point],
       moved: false,
@@ -149,6 +177,7 @@ export class SlideControls {
     }
     this.steering = null
     this.direction = 0
+    this.vertical = 0
     // Another finger still down takes over steering from where it is. It
     // isn't a new touch, so lifting it later isn't a tap.
     const [next] = [...this.others]
