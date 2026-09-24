@@ -19,8 +19,10 @@ const PLAYER_JUMP = 840
 // tied to how long the popup happened to stay open.
 const INVINCIBILITY_MS = 3000
 // Nephi has three hearts, shown under the level's name. Each hit, by an
-// enemy or a coconut, costs one (see hurtNephi); losing the last starts the
-// journey again from level 1. Every level starts with all three.
+// enemy or a coconut, costs one (see hurtNephi), and what's left carries on
+// to the next level. Losing the last starts the journey again from level 1,
+// which is also the only thing, short of starting the game afresh, that
+// gives them back.
 const HEARTS = 3
 // A hit knocks him back (across and up, in px/s) and he can't walk for a
 // moment. Then he blinks for a while, and can't be hurt again until he stops.
@@ -1235,6 +1237,8 @@ class StoryScene extends Phaser.Scene {
 
   create(data) {
     const levelIndex = data.levelIndex ?? 0
+    // Hearts left, carried from the level before (see HEARTS).
+    const hearts = data.hearts ?? HEARTS
     const level = LEVELS[levelIndex]
     const { width, height } = this.scale
 
@@ -1391,7 +1395,7 @@ class StoryScene extends Phaser.Scene {
     hint.setPosition(width / 2, cursorY)
 
     const startGame = () => {
-      this.scene.start('GameScene', { levelIndex })
+      this.scene.start('GameScene', { levelIndex, hearts })
     }
 
     startButton.on('pointerdown', startGame)
@@ -1466,6 +1470,9 @@ class GameScene extends Phaser.Scene {
 
   init(data) {
     this.levelIndex = data.levelIndex ?? 0
+    // His hearts last the whole journey: they only come back in full when
+    // he runs out (see outOfHearts) or the game starts afresh.
+    this.hearts = data.hearts ?? HEARTS
   }
 
   create() {
@@ -1486,7 +1493,6 @@ class GameScene extends Phaser.Scene {
     this.coconuts = null
     this.swingStartedAt = -Infinity
     this.levelFinished = false
-    this.hearts = HEARTS
     // Since his last hit: until when he's knocked back, and until when he
     // can't be hurt again (see hurtNephi).
     this.staggerUntil = 0
@@ -2588,7 +2594,7 @@ class GameScene extends Phaser.Scene {
         .image(
           18 + padding + index * (heartSize + heartGap) + heartSize / 2,
           58 + padding + heartSize / 2,
-          'heart',
+          index < this.hearts ? 'heart' : 'heart-lost',
         )
         .setScrollFactor(0),
     )
@@ -3839,7 +3845,10 @@ class GameScene extends Phaser.Scene {
       if (nextLevel >= LEVELS.length) {
         this.scene.start('EndingScene')
       } else {
-        this.scene.start('StoryScene', { levelIndex: nextLevel })
+        this.scene.start('StoryScene', {
+          levelIndex: nextLevel,
+          hearts: this.hearts,
+        })
       }
     })
   }
